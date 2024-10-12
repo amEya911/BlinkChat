@@ -59,7 +59,6 @@ fun AppNav() {
 
         }
     }
-
 }
 
 sealed class Screen(val route: String) {
