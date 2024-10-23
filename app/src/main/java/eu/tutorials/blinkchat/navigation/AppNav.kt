@@ -15,7 +15,9 @@ import com.google.gson.Gson
 import eu.tutorials.blinkchat.data.model.ContactModel
 import eu.tutorials.blinkchat.ui.screen.Chat
 import eu.tutorials.blinkchat.ui.screen.Inbox
-import eu.tutorials.blinkchat.ui.screen.Login
+import eu.tutorials.blinkchat.ui.screen.LoginOptions
+import eu.tutorials.blinkchat.ui.screen.LoginWithPhoneVerifyOTP
+import eu.tutorials.blinkchat.ui.screen.LoginWithPhoneVerifyPhone
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -34,13 +36,40 @@ fun AppNav() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Inbox.route
+        startDestination = Screen.LoginOptions.route
     ) {
-        composable(Screen.Login.route) {
-            Login(
-                onLoginSuccessful = { navController.navigate(Screen.Inbox.route)}
+        composable(Screen.LoginOptions.route) {
+            LoginOptions(
+                onCLickLoginButton = {
+                    navController.navigate(Screen.LoginWithPhoneVerifyPhone.route)
+                },
+                onClickGuestButton = {}
             )
         }
+
+        composable(Screen.LoginWithPhoneVerifyPhone.route) {
+            LoginWithPhoneVerifyPhone(
+                onVerifyLoginSuccessful = { verificationId, mobileNumber ->
+                    navController.navigate("${Screen.LoginWithPhoneVerifyOTP.route}/$verificationId/$mobileNumber")
+                }
+            )
+        }
+
+
+        composable("${Screen.LoginWithPhoneVerifyOTP.route}/{verificationId}/{mobileNumber}") { backStackEntry ->
+            val verificationId = backStackEntry.arguments?.getString("verificationId")
+            val mobileNumber = backStackEntry.arguments?.getString("mobileNumber")
+
+            LoginWithPhoneVerifyOTP(
+                verificationId = verificationId,
+                mobileNumber = mobileNumber,
+                onOTPLoginSuccessful = {
+                    navController.navigate(Screen.Inbox.route)
+                }
+            )
+        }
+
+
 
         composable(Screen.Inbox.route) {
             Inbox(
@@ -56,13 +85,14 @@ fun AppNav() {
             val contactModel = contactJson?.let { URLDecoder.decode(it, "UTF-8") }
                 ?.let { gson.fromJson(it, ContactModel::class.java) }
             Chat(contactModel)
-
         }
     }
 }
 
 sealed class Screen(val route: String) {
-    data object Login: Screen("login")
+    data object LoginOptions: Screen("login-options")
+    data object LoginWithPhoneVerifyPhone: Screen("login-with-phone-verify-phone")
+    data object LoginWithPhoneVerifyOTP: Screen("login-with-phone-verify-otp")
     data object Inbox: Screen("inbox")
     data object Chat: Screen("chat")
 }
