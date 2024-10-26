@@ -6,6 +6,5 @@ data class InboxState(
     val contacts: List<ContactModel> = emptyList(),
     val searchQuery: String? = null,
     val searchResults: List<ContactModel> = emptyList(),
-    val isContactClicked: Boolean = false,
-    val selectedContact: ContactModel? = null,
+    val isAllContactsClicked: Boolean = false
 )

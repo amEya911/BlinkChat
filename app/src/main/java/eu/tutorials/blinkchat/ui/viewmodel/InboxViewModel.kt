@@ -33,26 +33,14 @@ class InboxViewModel @Inject constructor(private val context: Context) : ViewMod
             is InboxEvent.LoadContacts -> {
                 loadContacts(event.activity)
             }
+            InboxEvent.OnAllContactsIconClicked -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isAllContactsClicked = !_inboxState.value.isAllContactsClicked
+                )
+            }
 
             is InboxEvent.SearchUsers -> {
                 searchUsers(event.searchQuery)
-            }
-
-            is InboxEvent.OnContactClicked -> {
-                _inboxState.value = _inboxState.value.copy(
-                    isContactClicked = true,
-                    selectedContact = event.contact
-                )
-            }
-
-            InboxEvent.OnContactDismiss -> {
-                _inboxState.value = _inboxState.value.copy(
-                    isContactClicked = false
-                )
-            }
-
-            is InboxEvent.StartChatWithContact -> {
-
             }
         }
     }

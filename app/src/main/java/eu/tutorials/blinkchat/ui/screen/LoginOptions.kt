@@ -35,7 +35,7 @@ import eu.tutorials.blinkchat.ui.viewmodel.LoginOptionViewModel
 
 @Composable
 fun LoginOptions(
-    onCLickLoginButton : () -> Unit,
+    onClickLoginButton : () -> Unit,
     onClickGuestButton: () -> Unit,
     viewModel: LoginOptionViewModel = hiltViewModel()
 ) {
@@ -43,7 +43,7 @@ fun LoginOptions(
 
     LaunchedEffect(key1 = loginOptionsState) {
         if (loginOptionsState.isLoginClicked) {
-            onCLickLoginButton()
+            onClickLoginButton()
             viewModel.onEvent(LoginOptionsEvent.Reset)
         }
 

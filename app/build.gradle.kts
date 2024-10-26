@@ -70,7 +70,12 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(libs.androidx.navigation.compose)
+    implementation (libs.material3)
+    implementation (libs.ui)
+    implementation(libs.androidx.navigation.ui)
+    implementation(libs.androidx.material)
+    implementation (libs.androidx.navigation.compose.v283)
+    implementation (libs.material3)
     implementation(libs.dagger.hilt.android)
     implementation(libs.firebase.crashlytics.buildtools)
     kapt(libs.dagger.hilt.compiler)
