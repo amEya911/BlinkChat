@@ -2,6 +2,7 @@ package eu.tutorials.blinkchat.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -14,7 +15,6 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 
 @Composable
@@ -48,10 +47,10 @@ fun BottomNavBar(navController: NavController) {
                     Icon(
                         if (currentRoute == screen.route) screen.selectedIcon else screen.unSelectedIcon,
                         contentDescription = null,
-                        tint = Color.Black
+                        tint = if (currentRoute == screen.route) Color.Black else Color.Black.copy(alpha = 0.25f),
+                        modifier = Modifier.size(if (currentRoute == screen.route) 35.dp else 25.dp)
                     )
                 },
-                label = { Text(text = screen.title, color = Color.Black) },
                 selected = currentRoute == screen.route,
                 onClick = {
                     navController.navigate(screen.route) {
