@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,7 +23,7 @@ import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 fun AppBar(
     title: String,
     showIcon: Boolean = false,
-    iconResId: Int? = null,
+    iconResId: Any? = null,
     onIconClick: (() -> Unit)? = null
 ) {
     TopAppBar(
@@ -40,18 +41,21 @@ fun AppBar(
                 Spacer(modifier = Modifier.weight(1f))
                 if (showIcon) {
                     IconButton(onClick = { onIconClick?.invoke() }) {
-                        if (iconResId != null) {
-                            Icon(
-                                painter = painterResource(id = iconResId),
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
+                        when (iconResId) {
+                            is Int -> {
+                                Icon(
+                                    painter = painterResource(id = iconResId),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                            is ImageVector -> {
+                                Icon(
+                                    imageVector = iconResId,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
                         }
                     }
                 }

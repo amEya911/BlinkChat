@@ -17,72 +17,70 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.ContactModel
-import eu.tutorials.blinkchat.ui.component.AppBar
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
+import eu.tutorials.blinkchat.data.state.InboxState
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
-import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 
 @Composable
-fun Inbox(viewModel: InboxViewModel = hiltViewModel()) {
-    val inboxState = viewModel.inboxState.collectAsState().value
+fun Inbox(
+    inboxState: InboxState,
+    onEvent: (InboxEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val activity = LocalContext.current as? Activity
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery = inboxState.searchQuery
 
-    LaunchedEffect(Unit) {
-        activity?.let { viewModel.onEvent(InboxEvent.LoadContacts(it)) }
-    }
-
-    Scaffold(
-        containerColor = BackgroundColor,
-        topBar = {
-            AppBar(
-                title = "Chats",
-                showIcon = true,
-                onIconClick = { viewModel.onEvent(InboxEvent.OnAllContactsIconClicked) }
-            )
+    LaunchedEffect(inboxState.contacts) {
+        if (inboxState.contacts.isEmpty()) {
+            activity?.let { onEvent(InboxEvent.LoadContacts(it)) }
         }
-    ){ innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            TextField(
-                value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    viewModel.onEvent(InboxEvent.SearchUsers(it))
-                },
-                placeholder = { Text("Search", fontSize = 14.sp, color = Color.Black.copy(alpha = 0.4f)) },
-                singleLine = true,
-                modifier = Modifier
-                    .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .clip(RoundedCornerShape(15.dp)),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = TextFieldColor,
-                    unfocusedContainerColor = TextFieldColor,
-                    focusedTextColor = Color.Gray,
-                    unfocusedTextColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+    }
+    Column(modifier = modifier.fillMaxSize()) {
+        TextField(
+            value = searchQuery ?: "",
+            onValueChange = {
+                searchQuery = it
+                onEvent(InboxEvent.SearchUsers(it))
+            },
+            placeholder = {
+                Text(
+                    "Search",
+                    fontSize = 14.sp,
+                    color = Color.Black.copy(alpha = 0.4f)
                 )
+            },
+            singleLine = true,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(RoundedCornerShape(15.dp)),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = TextFieldColor,
+                unfocusedContainerColor = TextFieldColor,
+                focusedTextColor = Color.Gray,
+                unfocusedTextColor = Color.Gray,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
             )
+        )
 
-            val displayedContacts = if (inboxState.searchQuery.isNullOrBlank()) inboxState.contacts else inboxState.searchResults
+        val displayedContacts =
+            if (inboxState.searchQuery.isNullOrBlank()) inboxState.contacts else inboxState.searchResults
 
-            if (inboxState.isAllContactsClicked || !inboxState.searchQuery.isNullOrBlank()) {
-                LazyColumn {
-                    items(displayedContacts.sortedBy { it.displayName }) { contact ->
-                        ChatItem(contact = contact)
-                    }
+        if (inboxState.isAllContactsClicked || !inboxState.searchQuery.isNullOrBlank()) {
+            LazyColumn {
+                items(displayedContacts.sortedBy { it.displayName }) { contact ->
+                    ChatItem(contact = contact)
                 }
             }
         }
+
     }
 }
 

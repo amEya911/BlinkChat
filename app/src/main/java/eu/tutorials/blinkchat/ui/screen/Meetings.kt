@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,48 +23,36 @@ import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 
 @Composable
 fun Meetings(
+    modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        containerColor = BackgroundColor,
-        topBar = {
-            AppBar(
-                title = "Meets",
-                showIcon = true,
-                iconResId = R.drawable.calendar,
-                onIconClick = {
-
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            TextField(
-                value = "",
-                onValueChange = {},
-                placeholder = {
-                    Text(
-                        "Search",
-                        fontSize = 14.sp,
-                        color = Color.Black.copy(alpha = 0.4f)
-                    )
-                },
-                singleLine = true,
-                modifier = Modifier
-                    .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .clip(RoundedCornerShape(15.dp)),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = TextFieldColor,
-                    unfocusedContainerColor = TextFieldColor,
-                    focusedTextColor = Color.Gray,
-                    unfocusedTextColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+    Column(modifier = modifier.fillMaxSize()) {
+        TextField(
+            value = "",
+            onValueChange = {},
+            placeholder = {
+                Text(
+                    "Search",
+                    fontSize = 14.sp,
+                    color = Color.Black.copy(alpha = 0.4f)
                 )
+            },
+            singleLine = true,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(RoundedCornerShape(15.dp)),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = TextFieldColor,
+                unfocusedContainerColor = TextFieldColor,
+                focusedTextColor = Color.Gray,
+                unfocusedTextColor = Color.Gray,
+                focusedPlaceholderColor = Color.Gray,
+                unfocusedPlaceholderColor = Color.Gray,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
             )
-        }
+        )
     }
+
 }
