@@ -1,4 +1,4 @@
-package eu.tutorials.blinkchat.ui.screen
+package eu.tutorials.blinkchat.ui.screen.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -104,7 +103,7 @@ fun LoginOptions(
                     Spacer(modifier = Modifier.weight(1f))
                     Button(
                         onClick = {
-                            viewModel.onEvent(LoginOptionsEvent.onLoginClicked)
+                            viewModel.onEvent(LoginOptionsEvent.OnLoginClicked)
                         },
                         modifier = Modifier
                             .width(300.dp)
@@ -116,7 +115,7 @@ fun LoginOptions(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            viewModel.onEvent(LoginOptionsEvent.onGuestClicked)
+                            viewModel.onEvent(LoginOptionsEvent.OnGuestClicked)
                         },
                         modifier = Modifier
                             .width(300.dp)

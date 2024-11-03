@@ -1,7 +1,6 @@
-package eu.tutorials.blinkchat.ui.screen
+package eu.tutorials.blinkchat.ui.screen.auth
 
 import android.app.Activity
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

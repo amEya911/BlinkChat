@@ -1,7 +1,8 @@
-package eu.tutorials.blinkchat.ui.screen
+package eu.tutorials.blinkchat.ui.screen.app
 
 import android.app.Activity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,7 +29,8 @@ import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 fun Inbox(
     inboxState: InboxState,
     onEvent: (InboxEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onStartChatWithContact : (String) -> Unit
 ) {
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
@@ -38,6 +40,34 @@ fun Inbox(
             activity?.let { onEvent(InboxEvent.LoadContacts(it)) }
         }
     }
+
+    LaunchedEffect(key1 = inboxState.isEnterChatRoom) {
+        if (inboxState.isEnterChatRoom) {
+            onStartChatWithContact(inboxState.navigateToChatId!!)
+            onEvent(InboxEvent.ResetEnterChatRoom)
+        }
+    }
+
+    if (inboxState.isContactClicked) {
+        AlertDialog(
+            title = { Text(text = "Start chat with ${inboxState.selectedContact?.displayName}?") },
+            onDismissRequest = { onEvent(InboxEvent.OnContactDismissed) },
+            confirmButton = {
+                Button(onClick = {
+                    onEvent(InboxEvent.OnEnterChatRoom)
+                    onEvent(InboxEvent.OnContactDismissed)
+                }) {
+                    Text(text = "Enter")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { onEvent(InboxEvent.OnContactDismissed) }) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         TextField(
             value = searchQuery ?: "",
@@ -76,7 +106,7 @@ fun Inbox(
         if (inboxState.isAllContactsClicked || !inboxState.searchQuery.isNullOrBlank()) {
             LazyColumn {
                 items(displayedContacts.sortedBy { it.displayName }) { contact ->
-                    ChatItem(contact = contact)
+                    ChatItem(contact = contact, onEvent = onEvent)
                 }
             }
         }
@@ -85,11 +115,17 @@ fun Inbox(
 }
 
 @Composable
-fun ChatItem(contact: ContactModel) {
+fun ChatItem(
+    contact: ContactModel,
+    onEvent: (InboxEvent) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable {
+                onEvent(InboxEvent.OnContactClicked(contact))
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (contact.photoUri != null) {

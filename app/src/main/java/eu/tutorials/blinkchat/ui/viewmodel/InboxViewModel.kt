@@ -5,10 +5,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
+import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.ContactModel
 import eu.tutorials.blinkchat.data.state.InboxState
@@ -18,12 +24,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class InboxViewModel @Inject constructor(private val context: Context) : ViewModel() {
+class InboxViewModel @Inject constructor(
+    private val context: Context,
+    private val appRepository: AppRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     private companion object {
         const val REQUEST_CODE_READ_CONTACTS = 1001
     }
-
 
     private val _inboxState = MutableStateFlow(InboxState())
     val inboxState: StateFlow<InboxState> = _inboxState
@@ -33,14 +42,32 @@ class InboxViewModel @Inject constructor(private val context: Context) : ViewMod
             is InboxEvent.LoadContacts -> {
                 loadContacts(event.activity)
             }
+            is InboxEvent.OnContactClicked -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = true,
+                    selectedContact = event.contact
+                )
+            }
+            InboxEvent.OnContactDismissed -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
             InboxEvent.OnAllContactsIconClicked -> {
                 _inboxState.value = _inboxState.value.copy(
                     isAllContactsClicked = !_inboxState.value.isAllContactsClicked
                 )
             }
-
             is InboxEvent.SearchUsers -> {
                 searchUsers(event.searchQuery)
+            }
+            InboxEvent.OnEnterChatRoom -> {
+                createChatRoom()
+            }
+            InboxEvent.ResetEnterChatRoom -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isEnterChatRoom = false
+                )
             }
         }
     }
@@ -57,7 +84,6 @@ class InboxViewModel @Inject constructor(private val context: Context) : ViewMod
             )
         }
     }
-
 
     private fun loadContacts(activity: Activity) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
@@ -108,12 +134,28 @@ class InboxViewModel @Inject constructor(private val context: Context) : ViewMod
                     }
                 }
             }
-
             _inboxState.value = InboxState(contacts = contactsList)
         }
     }
 
-
+    private fun createChatRoom() {
+        val currentUserId = userRepository.currentUserId()
+        val otherUserId = _inboxState.value.selectedContact!!.id
+        val otherUserName = _inboxState.value.selectedContact!!.displayName
+        if (currentUserId != null) {
+            userRepository.getUserDetails(currentUserId) { currentUserName ->
+                appRepository.createChatRoom(currentUserId, currentUserName, otherUserId, otherUserName) { chatRoomId ->
+                   if (chatRoomId != null) {
+                       _inboxState.value = _inboxState.value.copy(isEnterChatRoom = true, navigateToChatId = chatRoomId)
+                   } else {
+                       Log.e("ChatRoom", "Failed to create chat room.")
+                   }
+                }
+            }
+        } else {
+            Log.e("ChatRoom", "Current user is not logged in.")
+        }
+    }
 }
 
 

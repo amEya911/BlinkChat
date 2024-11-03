@@ -1,8 +1,7 @@
 package eu.tutorials.blinkchat.data.event
 
 sealed class LoginOptionsEvent {
-
-    data object onLoginClicked: LoginOptionsEvent()
-    data object onGuestClicked: LoginOptionsEvent()
-    object Reset : LoginOptionsEvent()
+    data object OnLoginClicked: LoginOptionsEvent()
+    data object OnGuestClicked: LoginOptionsEvent()
+    data object Reset : LoginOptionsEvent()
 }

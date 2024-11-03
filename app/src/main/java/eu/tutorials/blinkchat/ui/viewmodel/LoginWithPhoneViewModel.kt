@@ -9,7 +9,9 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.LoginWithPhoneEvent
+import eu.tutorials.blinkchat.data.model.ContactModel
 import eu.tutorials.blinkchat.data.state.LoginWithPhoneState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +19,9 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginWithPhoneViewModel @Inject constructor() : ViewModel() {
+class LoginWithPhoneViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     private val _loginWithPhoneState = MutableStateFlow(LoginWithPhoneState())
     val loginWithPhoneState: StateFlow<LoginWithPhoneState> = _loginWithPhoneState
@@ -39,7 +43,6 @@ class LoginWithPhoneViewModel @Inject constructor() : ViewModel() {
             is LoginWithPhoneEvent.VerifyCode -> {
                 verifyVerificationCode(_loginWithPhoneState.value.verificationCode, event.verificationId)
             }
-
         }
     }
 
@@ -51,16 +54,15 @@ class LoginWithPhoneViewModel @Inject constructor() : ViewModel() {
 
     private fun sendVerificationCode(mobileNumber: String, activity: Activity) {
         val options = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber("+91$mobileNumber") // Set the mobile number (ensure correct format)
-            .setTimeout(60L, TimeUnit.SECONDS) // Timeout duration
-            .setActivity(activity) // Pass the Activity here
+            .setPhoneNumber("+91$mobileNumber")
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(activity)
             .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
                     signInWithPhoneAuthCredential(credential)
                 }
 
                 override fun onVerificationFailed(e: FirebaseException) {
-                    // Handle the failure
                     _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                         verificationError = "Verification failed: ${e.message}"
                     )
@@ -74,22 +76,31 @@ class LoginWithPhoneViewModel @Inject constructor() : ViewModel() {
                         verificationId = verificationId,
                         mobileNumber = _loginWithPhoneState.value.mobileNumber
                     )
-                    this@LoginWithPhoneViewModel.verificationId = verificationId // Save the verification ID
+                    this@LoginWithPhoneViewModel.verificationId = verificationId
                 }
             })
             .build()
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
-
-
     private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
         auth.signInWithCredential(credential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 Log.d("LoginWithPhoneViewModel1", "Login successful")
-                // Login success
                 _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                     isLoggedIn = true
                 )
+
+                val user = auth.currentUser
+                user?.let {
+                    val contactModel = ContactModel(
+                        id = it.uid,
+                        displayName = it.displayName ?: "Unknown User",
+                        phoneNumber = it.phoneNumber ?: "Unknown Number",
+                        photoThumbnailUri = it.photoUrl?.toString(),
+                        photoUri = it.photoUrl?.toString()
+                    )
+                    userRepository.addUserDetails(contactModel)
+                }
             } else {
                 Log.e("LoginWithPhoneViewModel1", "Login failed: ${task.exception?.message}")
                 // Login failure
@@ -100,5 +111,4 @@ class LoginWithPhoneViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
-
 }

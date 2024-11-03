@@ -16,12 +16,12 @@ class LoginOptionViewModel @Inject constructor(): ViewModel() {
 
     fun onEvent(event: LoginOptionsEvent) {
         when (event) {
-            LoginOptionsEvent.onGuestClicked -> {
+            LoginOptionsEvent.OnGuestClicked -> {
                 _loginOptionsState.value = _loginOptionsState.value.copy(
                     isGuestClicked = true
                 )
             }
-            LoginOptionsEvent.onLoginClicked -> {
+            LoginOptionsEvent.OnLoginClicked -> {
                 _loginOptionsState.value = _loginOptionsState.value.copy(
                     isLoginClicked = true
                 )

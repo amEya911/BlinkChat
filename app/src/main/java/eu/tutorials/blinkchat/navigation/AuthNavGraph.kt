@@ -4,9 +4,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import eu.tutorials.blinkchat.ui.screen.LoginOptions
-import eu.tutorials.blinkchat.ui.screen.LoginWithPhoneVerifyOTP
-import eu.tutorials.blinkchat.ui.screen.LoginWithPhoneVerifyPhone
+import eu.tutorials.blinkchat.ui.screen.auth.LoginOptions
+import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyOTP
+import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyPhone
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(

@@ -18,8 +18,6 @@ fun RootNavGraph() {
             AppNavGraph()
         }
     }
-
-
 }
 
 object Graph {
