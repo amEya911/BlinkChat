@@ -19,10 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
-import eu.tutorials.blinkchat.data.model.ContactModel
+import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.InboxState
+import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 
 @Composable
@@ -32,6 +34,7 @@ fun Inbox(
     modifier: Modifier = Modifier,
     onStartChatWithContact : (String) -> Unit
 ) {
+
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
 
@@ -116,7 +119,7 @@ fun Inbox(
 
 @Composable
 fun ChatItem(
-    contact: ContactModel,
+    contact: Contact,
     onEvent: (InboxEvent) -> Unit,
 ) {
     Row(

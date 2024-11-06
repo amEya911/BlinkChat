@@ -22,11 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.model.ContactModel
+import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.ui.theme.LightGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatRoomTopBar(contact: ContactModel) {
+fun ChatRoomTopBar(contact: Contact) {
     TopAppBar(
         title = {
             Row(
@@ -61,6 +62,6 @@ fun ChatRoomTopBar(contact: ContactModel) {
             }
         },
         expandedHeight = 80.dp,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.LightGray)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = LightGray)
     )
 }

@@ -3,14 +3,15 @@ package eu.tutorials.blinkchat.data.datasource.remote
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import eu.tutorials.blinkchat.data.model.ContactModel
+import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.ui.component.HashUtil
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
 
-    fun addUserDetails(contact: ContactModel) {
+    fun addUserDetails(contact: Contact) {
         firestore.collection("users").document(contact.id)
             .get()
             .addOnSuccessListener { document ->
@@ -33,26 +34,45 @@ class UserRepository @Inject constructor(
     }
 
     fun currentUserId(): String? {
-        return FirebaseAuth.getInstance().currentUser?.uid
+        val phoneNumber = FirebaseAuth.getInstance().currentUser?.phoneNumber
+        return if (phoneNumber != null) {
+            HashUtil.hashPhoneNumber(phoneNumber)
+        } else {
+            null
+        }
     }
 
-    fun getUserDetails(userId: String, onResult: (String) -> Unit) {
+    fun getUserDetails(userId: String, onResult: (Contact?) -> Unit) {
         firestore.collection("users").document(userId)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val userName = document.getString("displayName") ?: "Unknown"
-                    onResult(userName)
+                    val id = document.id
+                    val displayName = document.getString("displayName") ?: "Unknown"
+                    val phoneNumber = document.getString("phoneNumber") ?: "Unknown Number"
+                    val photoThumbnailUri = document.getString("photoThumbnailUri")
+                    val photoUri = document.getString("photoUri")
+
+                    val contact = Contact(
+                        id = id,
+                        displayName = displayName,
+                        phoneNumber = phoneNumber,
+                        photoThumbnailUri = photoThumbnailUri,
+                        photoUri = photoUri
+                    )
+
+                    onResult(contact)
                 } else {
                     Log.e("UserRepository", "User does not exist.")
-                    onResult("Unknown")
+                    onResult(null)
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("UserRepository", "Error fetching user details: ${e.message}")
-                onResult("Unknown")
+                onResult(null)
             }
     }
+
 }
 
 

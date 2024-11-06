@@ -1,30 +1,17 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
+import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,38 +19,60 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.model.ContactModel
+import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.state.ChatRoomState
 import eu.tutorials.blinkchat.ui.component.ChatRoomTopBar
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
+import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun ChatRoom(
-    modifier: Modifier = Modifier,
     chatRoomId: String,
-    contact: ContactModel,
+    chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
 ) {
+    val systemUiController = rememberSystemUiController()
+    systemUiController.setSystemBarsColor(color = LightGray)
+
+    Log.d("ChatRoom", "Launching ChatRoom with chatRoomId: $chatRoomId")
+    val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
+
+    LaunchedEffect(chatRoomId) { chatRoomViewModel.loadChatRoomDetails(chatRoomId) }
+
     Scaffold(
-        topBar = { ChatRoomTopBar(contact) },
+        topBar = {
+            chatRoomState.otherUserContact?.let {
+                ChatRoomTopBar(it)
+            } ?: Text(text = "Loading...")
+        },
         containerColor = BackgroundColor,
-        bottomBar = { ChatInputBar() }
+        bottomBar = { ChatInputBar() },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundColor)
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .imePadding()
     ) { innerPadding ->
-        Box(
-            modifier = modifier
+        LazyColumn(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.TopCenter
+                .padding(innerPadding)
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
-            ) {
-
-
+            item {
+                chatRoomState.currentUserContact?.let {
+                    repeat(15) {  // Adjust number as needed
+                        Text(text = "Current User Id: ${chatRoomState.currentUserContact.id}")
+                        Text(text = "Other User Id: ${chatRoomState.otherUserContact?.id}")
+                    }
+                } ?: Text(text = "Error: ${chatRoomState.error ?: "Unknown error"}")
             }
         }
     }
@@ -74,23 +83,17 @@ fun ChatInputBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp)
+            .wrapContentHeight(align = Alignment.CenterVertically)
             .background(LightGray)
-            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 38.dp),
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = {  }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add",
-                tint = Color.Black
-            )
+        IconButton(onClick = { }) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.Black)
         }
         TextField(
             value = "",
-            onValueChange = {  },
+            onValueChange = { },
             placeholder = { Text(text = "Type a message", color = Color.Gray) },
             modifier = Modifier
                 .weight(1f)
@@ -108,19 +111,11 @@ fun ChatInputBar() {
                 unfocusedIndicatorColor = Color.Transparent
             )
         )
-        IconButton(onClick = {  }) {
-            Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = "Camera",
-                tint = Color.Black
-            )
+        IconButton(onClick = { }) {
+            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color.Black)
         }
-        IconButton(onClick = {  }) {
-            Icon(
-                painter = painterResource(id = R.drawable.eraser),
-                contentDescription = "Send",
-                tint = Color.Black
-            )
+        IconButton(onClick = { }) {
+            Icon(painter = painterResource(id = R.drawable.eraser), contentDescription = "Send", tint = Color.Black)
         }
     }
 }

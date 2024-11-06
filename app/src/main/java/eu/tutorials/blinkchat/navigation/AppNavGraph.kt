@@ -2,7 +2,11 @@ package eu.tutorials.blinkchat.navigation
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Scaffold
@@ -21,20 +25,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.google.gson.Gson
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
-import eu.tutorials.blinkchat.data.model.ContactModel
 import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
+import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
-import java.net.URLDecoder
-import java.net.URLEncoder
 
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
+
+    val systemUiController = rememberSystemUiController()
+    systemUiController.setSystemBarsColor(color = BackgroundColor)
+    systemUiController.setNavigationBarColor(color = TextFieldColor)
 
     Log.d("AppNavGraph", "current root: $currentRoute")
 
@@ -72,7 +78,8 @@ fun AppNavGraph() {
             if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
                 BottomNavBar(navController = navController)
             }
-        }
+        },
+        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
     ) { paddingValues ->
         NavHost(
             navController = navController,
@@ -109,21 +116,26 @@ fun AppNavGraph() {
                 arguments = listOf(
                     navArgument("chatRoomId") {
                         type = NavType.StringType
+                        nullable = true
                     }
                 )
             ) { backStackEntry ->
-
                 val chatRoomId = backStackEntry.arguments?.getString("chatRoomId")
-                ChatRoom(chatRoomId = chatRoomId!!, contact = inboxState.selectedContact!!)
+
+                if (chatRoomId != null) {
+                    ChatRoom(chatRoomId = chatRoomId)
+                    Log.e("AppNavGraph", "succesful $chatRoomId")
+                } else {
+                    Log.e("AppNavGraph", "chatRoomId is null")
+                }
             }
         }
     }
 }
 
-
 sealed class AppScreen(val route: String) {
-    object Meetings : AppScreen("meetings")
-    object Chats : AppScreen("chats")
-    object Settings : AppScreen("settings")
-    object ChatRoom : AppScreen("chat-room")
+    data object Meetings : AppScreen("meetings")
+    data object Chats : AppScreen("chats")
+    data object Settings : AppScreen("settings")
+    data object ChatRoom : AppScreen("chat-room")
 }

@@ -3,6 +3,7 @@ package eu.tutorials.blinkchat.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -32,7 +33,7 @@ fun BottomNavBar(navController: NavController) {
 
     BottomNavigation(
         modifier = Modifier
-            .height(80.dp),
+            .wrapContentHeight(),
         backgroundColor = TextFieldColor
     ) {
         val items = listOf(

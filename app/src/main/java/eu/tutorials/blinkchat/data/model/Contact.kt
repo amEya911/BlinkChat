@@ -1,6 +1,6 @@
 package eu.tutorials.blinkchat.data.model
 
-data class ContactModel(
+data class Contact(
     val id: String,
     val displayName: String,
     val phoneNumber: String,
