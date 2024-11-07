@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -27,18 +28,29 @@ import eu.tutorials.blinkchat.ui.theme.LightGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatRoomTopBar(contact: Contact) {
+fun ChatRoomTopBar(
+    contact: Contact,
+    isOnline: Boolean
+) {
     TopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 Text(
                     text = contact.displayName,
                     color = Color.Black,
-                    fontSize = 20.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (isOnline) "Online" else "Offline",
+                    fontSize = 20.sp,
+                    color = if (isOnline) Color.Green else Color.Red,
+                    modifier = Modifier.padding(start = 8.dp)
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 if (contact.photoUri != null) {
@@ -63,5 +75,20 @@ fun ChatRoomTopBar(contact: Contact) {
         },
         expandedHeight = 80.dp,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = LightGray)
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChatRoomTopBarPreview(modifier: Modifier = Modifier) {
+    ChatRoomTopBar(
+        contact = Contact(
+            id = "",
+            displayName = "Ameya Kulkarni",
+            phoneNumber = "1234567890",
+            photoThumbnailUri = null,
+            photoUri = null
+        ),
+        isOnline = false
     )
 }

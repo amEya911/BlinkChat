@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -30,7 +31,9 @@ import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
+import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
+import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 
 @Composable
@@ -39,13 +42,25 @@ fun AppNavGraph() {
     val currentRoute = currentRoute(navController)
 
     val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(color = BackgroundColor)
-    systemUiController.setNavigationBarColor(color = TextFieldColor)
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let {
+            if (it.startsWith(AppScreen.ChatRoom.route)) {
+                systemUiController.setSystemBarsColor(color = LightGray)
+            } else {
+                systemUiController.setSystemBarsColor(color = BackgroundColor)
+                systemUiController.setNavigationBarColor(color = TextFieldColor)
+            }
+        }
+
+    }
 
     Log.d("AppNavGraph", "current root: $currentRoute")
 
     val inboxViewModel: InboxViewModel = hiltViewModel()
     val inboxState = inboxViewModel.inboxState.collectAsState().value
+
+    val chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
+    val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
 
     Scaffold(
         containerColor = BackgroundColor,
@@ -124,7 +139,7 @@ fun AppNavGraph() {
 
                 if (chatRoomId != null) {
                     ChatRoom(chatRoomId = chatRoomId)
-                    Log.e("AppNavGraph", "succesful $chatRoomId")
+                    Log.e("AppNavGraph", "successful $chatRoomId")
                 } else {
                     Log.e("AppNavGraph", "chatRoomId is null")
                 }
@@ -139,3 +154,5 @@ sealed class AppScreen(val route: String) {
     data object Settings : AppScreen("settings")
     data object ChatRoom : AppScreen("chat-room")
 }
+
+

@@ -12,16 +12,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
+import eu.tutorials.blinkchat.data.event.ChatRoomEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.ChatRoomState
 import eu.tutorials.blinkchat.ui.component.ChatRoomTopBar
@@ -36,86 +41,133 @@ fun ChatRoom(
     chatRoomId: String,
     chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
 ) {
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(color = LightGray)
-
     Log.d("ChatRoom", "Launching ChatRoom with chatRoomId: $chatRoomId")
     val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
 
-    LaunchedEffect(chatRoomId) { chatRoomViewModel.loadChatRoomDetails(chatRoomId) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit) {
+        chatRoomViewModel.onEvent(ChatRoomEvent.OnLoadChatRoomDetails(chatRoomId))
+        chatRoomViewModel.onEvent(ChatRoomEvent.OnSetupAppLifecycleObserver(lifecycleOwner))
+    }
 
     Scaffold(
         topBar = {
             chatRoomState.otherUserContact?.let {
-                ChatRoomTopBar(it)
+                ChatRoomTopBar(it, chatRoomState.isOtherUserInChatRoom)
             } ?: Text(text = "Loading...")
         },
         containerColor = BackgroundColor,
-        bottomBar = { ChatInputBar() },
+        bottomBar = { ChatInputBar(chatRoomViewModel, chatRoomState) },
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundColor)
             .windowInsetsPadding(WindowInsets.systemBars)
             .imePadding()
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(8.dp)
         ) {
-            item {
-                chatRoomState.currentUserContact?.let {
-                    repeat(15) {  // Adjust number as needed
-                        Text(text = "Current User Id: ${chatRoomState.currentUserContact.id}")
-                        Text(text = "Other User Id: ${chatRoomState.otherUserContact?.id}")
-                    }
-                } ?: Text(text = "Error: ${chatRoomState.error ?: "Unknown error"}")
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                item {
+                    //Text(text = "Other User: ${chatRoomState.isOtherUserInChatRoom}")
+                    Text(text = chatRoomState.otherUserMessage)
+                }
+            }
+
+            Divider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                color = Color.Gray,
+                thickness = 1.dp
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                item {
+                    //Text(text = "Current User: ${chatRoomState.isCurrentUserInChatRoom}")
+                    Text(text = chatRoomState.currentUserMessage)
+                }
             }
         }
     }
 }
 
 @Composable
-fun ChatInputBar() {
+fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight(align = Alignment.CenterVertically)
             .background(LightGray)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { }) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.Black)
-        }
-        TextField(
-            value = "",
-            onValueChange = { },
-            placeholder = { Text(text = "Type a message", color = Color.Gray) },
-            modifier = Modifier
-                .weight(1f)
-                .height(40.dp)
-                .padding(4.dp)
-                .clip(RoundedCornerShape(30.dp)),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = TextFieldColor,
-                unfocusedContainerColor = TextFieldColor,
-                focusedTextColor = Color.Gray,
-                unfocusedTextColor = Color.Gray,
-                focusedPlaceholderColor = Color.Gray,
-                unfocusedPlaceholderColor = Color.Gray,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+        if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Waiting for the other user to join the chat room.",
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        } else {
+            IconButton(onClick = {  }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add",
+                    tint = Color.Black
+                )
+            }
+            TextField(
+                value = chatRoomState.currentUserMessage,
+                onValueChange = { newText ->
+                    viewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
+                },
+                placeholder = { Text(text = "Type a message", color = Color.Gray) },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(30.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = TextFieldColor,
+                    unfocusedContainerColor = TextFieldColor,
+                    focusedTextColor = Color.Gray,
+                    unfocusedTextColor = Color.Gray,
+                    focusedPlaceholderColor = Color.Gray,
+                    unfocusedPlaceholderColor = Color.Gray,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
-        )
-        IconButton(onClick = { }) {
-            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color.Black)
-        }
-        IconButton(onClick = { }) {
-            Icon(painter = painterResource(id = R.drawable.eraser), contentDescription = "Send", tint = Color.Black)
+            IconButton(onClick = {  }) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Camera",
+                    tint = Color.Black
+                )
+            }
+            IconButton(onClick = { }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.eraser),
+                    contentDescription = "Erase",
+                    tint = Color.Black
+                )
+            }
         }
     }
 }
