@@ -3,6 +3,7 @@ package eu.tutorials.blinkchat.data.datasource.remote
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.model.Message
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -19,8 +20,8 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
             "chatRoomId" to chatRoomId,
             "initiatorUser" to initiatorUser,
             "recipientUser" to recipientUser,
-            "initiatorMessage" to "",
-            "recipientMessage" to "",
+            "initiatorMessage" to Message(),
+            "recipientMessage" to Message(),
             "createdAt" to System.currentTimeMillis(),
             "activeUsers" to mapOf(
                 "initiator" to false,
@@ -43,10 +44,8 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
                 val initiatorUser = (snapshot.get("initiatorUser") as? Map<*, *>)?.toContact()
                 val recipientUser = (snapshot.get("recipientUser") as? Map<*, *>)?.toContact()
 
-                val initiatorId =
-                    initiatorUser?.id ?: throw Exception("Initiator user ID is missing")
-                val recipientId =
-                    recipientUser?.id ?: throw Exception("Recipient user ID is missing")
+                val initiatorId = initiatorUser?.id ?: throw Exception("Initiator user ID is missing")
+                val recipientId = recipientUser?.id ?: throw Exception("Recipient user ID is missing")
 
                 when (currentId) {
                     initiatorId -> Result.success(
@@ -124,14 +123,32 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
             else -> return
         }
 
-        // Update the correct message field in Firestore
         firestore.collection("chatRooms").document(chatRoomId)
-            .update(messageField, messageText)
+            .update("$messageField.messageText", messageText)
             .addOnFailureListener {
-                Log.e(
-                    "AppRepo",
-                    "Failed to update typing message: ${it.message}"
-                )
+                Log.e("AppRepo", "Failed to update typing message: ${it.message}")
+            }
+    }
+
+    fun updateReadMessages(
+        chatRoomId: String,
+        messageText: String,
+        currentUserId: String,
+        initiatorId: String,
+        recipientId: String,
+    ) {
+        Log.d("AppRepo", "Inside updateReadMessage: $messageText")
+
+        val messageField = when (currentUserId) {
+            initiatorId -> "recipientMessage"
+            recipientId -> "initiatorMessage"
+            else -> return
+        }
+
+        firestore.collection("chatRooms").document(chatRoomId)
+            .update("$messageField.readMessage", messageText)
+            .addOnFailureListener {
+                Log.e("AppRepo", "Failed to update readMessage: ${it.message}")
             }
     }
 
@@ -143,8 +160,34 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
         onMessageReceived: (String) -> Unit
     ) {
         val messageField = when (currentUserId) {
-            initiatorId -> "recipientMessage"
-            recipientId -> "initiatorMessage"
+            initiatorId -> "recipientMessage.messageText"
+            recipientId -> "initiatorMessage.messageText"
+            else -> return
+        }
+
+        firestore.collection("chatRooms").document(chatRoomId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("AppRepo", "Error listening for messages", e)
+                    return@addSnapshotListener
+                }
+
+                snapshot?.getString(messageField)?.let { newMessage ->
+                    onMessageReceived(newMessage)
+                }
+            }
+    }
+
+    fun listenForReadMessages(
+        chatRoomId: String,
+        currentUserId: String,
+        initiatorId: String,
+        recipientId: String,
+        onMessageReceived: (String) -> Unit
+    ) {
+        val messageField = when (currentUserId) {
+            initiatorId -> "initiatorMessage.readMessage"
+            recipientId -> "recipientMessage.readMessage"
             else -> return
         }
 
@@ -163,8 +206,8 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
 
     fun deleteMessages(chatRoomId: String) {
         val updates = mapOf(
-            "initiatorMessage" to "",
-            "recipientMessage" to ""
+            "initiatorMessage.messageText" to "",
+            "recipientMessage.messageText" to ""
         )
 
         firestore.collection("chatRooms").document(chatRoomId)

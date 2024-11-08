@@ -7,4 +7,5 @@ sealed class ChatRoomEvent {
     data class OnSetupAppLifecycleObserver(val lifecycleOwner: LifecycleOwner) : ChatRoomEvent()
     data class OnMessageTyping(val message: String) : ChatRoomEvent()
     data object DeleteMessages : ChatRoomEvent()
+    data object OnOtherUserMessageReceived: ChatRoomEvent()
 }

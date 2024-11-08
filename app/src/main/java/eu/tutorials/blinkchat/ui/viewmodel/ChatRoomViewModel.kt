@@ -55,6 +55,15 @@ class ChatRoomViewModel @Inject constructor(
             ChatRoomEvent.DeleteMessages -> {
                 deleteMessages()
             }
+            ChatRoomEvent.OnOtherUserMessageReceived -> {
+                chatRoomId?.let { id ->
+                    appRepository.updateReadMessages(
+                        id,
+                        _chatRoomState.value.otherUserMessage,
+                        currentUserId, _chatRoomState.value.initiatorId, _chatRoomState.value.recipientId
+                    )
+                }
+            }
         }
     }
 
@@ -101,6 +110,17 @@ class ChatRoomViewModel @Inject constructor(
                 ) { message ->
                     _chatRoomState.value = _chatRoomState.value.copy(
                         otherUserMessage = message
+                    )
+                }
+
+                appRepository.listenForReadMessages(
+                    chatRoomId,
+                    currentUserId,
+                    initiatorId,
+                    recipientId
+                ) { readMessage ->
+                    _chatRoomState.value = _chatRoomState.value.copy(
+                        readMessage = readMessage
                     )
                 }
 

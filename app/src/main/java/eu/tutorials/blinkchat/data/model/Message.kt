@@ -1,9 +1,8 @@
 package eu.tutorials.blinkchat.data.model
 
 data class Message(
-    val chatId: String,
-    val attachmentUrl: String? = null,
     val messageText: String? = null,
+    val readMessage: String? = null
 )
 
 //enum class AttachmentType {

@@ -12,8 +12,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -21,6 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,6 +56,10 @@ fun ChatRoom(
         chatRoomViewModel.onEvent(ChatRoomEvent.OnSetupAppLifecycleObserver(lifecycleOwner))
     }
 
+    LaunchedEffect(key1 = chatRoomState.otherUserMessage) {
+        chatRoomViewModel.onEvent(ChatRoomEvent.OnOtherUserMessageReceived)
+    }
+
     Scaffold(
         topBar = {
             chatRoomState.otherUserContact?.let {
@@ -76,7 +86,6 @@ fun ChatRoom(
                     .weight(1f)
             ) {
                 item {
-                    //Text(text = "Other User: ${chatRoomState.isOtherUserInChatRoom}")
                     Text(text = chatRoomState.otherUserMessage)
                 }
             }
@@ -95,8 +104,19 @@ fun ChatRoom(
                     .weight(1f)
             ) {
                 item {
-                    //Text(text = "Current User: ${chatRoomState.isCurrentUserInChatRoom}")
-                    Text(text = chatRoomState.currentUserMessage)
+                    Text(
+                        text = buildAnnotatedString {
+                            val readMessage = chatRoomState.readMessage ?: ""
+                            val currentMessage = chatRoomState.currentUserMessage
+
+                            withStyle(style = SpanStyle(color = Color.Green)) {
+                                append(readMessage)
+                            }
+                            withStyle(style = SpanStyle(color = Color.Yellow)) {
+                                append(currentMessage.removePrefix(readMessage))
+                            }
+                        }
+                    )
                 }
             }
         }
