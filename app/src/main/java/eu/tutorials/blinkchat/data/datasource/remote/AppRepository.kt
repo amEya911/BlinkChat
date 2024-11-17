@@ -1,20 +1,43 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
+import android.widget.Toast
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Message
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 
 class AppRepository @Inject constructor(private val firestore: FirebaseFirestore) {
 
+    private fun isNetworkAvailable(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork
+        val capabilities = connectivityManager.getNetworkCapabilities(network)
+        return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }
+
     fun createChatRoom(
         initiatorUser: Contact,
         recipientUser: Contact,
+        context: Context,
+        recipientUserExists: Boolean,
         callback: (String?) -> Unit
     ) {
+        if (!isNetworkAvailable(context)) {
+            Toast.makeText(context, "No internet connection. Room creation failed.", Toast.LENGTH_LONG).show()
+            callback(null)
+            return
+        }
+
         val chatRoomId = UUID.randomUUID().toString()
         val chatRoomData = mapOf(
             "chatRoomId" to chatRoomId,
@@ -29,9 +52,61 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
             )
         )
         firestore.collection("chatRooms").document(chatRoomId).set(chatRoomData)
-            .addOnSuccessListener { callback(chatRoomId) }
-            .addOnFailureListener { callback(null) }
+            .addOnSuccessListener {
+                callback(chatRoomId)
+                updateRecentChats(initiatorUser.id, recipientUser, chatRoomId)
+                if (recipientUserExists) {
+                    updateRecentChats(recipientUser.id, initiatorUser, chatRoomId)
+                }
+                callback(chatRoomId)
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(context, "Failed to create chat room: ${exception.message}", Toast.LENGTH_LONG).show()
+                Log.e("ChatRoom", "Error creating chat room: ${exception.message}", exception)
+                callback(null)
+            }
     }
+
+    private fun updateRecentChats(userId: String, otherUser: Contact, chatRoomId: String) {
+        val recentChatEntry = mapOf(
+            "userId" to otherUser.id,
+            "displayName" to otherUser.displayName,
+            "photoUri" to otherUser.photoUri,
+            "chatRoomId" to chatRoomId,
+            "lastUpdated" to System.currentTimeMillis()
+        )
+
+        firestore.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val recentChats = document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
+                    val updatedChats = recentChats.filter { it["userId"] != otherUser.id }
+                    val newRecentChats = updatedChats + recentChatEntry
+
+                    firestore.collection("users").document(userId)
+                        .update("recentChats", newRecentChats)
+                        .addOnSuccessListener {
+                            Log.d("ChatRoom", "Recent chats updated for user: $userId")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ChatRoom", "Failed to update recent chats for user: $userId", e)
+                        }
+                } else {
+                    firestore.collection("users").document(userId)
+                        .set(mapOf("recentChats" to listOf(recentChatEntry)))
+                        .addOnSuccessListener {
+                            Log.d("ChatRoom", "Recent chats created for user: $userId")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ChatRoom", "Failed to create recent chats for user: $userId", e)
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Failed to retrieve user document: $userId", e)
+            }
+    }
+
 
     suspend fun getChatRoomDetails(
         chatRoomId: String,
@@ -152,30 +227,28 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
             }
     }
 
-    fun listenForMessages(
+    fun listenForMessagesAsFlow(
         chatRoomId: String,
         currentUserId: String,
         initiatorId: String,
-        recipientId: String,
-        onMessageReceived: (String) -> Unit
-    ) {
+        recipientId: String
+    ): Flow<String> = callbackFlow {
         val messageField = when (currentUserId) {
             initiatorId -> "recipientMessage.messageText"
             recipientId -> "initiatorMessage.messageText"
-            else -> return
-        }
+            else -> null
+        } ?: return@callbackFlow
 
-        firestore.collection("chatRooms").document(chatRoomId)
+        val listenerRegistration = firestore.collection("chatRooms").document(chatRoomId)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e("AppRepo", "Error listening for messages", e)
                     return@addSnapshotListener
                 }
-
-                snapshot?.getString(messageField)?.let { newMessage ->
-                    onMessageReceived(newMessage)
-                }
+                val message = snapshot?.getString(messageField) ?: ""
+                trySend(message).isSuccess
             }
+        awaitClose { listenerRegistration.remove() }
     }
 
     fun listenForReadMessages(

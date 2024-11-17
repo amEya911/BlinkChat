@@ -39,6 +39,10 @@ fun Inbox(
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
 
+    LaunchedEffect(key1 = inboxState.recentContacts) {
+        onEvent(InboxEvent.LoadRecentChats)
+    }
+
     LaunchedEffect(inboxState.contacts) {
         if (inboxState.contacts.isEmpty()) {
             activity?.let { onEvent(InboxEvent.LoadContacts(it)) }
@@ -110,6 +114,12 @@ fun Inbox(
         if (inboxState.isAllContactsClicked || !inboxState.searchQuery.isNullOrBlank()) {
             LazyColumn {
                 items(displayedContacts.sortedBy { it.displayName }) { contact ->
+                    ChatItem(contact = contact, onEvent = onEvent)
+                }
+            }
+        } else {
+            LazyColumn {
+                items(inboxState.recentContacts.reversed()) { contact ->
                     ChatItem(contact = contact, onEvent = onEvent)
                 }
             }

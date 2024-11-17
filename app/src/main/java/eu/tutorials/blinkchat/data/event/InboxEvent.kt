@@ -12,4 +12,5 @@ sealed class InboxEvent {
     data class SearchUsers(val searchQuery: String): InboxEvent()
     data object OnEnterChatRoom: InboxEvent()
     data object ResetEnterChatRoom : InboxEvent()
+    data object LoadRecentChats: InboxEvent()
 }

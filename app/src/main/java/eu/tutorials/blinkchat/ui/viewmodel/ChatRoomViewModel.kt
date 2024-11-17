@@ -12,6 +12,7 @@ import eu.tutorials.blinkchat.data.event.ChatRoomEvent
 import eu.tutorials.blinkchat.data.state.ChatRoomState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,7 +41,6 @@ class ChatRoomViewModel @Inject constructor(
             is ChatRoomEvent.OnMessageTyping -> {
                 _chatRoomState.value = _chatRoomState.value.copy(currentUserMessage = event.message)
                 chatRoomId?.let { id ->
-
                     viewModelScope.launch {
                         appRepository.updateTypingMessage(
                             id,
@@ -102,15 +102,17 @@ class ChatRoomViewModel @Inject constructor(
                         }
                     }
                 }
-                appRepository.listenForMessages(
-                    chatRoomId,
-                    currentUserId,
-                    initiatorId,
-                    recipientId
-                ) { message ->
-                    _chatRoomState.value = _chatRoomState.value.copy(
-                        otherUserMessage = message
-                    )
+                viewModelScope.launch {
+                    appRepository.listenForMessagesAsFlow(
+                        chatRoomId,
+                        currentUserId,
+                        initiatorId,
+                        recipientId
+                    ).collectLatest { message ->
+                        _chatRoomState.value = _chatRoomState.value.copy(
+                            otherUserMessage = message
+                        )
+                    }
                 }
 
                 appRepository.listenForReadMessages(

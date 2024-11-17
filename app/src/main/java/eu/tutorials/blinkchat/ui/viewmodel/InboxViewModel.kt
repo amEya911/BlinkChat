@@ -37,6 +37,7 @@ class InboxViewModel @Inject constructor(
 
     init {
         loadCurrentUser()
+        loadRecentChats()
     }
 
     fun onEvent(event: InboxEvent) {
@@ -77,6 +78,10 @@ class InboxViewModel @Inject constructor(
                     isEnterChatRoom = false
                 )
             }
+
+            InboxEvent.LoadRecentChats -> {
+                loadRecentChats()
+            }
         }
     }
 
@@ -102,6 +107,18 @@ class InboxViewModel @Inject constructor(
             Log.e("InboxViewModel", "Current user is not logged in.")
         }
     }
+
+    private fun loadRecentChats() {
+        val currentUserId = userRepository.currentUserId()
+        if (currentUserId != null) {
+            userRepository.listenToRecentChats(currentUserId) { recentChats ->
+                _inboxState.value = _inboxState.value.copy(
+                    recentContacts = recentChats
+                )
+            }
+        }
+    }
+
 
     private fun searchUsers(query: String) {
         viewModelScope.launch {
@@ -187,6 +204,7 @@ class InboxViewModel @Inject constructor(
 
         if (initiatorUser == null) {
             Log.e("ChatRoom", "Current user details not loaded.")
+            Log.d("ChatRoom", "${_inboxState.value}")
             return
         }
 
@@ -195,17 +213,31 @@ class InboxViewModel @Inject constructor(
             return
         }
 
-        appRepository.createChatRoom(
-            initiatorUser = initiatorUser,
-            recipientUser = recipientUser
-        ) { chatRoomId ->
-            if (chatRoomId != null) {
-                _inboxState.value = _inboxState.value.copy(
-                    isEnterChatRoom = true,
-                    navigateToChatId = chatRoomId
-                )
+        checkRecipientExists(recipientUser.id) { exists ->
+            appRepository.createChatRoom(
+                initiatorUser = initiatorUser,
+                recipientUser = recipientUser,
+                recipientUserExists = exists,
+                context = context
+            ) { chatRoomId ->
+                if (chatRoomId != null) {
+                    _inboxState.value = _inboxState.value.copy(
+                        isEnterChatRoom = true,
+                        navigateToChatId = chatRoomId
+                    )
+                } else {
+                    Log.e("ChatRoom", "Failed to create chat room.")
+                }
+            }
+        }
+    }
+
+    private fun checkRecipientExists(userId: String, onResult: (Boolean) -> Unit) {
+        userRepository.getUserDetails(userId) { contact ->
+            if (contact != null) {
+                onResult(true)
             } else {
-                Log.e("ChatRoom", "Failed to create chat room.")
+                onResult(false)
             }
         }
     }
