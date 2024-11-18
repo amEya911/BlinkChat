@@ -103,7 +103,7 @@ class ChatRoomViewModel @Inject constructor(
                     }
                 }
                 viewModelScope.launch {
-                    appRepository.listenForMessagesAsFlow(
+                    appRepository.listenForMessages(
                         chatRoomId,
                         currentUserId,
                         initiatorId,

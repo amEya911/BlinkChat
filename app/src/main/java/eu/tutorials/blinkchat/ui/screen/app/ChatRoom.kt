@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
@@ -22,12 +23,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -104,19 +109,63 @@ fun ChatRoom(
                     .weight(1f)
             ) {
                 item {
-                    Text(
-                        text = buildAnnotatedString {
-                            val readMessage = chatRoomState.readMessage ?: ""
-                            val currentMessage = chatRoomState.currentUserMessage
-
-                            withStyle(style = SpanStyle(color = Color.Green)) {
-                                append(readMessage)
-                            }
-                            withStyle(style = SpanStyle(color = Color.Yellow)) {
-                                append(currentMessage.removePrefix(readMessage))
-                            }
+                    if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "To start typing, wait for other user to enter the chat room",
+                                color = Color.Red,
+                                fontSize = 18.sp
+                            )
                         }
-                    )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f)
+                        ) {
+                            BasicTextField(
+                                value = chatRoomState.currentUserMessage,
+                                onValueChange = { newText ->
+                                    chatRoomViewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
+                                },
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                textStyle = TextStyle(
+                                    color = Color.Transparent,
+                                    fontSize = 16.sp,
+                                    fontFamily = FontFamily.Default
+                                ),
+                                cursorBrush = SolidColor(Color.White)
+                            )
+                            Text(
+                                text = buildAnnotatedString {
+                                    val readMessage = chatRoomState.readMessage
+                                    val currentMessage = chatRoomState.currentUserMessage
+
+                                    if (readMessage != null && currentMessage.startsWith(readMessage)) {
+                                        withStyle(style = SpanStyle(color = Color.Green)) {
+                                            append(readMessage)
+                                        }
+                                        withStyle(style = SpanStyle(color = Color.Yellow)) {
+                                            append(currentMessage.removePrefix(readMessage))
+                                        }
+                                    } else {
+                                        withStyle(style = SpanStyle(color = Color.Yellow)) {
+                                            append(currentMessage)
+                                        }
+                                    }
+                                },
+                                style = TextStyle(
+                                    color = Color.Transparent,
+                                    fontSize = 16.sp,
+                                    fontFamily = FontFamily.Default
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -152,28 +201,7 @@ fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
                     tint = Color.Black
                 )
             }
-            TextField(
-                value = chatRoomState.currentUserMessage,
-                onValueChange = { newText ->
-                    viewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
-                },
-                placeholder = { Text(text = "Type a message", color = Color.Gray) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .padding(4.dp)
-                    .clip(RoundedCornerShape(30.dp)),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = TextFieldColor,
-                    unfocusedContainerColor = TextFieldColor,
-                    focusedTextColor = Color.Gray,
-                    unfocusedTextColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
+            Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {  }) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
@@ -181,7 +209,10 @@ fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
                     tint = Color.Black
                 )
             }
-            IconButton(onClick = { }) {
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = {
+                viewModel.onEvent(ChatRoomEvent.OnMessageTyping(""))
+            }) {
                 Icon(
                     painter = painterResource(id = R.drawable.eraser),
                     contentDescription = "Erase",

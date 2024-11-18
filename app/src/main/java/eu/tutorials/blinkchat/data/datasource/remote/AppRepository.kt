@@ -227,7 +227,7 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
             }
     }
 
-    fun listenForMessagesAsFlow(
+    fun listenForMessages(
         chatRoomId: String,
         currentUserId: String,
         initiatorId: String,
