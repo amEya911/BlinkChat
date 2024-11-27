@@ -3,7 +3,6 @@ package eu.tutorials.blinkchat.data.event
 import android.app.Activity
 import eu.tutorials.blinkchat.data.model.Contact
 
-
 sealed class InboxEvent {
     data object OnAllContactsIconClicked: InboxEvent()
     data class OnContactClicked(val contact: Contact) : InboxEvent()
@@ -13,4 +12,7 @@ sealed class InboxEvent {
     data object OnEnterChatRoom: InboxEvent()
     data object ResetEnterChatRoom : InboxEvent()
     data object LoadRecentChats: InboxEvent()
+    data object OnScheduleAMeetClick: InboxEvent()
+    data object OnScheduleDismissed: InboxEvent()
+    data class OnScheduleConfirmed(val date: String, val time: String) : InboxEvent()
 }

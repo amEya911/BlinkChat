@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
+import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
@@ -25,7 +26,8 @@ import javax.inject.Inject
 class InboxViewModel @Inject constructor(
     private val context: Context,
     private val appRepository: AppRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val meetRepository: MeetRepository
 ) : ViewModel() {
 
     private companion object {
@@ -82,6 +84,27 @@ class InboxViewModel @Inject constructor(
             InboxEvent.LoadRecentChats -> {
                 loadRecentChats()
             }
+
+            InboxEvent.OnScheduleAMeetClick -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isScheduleAMeetClicked = true
+                )
+            }
+
+            is InboxEvent.OnScheduleConfirmed -> {
+                _inboxState.value = _inboxState.value.copy(
+                    scheduleDate = event.date,
+                    scheduleTime = event.time,
+                    isScheduleAMeetClicked = false
+                )
+                addScheduleMeets()
+            }
+
+            InboxEvent.OnScheduleDismissed -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isScheduleAMeetClicked = false
+                )
+            }
         }
     }
 
@@ -99,6 +122,7 @@ class InboxViewModel @Inject constructor(
                             photoThumbnailUri = currentUserDetails.photoThumbnailUri
                         )
                     )
+                    Log.d("InboxViewModel", "currentUserContact: ${_inboxState.value.currentUserContact}")
                 } else {
                     Log.e("InboxViewModel", "Failed to retrieve current user details.")
                 }
@@ -111,11 +135,53 @@ class InboxViewModel @Inject constructor(
     private fun loadRecentChats() {
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
-            userRepository.listenToRecentChats(currentUserId) { recentChats ->
+            userRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
+                val allContacts = _inboxState.value.contacts
+                val matchedRecentContacts = recentChatUserIds.mapNotNull { userId ->
+                    allContacts.find { it.id == userId }
+                }
+
                 _inboxState.value = _inboxState.value.copy(
-                    recentContacts = recentChats
+                    recentContacts = matchedRecentContacts
                 )
             }
+        }
+
+        if (currentUserId != null) {
+            appRepository.listenForPresence(currentUserId) { activeUserNames ->
+               _inboxState.value = _inboxState.value.copy(
+                   usersInChatRoom = activeUserNames.filterNotNull()
+               )
+            }
+        }
+    }
+
+    private fun addScheduleMeets() {
+        val currentUserContact = _inboxState.value.currentUserContact
+        val otherUserContact = _inboxState.value.selectedContact
+        val date = _inboxState.value.scheduleDate
+        val time = _inboxState.value.scheduleTime
+
+        if (currentUserContact == null) {
+            Log.e("ScheduledMeets", "CurrentUserId not loaded")
+            return
+        }
+        if (otherUserContact == null) {
+            Log.e("ScheduledMeets", "No contact selected")
+            return
+        }
+        if (date == null || time == null) {
+            Log.e("ScheduledMeets", "Date or Time not selected")
+            return
+        }
+        checkRecipientExists(otherUserContact.id) { exists ->
+            meetRepository.addSchedule(
+                currentUserContact = currentUserContact,
+                otherUserContact = otherUserContact,
+                ifOtherUserExists = exists,
+                date = date,
+                time =time
+            )
         }
     }
 
@@ -203,13 +269,13 @@ class InboxViewModel @Inject constructor(
         val recipientUser = _inboxState.value.selectedContact
 
         if (initiatorUser == null) {
-            Log.e("ChatRoom", "Current user details not loaded.")
-            Log.d("ChatRoom", "${_inboxState.value}")
+            Log.e("InboxViewModel", "Current user details not loaded.")
+            Log.d("InboxViewModel", "${_inboxState.value}")
             return
         }
 
         if (recipientUser == null) {
-            Log.e("ChatRoom", "No contact selected.")
+            Log.e("InboxViewModel", "No contact selected.")
             return
         }
 
@@ -226,7 +292,7 @@ class InboxViewModel @Inject constructor(
                         navigateToChatId = chatRoomId
                     )
                 } else {
-                    Log.e("ChatRoom", "Failed to create chat room.")
+                    Log.e("InboxViewModel", "Failed to create chat room.")
                 }
             }
         }

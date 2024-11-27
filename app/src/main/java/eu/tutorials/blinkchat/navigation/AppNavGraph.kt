@@ -65,30 +65,30 @@ fun AppNavGraph() {
     Scaffold(
         containerColor = BackgroundColor,
         contentColor = TextColor,
-        topBar = {
-            if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
-                AppBar(
-                    title = when (currentRoute) {
-                        AppScreen.Meetings.route -> "Meets"
-                        AppScreen.Chats.route -> "Chats"
-                        AppScreen.Settings.route -> "Settings"
-                        else -> "Error"
-                    },
-                    showIcon = currentRoute != AppScreen.Settings.route,
-                    onIconClick = {
-                        when (currentRoute) {
-                            AppScreen.Meetings.route -> {}
-                            AppScreen.Chats.route -> {
-                                inboxViewModel.onEvent(InboxEvent.OnAllContactsIconClicked)
-                            }
-
-                            AppScreen.Settings.route -> {}
-                        }
-                    },
-                    iconResId = if (currentRoute == AppScreen.Meetings.route) R.drawable.calendar else Icons.Default.AccountCircle
-                )
-            }
-        },
+//        topBar = {
+//            if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
+//                AppBar(
+//                    title = when (currentRoute) {
+//                        AppScreen.Meetings.route -> "Meets"
+//                        AppScreen.Chats.route -> "Chats"
+//                        AppScreen.Settings.route -> "Settings"
+//                        else -> "Error"
+//                    },
+//                    showIcon = currentRoute != AppScreen.Settings.route,
+//                    onIconClick = {
+//                        when (currentRoute) {
+//                            AppScreen.Meetings.route -> {}
+//                            AppScreen.Chats.route -> {
+//                                inboxViewModel.onEvent(InboxEvent.OnAllContactsIconClicked)
+//                            }
+//
+//                            AppScreen.Settings.route -> {}
+//                        }
+//                    },
+//                    iconResId = if (currentRoute == AppScreen.Meetings.route) R.drawable.calendar else Icons.Default.AccountCircle
+//                )
+//            }
+//        },
         bottomBar = {
             if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
                 BottomNavBar(navController = navController)

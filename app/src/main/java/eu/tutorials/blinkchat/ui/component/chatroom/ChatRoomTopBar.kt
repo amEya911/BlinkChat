@@ -1,4 +1,4 @@
-package eu.tutorials.blinkchat.ui.component
+package eu.tutorials.blinkchat.ui.component.chatroom
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row

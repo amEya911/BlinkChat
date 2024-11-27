@@ -23,6 +23,7 @@ materialIconsExtended = "1.7.5"
 materialVersion = "1.7.4"
 navigationCompose = "2.8.2"
 navigationComposeVersion = "2.5.0"
+threetenabpVersion = "1.4.4"
 ui = "1.7.4"
 firebaseFirestoreKtx = "25.1.1"
 lifecycleProcess = "2.8.7"
@@ -42,6 +43,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-database = { module = "com.google.firebase:firebase-database" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+jakewharton-threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabpVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

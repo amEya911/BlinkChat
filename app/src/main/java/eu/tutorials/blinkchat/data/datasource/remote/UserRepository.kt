@@ -73,7 +73,7 @@ class UserRepository @Inject constructor(
             }
     }
 
-    fun listenToRecentChats(currentUserId: String, onResult: (List<Contact>) -> Unit) {
+    fun listenToRecentChats(currentUserId: String, onResult: (List<String>) -> Unit) {
         firestore.collection("users").document(currentUserId)
             .addSnapshotListener { document, exception ->
                 if (exception != null) {
@@ -85,26 +85,10 @@ class UserRepository @Inject constructor(
                 if (document != null && document.exists()) {
                     val recentChats = document["recentChats"] as? List<Map<String, Any>> ?: emptyList()
 
-                    val contacts = recentChats.mapNotNull { chat ->
-                        val displayName = chat["displayName"] as? String
-                        val lastUpdated = chat["lastUpdated"] as? Long
-                        val photoUri = chat["photoUri"] as? String
-                        val userId = chat["userId"] as? String
-
-                        if (userId != null && displayName != null && lastUpdated != null) {
-                            Contact(
-                                id = userId,
-                                displayName = displayName,
-                                phoneNumber = "",
-                                photoUri = photoUri,
-                                photoThumbnailUri = null
-                            )
-                        } else {
-                            null
-                        }
+                    val userIds = recentChats.mapNotNull { chat ->
+                        chat["userId"] as? String
                     }
-
-                    onResult(contacts)
+                    onResult(userIds)
                 } else {
                     Log.w("listenToRecentChats", "Document does not exist or has no recentChats field.")
                     onResult(emptyList())

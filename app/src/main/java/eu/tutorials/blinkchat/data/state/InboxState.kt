@@ -12,5 +12,9 @@ data class InboxState(
     val selectedContact: Contact? = null,
     val isEnterChatRoom: Boolean = false,
     val navigateToChatId: String? = null,
-    val currentUserContact: Contact? = null
+    val currentUserContact: Contact? = null,
+    val usersInChatRoom: List<String> = emptyList(),
+    val isScheduleAMeetClicked: Boolean = false,
+    val scheduleDate: String? = null,
+    val scheduleTime: String? = null
 )

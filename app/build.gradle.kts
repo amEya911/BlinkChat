@@ -93,6 +93,4 @@ dependencies {
 
     implementation (libs.libphonenumber)
     implementation (libs.accompanist.systemuicontroller)
-
-
 }

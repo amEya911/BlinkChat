@@ -8,6 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
+import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import javax.inject.Singleton
 
@@ -38,5 +39,13 @@ object AppModule {
         firestore: FirebaseFirestore
     ): AppRepository {
         return AppRepository(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMeetRepository(
+        firestore: FirebaseFirestore
+    ): MeetRepository {
+        return MeetRepository(firestore)
     }
 }

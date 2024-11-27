@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -13,15 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
@@ -29,23 +21,18 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
-import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.ChatRoomState
-import eu.tutorials.blinkchat.ui.component.ChatRoomTopBar
+import eu.tutorials.blinkchat.ui.component.chatroom.ChatRoomTopBar
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.LightGray
-import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
-import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun ChatRoom(
