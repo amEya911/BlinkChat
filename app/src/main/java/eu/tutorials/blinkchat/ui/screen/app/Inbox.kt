@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.state.InboxState
 import eu.tutorials.blinkchat.ui.component.AppBar
@@ -35,7 +37,7 @@ fun Inbox(
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
 
-    LaunchedEffect(key1 = inboxState.recentContacts) {
+    LaunchedEffect(key1 = true) {
         onEvent(InboxEvent.LoadRecentChats)
     }
 

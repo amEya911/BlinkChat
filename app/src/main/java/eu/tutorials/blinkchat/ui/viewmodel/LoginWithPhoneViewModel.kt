@@ -13,7 +13,7 @@ import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.LoginWithPhoneEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.LoginWithPhoneState
-import eu.tutorials.blinkchat.ui.component.HashUtil
+import eu.tutorials.blinkchat.util.HashUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.TimeUnit

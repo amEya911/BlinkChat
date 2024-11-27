@@ -10,16 +10,21 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.tutorials.blinkchat.data.datasource.local.LocalContact
+import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
+import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.InboxState
-import eu.tutorials.blinkchat.ui.component.HashUtil
+import eu.tutorials.blinkchat.util.HashUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,7 +32,8 @@ class InboxViewModel @Inject constructor(
     private val context: Context,
     private val appRepository: AppRepository,
     private val userRepository: UserRepository,
-    private val meetRepository: MeetRepository
+    private val meetRepository: MeetRepository,
+    private val localRepository: LocalRepository
 ) : ViewModel() {
 
     private companion object {
@@ -39,7 +45,6 @@ class InboxViewModel @Inject constructor(
 
     init {
         loadCurrentUser()
-        loadRecentChats()
     }
 
     fun onEvent(event: InboxEvent) {
@@ -137,24 +142,27 @@ class InboxViewModel @Inject constructor(
         if (currentUserId != null) {
             userRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
                 val allContacts = _inboxState.value.contacts
+                Log.d("saala", "allContacts: ${_inboxState.value.contacts}")
                 val matchedRecentContacts = recentChatUserIds.mapNotNull { userId ->
                     allContacts.find { it.id == userId }
                 }
-
+                Log.d("saala", "matchedRecentContacts: $matchedRecentContacts")
                 _inboxState.value = _inboxState.value.copy(
                     recentContacts = matchedRecentContacts
                 )
             }
-        }
+            Log.d("saala", "recentContacts: ${_inboxState.value.recentContacts}")
 
-        if (currentUserId != null) {
             appRepository.listenForPresence(currentUserId) { activeUserNames ->
-               _inboxState.value = _inboxState.value.copy(
-                   usersInChatRoom = activeUserNames.filterNotNull()
-               )
+                _inboxState.value = _inboxState.value.copy(
+                    usersInChatRoom = activeUserNames.filterNotNull()
+                )
             }
+        } else {
+            Log.e("saala", "Current user is not logged in.")
         }
     }
+
 
     private fun addScheduleMeets() {
         val currentUserContact = _inboxState.value.currentUserContact
@@ -200,11 +208,9 @@ class InboxViewModel @Inject constructor(
     }
 
     private fun loadContacts(activity: Activity) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.READ_CONTACTS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(Manifest.permission.READ_CONTACTS),
@@ -212,57 +218,91 @@ class InboxViewModel @Inject constructor(
             )
             return
         }
+        fetchContacts()
+    }
 
+    private fun fetchContacts() {
         viewModelScope.launch {
-            val contactsList = mutableListOf<Contact>()
-            val cursor = context.contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER,
-                    ContactsContract.CommonDataKinds.Phone.PHOTO_URI,
-                    ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI
-                ),
-                null,
-                null,
-                null
-            )
+            try {
+                val contactsList = mutableListOf<LocalContact>()
+                val cursor = context.contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.PHOTO_URI,
+                        ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI
+                    ),
+                    null,
+                    null,
+                    null
+                )
 
-            cursor?.use { contactsCursor ->
-                val nameIndex =
-                    contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numberIndex =
-                    contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                val photoUriIndex =
-                    contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
-                val photoThumbnailUriIndex =
-                    contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
+                cursor?.use { contactsCursor ->
+                    val nameIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                    val numberIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                    val photoUriIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
+                    val photoThumbnailUriIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
 
-                val uniqueContacts = mutableSetOf<String>()
-                while (contactsCursor.moveToNext()) {
-                    val name = contactsCursor.getString(nameIndex)
-                    val number = contactsCursor.getString(numberIndex)
-                    val uniqueId = HashUtil.hashPhoneNumber(number)
+                    val uniqueContacts = mutableSetOf<String>()
+                    while (contactsCursor.moveToNext()) {
+                        val name = contactsCursor.getString(nameIndex)
+                        val number = contactsCursor.getString(numberIndex)
+                        val uniqueId = HashUtil.hashPhoneNumber(number)
 
-                    if (uniqueContacts.add(uniqueId)) {
-                        val photoUri = contactsCursor.getString(photoUriIndex)
-                        val photoThumbnailUri = contactsCursor.getString(photoThumbnailUriIndex)
+                        if (uniqueContacts.add(uniqueId)) {
+                            val photoUri = contactsCursor.getString(photoUriIndex)
+                            val photoThumbnailUri = contactsCursor.getString(photoThumbnailUriIndex)
 
-                        contactsList.add(
-                            Contact(
-                                id = uniqueId,
-                                displayName = name,
-                                phoneNumber = number,
-                                photoThumbnailUri = photoThumbnailUri,
-                                photoUri = photoUri
+                            contactsList.add(
+                                LocalContact(
+                                    id = uniqueId,
+                                    displayName = name,
+                                    phoneNumber = number,
+                                    photoUri = photoUri,
+                                    photoThumbnailUri = photoThumbnailUri
+                                )
                             )
-                        )
+                        }
                     }
                 }
+                val dbContacts = localRepository.getContacts()
+
+                val contactsToDelete = dbContacts.filter { dbContact ->
+                    contactsList.none { it.id == dbContact.id }
+                }
+
+                if (contactsToDelete.isNotEmpty()) {
+                    localRepository.deleteContacts(contactsToDelete)
+                }
+
+                localRepository.insertContacts(contactsList)
+
+                val contactList = contactsList.map { localContact ->
+                    Contact(
+                        id = localContact.id,
+                        displayName = localContact.displayName,
+                        phoneNumber = localContact.phoneNumber,
+                        photoUri = localContact.photoUri,
+                        photoThumbnailUri = localContact.photoThumbnailUri
+                    )
+                }
+
+                withContext(Dispatchers.Main) {
+                    _inboxState.value = _inboxState.value.copy(contacts = contactList)
+                    Log.d("saala", "contacts: ${_inboxState.value.contacts}")
+                }
+
+                loadRecentChats()
+
+                Log.d("noooo", "Contacts loaded and saved: ${contactsList.size}")
+                Log.d("noooo", "size: ${localRepository.getContacts().size}")
+            } catch (e: Exception) {
+                Log.e("noooo", "Error loading contacts", e)
             }
-            _inboxState.value = InboxState(contacts = contactsList)
         }
     }
+
 
     private fun createChatRoom() {
         val initiatorUser = _inboxState.value.currentUserContact

@@ -29,10 +29,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
 import eu.tutorials.blinkchat.data.state.ChatRoomState
+import eu.tutorials.blinkchat.ui.component.chatroom.ChatInputBar
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatRoomTopBar
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 
 @Composable
 fun ChatRoom(
@@ -54,9 +56,19 @@ fun ChatRoom(
 
     Scaffold(
         topBar = {
-            chatRoomState.otherUserContact?.let {
-                ChatRoomTopBar(it, chatRoomState.isOtherUserInChatRoom)
-            } ?: Text(text = "Loading...")
+            val otherUserId = chatRoomState.otherUserContact?.id
+            Log.d("chup", "contacts: ${chatRoomState.contacts}")
+            Log.d("chup", "otherUserContact.id: $otherUserId")
+            Log.d("chup", "contacts1: ${chatRoomState.contacts.map { it.id }}")
+
+            val associatedContact = chatRoomState.contacts.find { it.id == otherUserId }
+            Log.d("chup", "associatedContact: $associatedContact")
+
+            if (associatedContact != null) {
+                ChatRoomTopBar(associatedContact, chatRoomState.isOtherUserInChatRoom)
+            } else {
+                Text(text = "Loading...")
+            }
         },
         containerColor = BackgroundColor,
         bottomBar = { ChatInputBar(chatRoomViewModel, chatRoomState) },
@@ -154,57 +166,6 @@ fun ChatRoom(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(LightGray)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Waiting for the other user to join the chat room.",
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        } else {
-            IconButton(onClick = {  }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color.Black
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {  }) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Camera",
-                    tint = Color.Black
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {
-                viewModel.onEvent(ChatRoomEvent.OnMessageTyping(""))
-            }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.eraser),
-                    contentDescription = "Erase",
-                    tint = Color.Black
-                )
             }
         }
     }

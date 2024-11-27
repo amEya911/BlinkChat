@@ -2,11 +2,14 @@ package eu.tutorials.blinkchat.di
 
 import android.app.Application
 import android.content.Context
+import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import eu.tutorials.blinkchat.data.datasource.local.AppDatabase
+import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
@@ -47,5 +50,20 @@ object AppModule {
         firestore: FirebaseFirestore
     ): MeetRepository {
         return MeetRepository(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "contacts-database"
+        ).build()
+    }
+
+    @Provides
+    fun provideContactDao(appDatabase: AppDatabase): LocalContactDao {
+        return appDatabase.contactDao()
     }
 }

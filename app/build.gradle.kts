@@ -93,4 +93,8 @@ dependencies {
 
     implementation (libs.libphonenumber)
     implementation (libs.accompanist.systemuicontroller)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt (libs.androidx.room.compiler)
 }

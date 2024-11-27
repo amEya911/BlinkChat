@@ -1,4 +1,4 @@
-package eu.tutorials.blinkchat.ui.component
+package eu.tutorials.blinkchat.util
 
 import android.util.Log
 import com.google.i18n.phonenumbers.PhoneNumberUtil

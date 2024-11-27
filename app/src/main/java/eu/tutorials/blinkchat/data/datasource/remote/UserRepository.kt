@@ -4,7 +4,7 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
-import eu.tutorials.blinkchat.ui.component.HashUtil
+import eu.tutorials.blinkchat.util.HashUtil
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(

@@ -12,5 +12,6 @@ data class ChatRoomState(
     val error: String? = null,
     val currentUserMessage: String = "",
     val otherUserMessage: String = "",
-    val readMessage: String? = null
+    val readMessage: String? = null,
+    val contacts: List<Contact> = emptyList()
 )

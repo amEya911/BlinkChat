@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -7,8 +8,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
+import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
+import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.ChatRoomState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +22,9 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatRoomViewModel @Inject constructor(
     private val appRepository: AppRepository,
-    userRepository: UserRepository
+    userRepository: UserRepository,
+    private val localRepository: LocalRepository
+
 ) : ViewModel() {
 
     private val _chatRoomState = MutableStateFlow(ChatRoomState())
@@ -128,6 +133,15 @@ class ChatRoomViewModel @Inject constructor(
 
             }.onFailure { error ->
                 _chatRoomState.value = ChatRoomState(error = error.message)
+            }
+            try {
+                val localContacts = localRepository.getContacts()
+                val contacts = localContacts.map { it.toContact() }
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    contacts = contacts
+                )
+            } catch (e: Exception) {
+                Log.e("MeetingsViewModel", "Error loading contacts", e)
             }
         }
     }

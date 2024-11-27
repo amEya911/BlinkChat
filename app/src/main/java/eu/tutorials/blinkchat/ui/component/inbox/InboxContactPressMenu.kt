@@ -89,7 +89,6 @@ fun InboxContactPress(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ContactPressMenu(
-                        modifier = Modifier,
                         onEnterClick = {
                             onEvent(InboxEvent.OnEnterChatRoom)
                             onEvent(InboxEvent.OnContactDismissed)
@@ -108,13 +107,12 @@ fun InboxContactPress(
 
 @Composable
 fun ContactPressMenu(
-    modifier: Modifier = Modifier,
     onEnterClick: () -> Unit,
     onCancelClick: () -> Unit,
     onScheduleAMeet: () -> Unit
 ) {
     Card(
-        modifier = modifier
+        modifier = Modifier
             .width(220.dp)
             .wrapContentHeight(),
         colors = CardDefaults.cardColors(
