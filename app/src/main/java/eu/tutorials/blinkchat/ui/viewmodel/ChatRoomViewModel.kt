@@ -22,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatRoomViewModel @Inject constructor(
     private val appRepository: AppRepository,
-    userRepository: UserRepository,
+    private val userRepository: UserRepository,
     private val localRepository: LocalRepository
 
 ) : ViewModel() {
@@ -87,7 +87,7 @@ class ChatRoomViewModel @Inject constructor(
                 )
                 updatePresence(true)
                 otherUser?.let {
-                    appRepository.listenForPresenceUpdates(chatRoomId) { activeUsers ->
+                    userRepository.listenForPresenceUpdates(chatRoomId) { activeUsers ->
                         _chatRoomState.value = _chatRoomState.value.copy(
                             isCurrentUserInChatRoom = when (currentUserId) {
                                 _chatRoomState.value.initiatorId -> activeUsers["initiator"] == true
@@ -149,7 +149,7 @@ class ChatRoomViewModel @Inject constructor(
     private fun updatePresence(isPresent: Boolean) {
         chatRoomId?.let { id ->
             viewModelScope.launch {
-                appRepository.setUserPresence(
+                userRepository.setUserPresence(
                     id,
                     currentUserId,
                     isPresent,

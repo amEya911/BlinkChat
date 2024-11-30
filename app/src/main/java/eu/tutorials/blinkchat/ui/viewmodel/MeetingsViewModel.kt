@@ -38,13 +38,31 @@ class MeetingsViewModel @Inject constructor(
 
             is MeetingsEvent.OnMeetingClicked -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
-                    isContactClicked = true,
+                    isMeetingClicked = true,
                     selectedMeeting = event.meeting
                 )
             }
             MeetingsEvent.OnMeetingDismissed -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
-                    isContactClicked = false
+                    isMeetingClicked = false
+                )
+            }
+
+            is MeetingsEvent.OnRescheduleConfirmed -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isRescheduleClicked = false
+                )
+                rescheduleMeet(event.meeting, event.newDate, event.newTime)
+            }
+
+            MeetingsEvent.OnRescheduleClicked -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isRescheduleClicked = true
+                )
+            }
+            MeetingsEvent.OnRescheduleDismissed -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isRescheduleClicked = false
                 )
             }
         }
@@ -72,5 +90,15 @@ class MeetingsViewModel @Inject constructor(
                 Log.e("MeetingsViewModel", "Error loading contacts", e)
             }
         }
+    }
+
+    private fun rescheduleMeet(meeting: Meeting, newDate: String, newTime: String) {
+        meetRepository.rescheduleMeet(
+            meetingId = meeting.meetingId,
+            createdBy = meeting.createdBy,
+            createdWith = meeting.otherUserContact,
+            newDate = newDate,
+            newTime = newTime
+        )
     }
 }

@@ -7,6 +7,7 @@ data class MeetingsState(
     val meetings: List<Meeting> = emptyList(),
     val currentUserId: String = "",
     val contacts: List<Contact> = emptyList(),
-    val isContactClicked: Boolean = false,
-    val selectedMeeting: Meeting? = null
+    val isMeetingClicked: Boolean = false,
+    val selectedMeeting: Meeting? = null,
+    val isRescheduleClicked: Boolean = false
 )

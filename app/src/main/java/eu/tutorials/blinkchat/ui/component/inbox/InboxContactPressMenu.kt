@@ -116,7 +116,9 @@ fun ContactPressMenu(
             .width(220.dp)
             .wrapContentHeight(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+            containerColor =  MaterialTheme.colorScheme.secondary.copy(
+                alpha = 0.5f
+            )
         ),
         shape = RoundedCornerShape(20.dp),
     ) {

@@ -21,10 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -83,7 +81,8 @@ fun MeetingContactPress(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         MeetingPressMenu(
-                            onCancelClick = {onEvent(MeetingsEvent.OnMeetingDismissed)}
+                            onCancelClick = {onEvent(MeetingsEvent.OnMeetingDismissed)},
+                            onRescheduleMeet = {onEvent(MeetingsEvent.OnRescheduleClicked)}
                         )
                     }
                 }
@@ -94,7 +93,8 @@ fun MeetingContactPress(
 
 @Composable
 fun MeetingPressMenu(
-    onCancelClick:() -> Unit
+    onCancelClick:() -> Unit,
+    onRescheduleMeet: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -111,7 +111,7 @@ fun MeetingPressMenu(
             MenuItem(
                 text = "Reschedule",
                 icon = Icons.Default.Edit,
-                onClick = {}
+                onClick = onRescheduleMeet
             )
 
             MenuDivider()

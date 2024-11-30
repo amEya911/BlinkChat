@@ -73,29 +73,37 @@ class UserRepository @Inject constructor(
             }
     }
 
-    fun listenToRecentChats(currentUserId: String, onResult: (List<String>) -> Unit) {
-        firestore.collection("users").document(currentUserId)
-            .addSnapshotListener { document, exception ->
-                if (exception != null) {
-                    Log.e("listenToRecentChats", "Error listening for updates: ${exception.message}", exception)
-                    onResult(emptyList())
-                    return@addSnapshotListener
-                }
-
-                if (document != null && document.exists()) {
-                    val recentChats = document["recentChats"] as? List<Map<String, Any>> ?: emptyList()
-
-                    val userIds = recentChats.mapNotNull { chat ->
-                        chat["userId"] as? String
-                    }
-                    onResult(userIds)
-                } else {
-                    Log.w("listenToRecentChats", "Document does not exist or has no recentChats field.")
-                    onResult(emptyList())
-                }
-            }
+    fun setUserPresence(
+        chatRoomId: String,
+        currentUserId: String,
+        isOnline: Boolean,
+        initiatorUserId: String,
+        recipientUserId: String
+    ) {
+        val userId = when (currentUserId) {
+            initiatorUserId -> "initiator"
+            recipientUserId -> "recipient"
+            else -> return
+        }
+        firestore.collection("chatRooms").document(chatRoomId)
+            .update("activeUsers.$userId", isOnline)
+            .addOnFailureListener { Log.e("AppRepo", "Failed to update presence: ${it.message}") }
     }
 
+    fun listenForPresenceUpdates(
+        chatRoomId: String,
+        onPresenceUpdate: (Map<String, Boolean>) -> Unit
+    ) {
+        firestore.collection("chatRooms").document(chatRoomId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("AppRepo", "Error listening for presence updates", e)
+                    return@addSnapshotListener
+                }
+                val activeUsers = snapshot?.get("activeUsers") as? Map<String, Boolean>
+                onPresenceUpdate(activeUsers ?: emptyMap())
+            }
+    }
 }
 
 

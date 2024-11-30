@@ -25,7 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import eu.tutorials.blinkchat.R
+import eu.tutorials.blinkchat.data.event.MeetingsEvent
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.inbox.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingItem
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
@@ -39,7 +41,7 @@ fun Meetings(
 ) {
     val meetingsState = meetingsViewModel.meetingsState.collectAsState().value
 
-    val contentModifier = if (meetingsState.isContactClicked) Modifier.blur(20.dp) else Modifier
+    val contentModifier = if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
 
     Scaffold(
         topBar = {
@@ -109,7 +111,7 @@ fun Meetings(
                 }
             }
         }
-        if (meetingsState.isContactClicked) {
+        if (meetingsState.isMeetingClicked) {
             MeetingContactPress(
                 meetingsState = meetingsState,
                 onEvent = meetingsViewModel::onEvent
@@ -121,5 +123,22 @@ fun Meetings(
                 )
             }
         }
+        if (meetingsState.isRescheduleClicked) {
+            ScheduleMeetDialog(
+                onDismiss = { meetingsViewModel.onEvent(MeetingsEvent.OnMeetingDismissed) },
+                onConfirm = { date, time ->
+                    meetingsState.selectedMeeting?.let { meeting ->
+                        meetingsViewModel.onEvent(
+                            MeetingsEvent.OnRescheduleConfirmed(
+                                meeting,
+                                date,
+                                time
+                            )
+                        )
+                    }
+                }
+            )
+        }
+
     }
 }

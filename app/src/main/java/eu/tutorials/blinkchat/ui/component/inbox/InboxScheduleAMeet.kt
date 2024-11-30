@@ -4,7 +4,6 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -31,12 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.data.event.InboxEvent
+import eu.tutorials.blinkchat.data.model.Meeting
 import java.util.Calendar
 import java.util.Locale
 
 @Composable
 fun ScheduleMeetDialog(
-    onEvent: (InboxEvent) -> Unit
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val selectedDate = remember { mutableStateOf<String?>(null) }
@@ -48,7 +49,7 @@ fun ScheduleMeetDialog(
         modifier = Modifier
             .fillMaxSize()
             .clickable(
-                onClick = { onEvent(InboxEvent.OnScheduleDismissed) },
+                onClick = onDismiss,
                 interactionSource = interactionSource,
                 indication = null
             )
@@ -114,7 +115,7 @@ fun ScheduleMeetDialog(
                     ) {
                         TextButton(onClick = {
                             if (step.value == 1) {
-                                onEvent(InboxEvent.OnScheduleDismissed)
+                                onDismiss()
                             } else {
                                 step.value = 1
                             }
@@ -136,8 +137,9 @@ fun ScheduleMeetDialog(
                                 if (time == null) {
                                     Toast.makeText(context, "Please select a time.", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    onEvent(InboxEvent.OnScheduleConfirmed(date!!, time))
-                                    onEvent(InboxEvent.OnScheduleDismissed)
+                                    //onEvent(InboxEvent.OnScheduleConfirmed(date!!, time))
+                                    onConfirm(date!!, time)
+                                    onDismiss()
                                 }
                             }
                         }) {
@@ -244,8 +246,3 @@ fun TimePicker(selectedDate: String, onTimeSelected: (String) -> Unit) {
         Text("Pick Time")
     }
 }
-
-
-
-
-

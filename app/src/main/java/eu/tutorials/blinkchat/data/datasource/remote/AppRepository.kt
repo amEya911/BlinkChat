@@ -16,7 +16,10 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 
-class AppRepository @Inject constructor(private val firestore: FirebaseFirestore) {
+class AppRepository @Inject constructor(
+    private val firestore: FirebaseFirestore,
+    private val recentChatRepository: RecentChatRepository
+) {
 
     private fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -40,9 +43,9 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
 
         checkChatRoomExists(initiatorUser, recipientUser) { existingChatRoomId ->
             if (existingChatRoomId != null) {
-                updateRecentChats(initiatorUser.id, recipientUser, existingChatRoomId)
+                recentChatRepository.updateRecentChats(initiatorUser.id, recipientUser, existingChatRoomId)
                 if (recipientUserExists) {
-                    updateRecentChats(recipientUser.id, initiatorUser, existingChatRoomId)
+                    recentChatRepository.updateRecentChats(recipientUser.id, initiatorUser, existingChatRoomId)
                 }
                 callback(existingChatRoomId)
             } else {
@@ -113,9 +116,9 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
         firestore.collection("chatRooms").document(chatRoomId).set(chatRoomData)
             .addOnSuccessListener {
                 callback(chatRoomId)
-                updateRecentChats(initiatorUser.id, recipientUser, chatRoomId)
+                recentChatRepository.updateRecentChats(initiatorUser.id, recipientUser, chatRoomId)
                 if (recipientUserExists) {
-                    updateRecentChats(recipientUser.id, initiatorUser, chatRoomId)
+                    recentChatRepository.updateRecentChats(recipientUser.id, initiatorUser, chatRoomId)
                 }
             }
             .addOnFailureListener { exception ->
@@ -124,134 +127,6 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
                 callback(null)
             }
     }
-
-    fun listenForPresence(currentUserId: String, callback: (List<String?>) -> Unit) {
-        firestore.collection("users").document(currentUserId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("AppRepo", "Error listening for presence updates", e)
-                    return@addSnapshotListener
-                }
-                val chatRoomIds = extractChatRoomIds(snapshot)
-                fetchActiveUserNamesWithListener(chatRoomIds, currentUserId, callback)
-            }
-    }
-
-    private fun extractChatRoomIds(snapshot: DocumentSnapshot?): List<String?> {
-        if (snapshot != null && snapshot.exists()) {
-            val recentChats = snapshot.get("recentChats") as? List<Map<String, Any>>
-            return recentChats?.map { it["chatRoomId"] as? String } ?: emptyList()
-        }
-        return emptyList()
-    }
-
-    private fun fetchActiveUserNamesWithListener(chatRoomIds: List<String?>, currentUserId: String, callback: (List<String>) -> Unit) {
-        val activeUserNames = mutableSetOf<String>()
-
-        if (chatRoomIds.isEmpty()) {
-            Log.d("AppRepo", "No chat rooms found, calling callback with empty list.")
-            callback(activeUserNames.toList())
-            return
-        }
-
-        for (chatRoomId in chatRoomIds) {
-            if (chatRoomId == null) continue
-
-            firestore.collection("chatRooms").document(chatRoomId)
-                .addSnapshotListener { chatRoomSnapshot, e ->
-                    if (e != null) {
-                        Log.e("AppRepo", "Error listening to chat room $chatRoomId", e)
-                        return@addSnapshotListener
-                    }
-                    if (chatRoomSnapshot != null && chatRoomSnapshot.exists()) {
-                        val initiatorUser = chatRoomSnapshot.get("initiatorUser") as? Map<String, Any>
-                        val recipientUser = chatRoomSnapshot.get("recipientUser") as? Map<String, Any>
-                        val activeUsers = chatRoomSnapshot.get("activeUsers") as? Map<String, Boolean>
-
-                        if (initiatorUser != null && recipientUser != null && activeUsers != null) {
-                            val initiatorUserId = initiatorUser["id"] as? String
-                            val recipientUserId = recipientUser["id"] as? String
-
-                            if (initiatorUserId != null && recipientUserId != null) {
-                                val isCurrentUserInitiator = currentUserId == initiatorUserId
-                                val isCurrentUserRecipient = currentUserId == recipientUserId
-                                if (isCurrentUserInitiator) {
-                                    val isRecipientActive = activeUsers["recipient"] == true
-                                    if (isRecipientActive) {
-                                        if (!activeUserNames.contains(recipientUserId)) {
-                                            activeUserNames.add(recipientUserId)
-                                            Log.d("AppRepo", "Added active user ID: $recipientUserId (Recipient)")
-                                        }
-                                    } else {
-                                        if (activeUserNames.contains(recipientUserId)) {
-                                            activeUserNames.remove(recipientUserId)
-                                            Log.d("AppRepo", "Removed inactive user ID: $recipientUserId (Recipient)")
-                                        }
-                                    }
-                                    callback(activeUserNames.toList())
-                                }
-                                if (isCurrentUserRecipient) {
-                                    val isInitiatorActive = activeUsers["initiator"] == true
-                                    if (isInitiatorActive) {
-                                        if (!activeUserNames.contains(initiatorUserId)) {
-                                            activeUserNames.add(initiatorUserId)
-                                            Log.d("AppRepo", "Added active user ID: $initiatorUserId (Initiator)")
-                                        }
-                                    } else {
-                                        if (activeUserNames.contains(initiatorUserId)) {
-                                            activeUserNames.remove(initiatorUserId)
-                                            Log.d("AppRepo", "Removed inactive user ID: $initiatorUserId (Initiator)")
-                                        }
-                                    }
-                                    callback(activeUserNames.toList())
-                                }
-                            }
-                        }
-                    } else {
-                        Log.e("AppRepo", "Chat room $chatRoomId snapshot does not exist")
-                    }
-                }
-        }
-    }
-
-    private fun updateRecentChats(userId: String, otherUser: Contact, chatRoomId: String) {
-        val recentChatEntry = mapOf(
-            "userId" to otherUser.id,
-            "chatRoomId" to chatRoomId,
-            "lastUpdated" to System.currentTimeMillis()
-        )
-
-        firestore.collection("users").document(userId).get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val recentChats = document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
-                    val updatedChats = recentChats.filter { it["userId"] != otherUser.id }
-                    val newRecentChats = updatedChats + recentChatEntry
-
-                    firestore.collection("users").document(userId)
-                        .update("recentChats", newRecentChats)
-                        .addOnSuccessListener {
-                            Log.d("ChatRoom", "Recent chats updated for user: $userId")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("ChatRoom", "Failed to update recent chats for user: $userId", e)
-                        }
-                } else {
-                    firestore.collection("users").document(userId)
-                        .set(mapOf("recentChats" to listOf(recentChatEntry)))
-                        .addOnSuccessListener {
-                            Log.d("ChatRoom", "Recent chats created for user: $userId")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("ChatRoom", "Failed to create recent chats for user: $userId", e)
-                        }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("ChatRoom", "Failed to retrieve user document: $userId", e)
-            }
-    }
-
 
     suspend fun getChatRoomDetails(
         chatRoomId: String,
@@ -288,38 +163,6 @@ class AppRepository @Inject constructor(private val firestore: FirebaseFirestore
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    fun setUserPresence(
-        chatRoomId: String,
-        currentUserId: String,
-        isOnline: Boolean,
-        initiatorUserId: String,
-        recipientUserId: String
-    ) {
-        val userId = when (currentUserId) {
-            initiatorUserId -> "initiator"
-            recipientUserId -> "recipient"
-            else -> return
-        }
-        firestore.collection("chatRooms").document(chatRoomId)
-            .update("activeUsers.$userId", isOnline)
-            .addOnFailureListener { Log.e("AppRepo", "Failed to update presence: ${it.message}") }
-    }
-
-    fun listenForPresenceUpdates(
-        chatRoomId: String,
-        onPresenceUpdate: (Map<String, Boolean>) -> Unit
-    ) {
-        firestore.collection("chatRooms").document(chatRoomId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("AppRepo", "Error listening for presence updates", e)
-                    return@addSnapshotListener
-                }
-                val activeUsers = snapshot?.get("activeUsers") as? Map<String, Boolean>
-                onPresenceUpdate(activeUsers ?: emptyMap())
-            }
     }
 
     private fun Map<*, *>.toContact(): Contact = Contact(

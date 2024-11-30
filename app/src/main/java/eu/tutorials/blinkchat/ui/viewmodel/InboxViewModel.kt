@@ -15,6 +15,7 @@ import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
+import eu.tutorials.blinkchat.data.datasource.remote.RecentChatRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
@@ -33,7 +34,8 @@ class InboxViewModel @Inject constructor(
     private val appRepository: AppRepository,
     private val userRepository: UserRepository,
     private val meetRepository: MeetRepository,
-    private val localRepository: LocalRepository
+    private val localRepository: LocalRepository,
+    private val recentChatRepository: RecentChatRepository
 ) : ViewModel() {
 
     private companion object {
@@ -140,7 +142,7 @@ class InboxViewModel @Inject constructor(
     private fun loadRecentChats() {
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
-            userRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
+            recentChatRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
                 val allContacts = _inboxState.value.contacts
                 Log.d("saala", "allContacts: ${_inboxState.value.contacts}")
                 val matchedRecentContacts = recentChatUserIds.mapNotNull { userId ->
@@ -153,7 +155,7 @@ class InboxViewModel @Inject constructor(
             }
             Log.d("saala", "recentContacts: ${_inboxState.value.recentContacts}")
 
-            appRepository.listenForPresence(currentUserId) { activeUserNames ->
+            recentChatRepository.listenForPresence(currentUserId) { activeUserNames ->
                 _inboxState.value = _inboxState.value.copy(
                     usersInChatRoom = activeUserNames.filterNotNull()
                 )

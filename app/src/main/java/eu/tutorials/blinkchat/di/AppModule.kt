@@ -12,6 +12,7 @@ import eu.tutorials.blinkchat.data.datasource.local.AppDatabase
 import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
+import eu.tutorials.blinkchat.data.datasource.remote.RecentChatRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import javax.inject.Singleton
 
@@ -39,9 +40,10 @@ object AppModule {
 
     @Provides
     fun provideAppRepository(
-        firestore: FirebaseFirestore
+        firestore: FirebaseFirestore,
+        recentChatRepository: RecentChatRepository
     ): AppRepository {
-        return AppRepository(firestore)
+        return AppRepository(firestore, recentChatRepository)
     }
 
     @Provides
@@ -65,5 +67,13 @@ object AppModule {
     @Provides
     fun provideContactDao(appDatabase: AppDatabase): LocalContactDao {
         return appDatabase.contactDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecentChatRepository(
+        firestore: FirebaseFirestore
+    ): RecentChatRepository {
+        return RecentChatRepository(firestore)
     }
 }

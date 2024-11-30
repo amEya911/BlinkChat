@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Meeting
+import java.util.UUID
 import javax.inject.Inject
 
 class MeetRepository @Inject constructor(
@@ -16,7 +17,9 @@ class MeetRepository @Inject constructor(
         date: String,
         time: String
     ) {
+        val meetingId = UUID.randomUUID().toString()
         val scheduledMeetEntry = mapOf(
+            "meetingId" to meetingId,
             "createdBy" to currentUserContact,
             "createdWith" to otherUserContact,
             "date" to date,
@@ -24,10 +27,22 @@ class MeetRepository @Inject constructor(
             "createAt" to System.currentTimeMillis()
         )
 
-        addScheduleToUser(currentUserContact.id, scheduledMeetEntry, otherUserContact.displayName, date, time)
+        addScheduleToUser(
+            currentUserContact.id,
+            scheduledMeetEntry,
+            otherUserContact.displayName,
+            date,
+            time
+        )
 
         if (ifOtherUserExists) {
-            addScheduleToUser(otherUserContact.id, scheduledMeetEntry, currentUserContact.displayName, date, time)
+            addScheduleToUser(
+                otherUserContact.id,
+                scheduledMeetEntry,
+                currentUserContact.displayName,
+                date,
+                time
+            )
         }
     }
 
@@ -84,22 +99,25 @@ class MeetRepository @Inject constructor(
         firestore.collection("users").document(currentUserId)
             .addSnapshotListener { document, exception ->
                 if (exception != null) {
-                    Log.e("ScheduledMeets", "Error listening for updates: ${exception.message}", exception)
+                    Log.e(
+                        "ScheduledMeets",
+                        "Error listening for updates: ${exception.message}",
+                        exception
+                    )
                     onResult(emptyList())
                     return@addSnapshotListener
                 }
 
                 if (document != null && document.exists()) {
                     val meets = document["scheduledMeets"] as? List<Map<String, Any>> ?: emptyList()
-                    Log.d("ScheduledMeets", "meets: $meets")
 
                     val meetingDetails = meets.mapNotNull { meet ->
+                        val meetingId = meet["meetingId"] as? String
                         val createdByMap = meet["createdBy"] as? Map<String, Any>
                         val createdWithMap = meet["createdWith"] as? Map<String, Any>
                         val date = meet["date"] as? String ?: ""
                         val time = meet["time"] as? String ?: ""
 
-                        Log.d("ScheduledMeets", "createdByMap: $createdByMap createdWithMap: $createdWithMap")
 
                         val createdBy = createdByMap?.let { map ->
                             Contact(
@@ -128,26 +146,84 @@ class MeetRepository @Inject constructor(
                                     "date: $date" +
                                     "time: $time"
                         )
-
-                        if (createdBy?.id != currentUserId) {
-                            createdBy?.let {
-                                Meeting(it, it, date, time)
-                            }
-                        } else if (createdWith?.id != currentUserId) {
-                            createdWith?.let {
-                                Meeting(createdBy, it, date, time)
+                        if (meetingId != null) {
+                            if (createdBy?.id != currentUserId) {
+                                createdBy?.let {
+                                    Meeting(meetingId, it, it, date, time)
+                                }
+                            } else if (createdWith?.id != currentUserId) {
+                                createdWith?.let {
+                                    Meeting(meetingId, createdBy, it, date, time)
+                                }
+                            } else {
+                                null
                             }
                         } else {
+                            Log.e("ScheduledMeets", "meetingId is null")
                             null
                         }
                     }
-                    Log.d("ScheduledMeets", "meetingDetails: $meetingDetails")
 
                     onResult(meetingDetails)
                 } else {
-                    Log.w("ScheduledMeets", "Document does not exist or has no scheduledMeets field.")
+                    Log.w(
+                        "ScheduledMeets",
+                        "Document does not exist or has no scheduledMeets field."
+                    )
                     onResult(emptyList())
                 }
+            }
+    }
+
+    fun rescheduleMeet(
+        meetingId: String,
+        createdBy: Contact,
+        createdWith: Contact,
+        newDate: String,
+        newTime: String
+    ) {
+        rescheduleMeetForUser(meetingId, createdBy.id, newDate, newTime)
+        rescheduleMeetForUser(meetingId, createdWith.id, newDate, newTime)
+    }
+
+    private fun rescheduleMeetForUser(
+        meetingId: String,
+        userId: String,
+        newDate: String,
+        newTime: String
+    ) {
+        firestore.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val scheduledMeets =
+                        document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
+
+                    val updatedMeets = scheduledMeets.map { meet ->
+                        if (meet["meetingId"] == meetingId) {
+                            meet.toMutableMap().apply {
+                                this["date"] = newDate
+                                this["time"] = newTime
+                            }
+                        } else {
+                            meet
+                        }
+                    }
+
+                    firestore.collection("users").document(userId)
+                        .update("scheduledMeets", updatedMeets)
+                        .addOnSuccessListener {
+                            Log.d(
+                                "ScheduledMeets",
+                                "Meeting successfully rescheduled for $userId to $newDate at $newTime"
+                            )
+                        }.addOnFailureListener { e ->
+                            Log.e("ScheduledMeets", "Failed to reschedule meeting for $userId", e)
+                        }
+                } else {
+                    Log.e("ScheduledMeets", "User document does not exist: $userId")
+                }
+            }.addOnFailureListener { e ->
+                Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
             }
     }
 }

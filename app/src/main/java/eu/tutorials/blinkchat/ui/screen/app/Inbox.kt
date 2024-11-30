@@ -138,8 +138,12 @@ fun Inbox(
         }
         if (inboxState.isScheduleAMeetClicked) {
             ScheduleMeetDialog(
-                onEvent = onEvent
+                onDismiss = { onEvent(InboxEvent.OnScheduleDismissed) },
+                onConfirm = { date, time ->
+                    onEvent(InboxEvent.OnScheduleConfirmed(date, time))
+                }
             )
         }
+
     }
 }
