@@ -65,6 +65,13 @@ class MeetingsViewModel @Inject constructor(
                     isRescheduleClicked = false
                 )
             }
+
+            is MeetingsEvent.OnCallOffClicked -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isMeetingClicked = false
+                )
+                deleteMeet(meeting = event.meeting)
+            }
         }
     }
 
@@ -93,12 +100,30 @@ class MeetingsViewModel @Inject constructor(
     }
 
     private fun rescheduleMeet(meeting: Meeting, newDate: String, newTime: String) {
-        meetRepository.rescheduleMeet(
-            meetingId = meeting.meetingId,
-            createdBy = meeting.createdBy,
-            createdWith = meeting.otherUserContact,
-            newDate = newDate,
-            newTime = newTime
-        )
+        val currentUserId = userRepository.currentUserId()
+        if (currentUserId != null) {
+            meetRepository.rescheduleMeet(
+                meetingId = meeting.meetingId,
+                currentUserId = currentUserId,
+                otherUserId= meeting.otherUserContact.id,
+                newDate = newDate,
+                newTime = newTime
+            )
+        } else {
+            Log.e("scheduleMeet", "currentUserId not loaded")
+        }
+    }
+
+    private fun deleteMeet(meeting: Meeting) {
+        val currentUserId = userRepository.currentUserId()
+        if (currentUserId != null) {
+            meetRepository.deleteMeet(
+                meetingId = meeting.meetingId,
+                currentUserId = currentUserId,
+                otherUserId = meeting.otherUserContact.id
+            )
+        } else {
+            Log.e("scheduleMeet", "currentUserId not loaded")
+        }
     }
 }

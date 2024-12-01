@@ -4,13 +4,17 @@ import android.util.Log
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.model.RecentChatContact
+import java.util.UUID
 import javax.inject.Inject
 
 class RecentChatRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
     fun updateRecentChats(userId: String, otherUser: Contact, chatRoomId: String) {
+        val recentChatId = UUID.randomUUID().toString()
         val recentChatEntry = mapOf(
+            "recentChatId" to recentChatId,
             "userId" to otherUser.id,
             "chatRoomId" to chatRoomId,
             "lastUpdated" to System.currentTimeMillis()
@@ -19,7 +23,8 @@ class RecentChatRepository @Inject constructor(
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val recentChats = document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
+                    val recentChats =
+                        document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
                     val updatedChats = recentChats.filter { it["userId"] != otherUser.id }
                     val newRecentChats = updatedChats + recentChatEntry
 
@@ -47,11 +52,15 @@ class RecentChatRepository @Inject constructor(
             }
     }
 
-    fun listenToRecentChats(currentUserId: String, onResult: (List<String>) -> Unit) {
+    fun listenToRecentChats(currentUserId: String, onResult: (List<Pair<String, String>>) -> Unit) {
         firestore.collection("users").document(currentUserId)
             .addSnapshotListener { document, exception ->
                 if (exception != null) {
-                    Log.e("listenToRecentChats", "Error listening for updates: ${exception.message}", exception)
+                    Log.e(
+                        "listenToRecentChats",
+                        "Error listening for updates: ${exception.message}",
+                        exception
+                    )
                     onResult(emptyList())
                     return@addSnapshotListener
                 }
@@ -60,15 +69,25 @@ class RecentChatRepository @Inject constructor(
                     val recentChats = document["recentChats"] as? List<Map<String, Any>> ?: emptyList()
 
                     val userIds = recentChats.mapNotNull { chat ->
-                        chat["userId"] as? String
+                        val userId = chat["userId"] as? String
+                        val recentChatId = chat["recentChatId"] as? String
+                        if (userId != null && recentChatId != null) {
+                            userId to recentChatId
+                        } else {
+                            null
+                        }
                     }
                     onResult(userIds)
                 } else {
-                    Log.w("listenToRecentChats", "Document does not exist or has no recentChats field.")
+                    Log.w(
+                        "listenToRecentChats",
+                        "Document does not exist or has no recentChats field."
+                    )
                     onResult(emptyList())
                 }
             }
     }
+
 
     fun listenForPresence(currentUserId: String, callback: (List<String?>) -> Unit) {
         firestore.collection("users").document(currentUserId)
@@ -90,7 +109,11 @@ class RecentChatRepository @Inject constructor(
         return emptyList()
     }
 
-    private fun fetchActiveUserNamesWithListener(chatRoomIds: List<String?>, currentUserId: String, callback: (List<String>) -> Unit) {
+    private fun fetchActiveUserNamesWithListener(
+        chatRoomIds: List<String?>,
+        currentUserId: String,
+        callback: (List<String>) -> Unit
+    ) {
         val activeUserNames = mutableSetOf<String>()
 
         if (chatRoomIds.isEmpty()) {
@@ -109,9 +132,12 @@ class RecentChatRepository @Inject constructor(
                         return@addSnapshotListener
                     }
                     if (chatRoomSnapshot != null && chatRoomSnapshot.exists()) {
-                        val initiatorUser = chatRoomSnapshot.get("initiatorUser") as? Map<String, Any>
-                        val recipientUser = chatRoomSnapshot.get("recipientUser") as? Map<String, Any>
-                        val activeUsers = chatRoomSnapshot.get("activeUsers") as? Map<String, Boolean>
+                        val initiatorUser =
+                            chatRoomSnapshot.get("initiatorUser") as? Map<String, Any>
+                        val recipientUser =
+                            chatRoomSnapshot.get("recipientUser") as? Map<String, Any>
+                        val activeUsers =
+                            chatRoomSnapshot.get("activeUsers") as? Map<String, Boolean>
 
                         if (initiatorUser != null && recipientUser != null && activeUsers != null) {
                             val initiatorUserId = initiatorUser["id"] as? String
@@ -125,12 +151,18 @@ class RecentChatRepository @Inject constructor(
                                     if (isRecipientActive) {
                                         if (!activeUserNames.contains(recipientUserId)) {
                                             activeUserNames.add(recipientUserId)
-                                            Log.d("AppRepo", "Added active user ID: $recipientUserId (Recipient)")
+                                            Log.d(
+                                                "AppRepo",
+                                                "Added active user ID: $recipientUserId (Recipient)"
+                                            )
                                         }
                                     } else {
                                         if (activeUserNames.contains(recipientUserId)) {
                                             activeUserNames.remove(recipientUserId)
-                                            Log.d("AppRepo", "Removed inactive user ID: $recipientUserId (Recipient)")
+                                            Log.d(
+                                                "AppRepo",
+                                                "Removed inactive user ID: $recipientUserId (Recipient)"
+                                            )
                                         }
                                     }
                                     callback(activeUserNames.toList())
@@ -140,12 +172,18 @@ class RecentChatRepository @Inject constructor(
                                     if (isInitiatorActive) {
                                         if (!activeUserNames.contains(initiatorUserId)) {
                                             activeUserNames.add(initiatorUserId)
-                                            Log.d("AppRepo", "Added active user ID: $initiatorUserId (Initiator)")
+                                            Log.d(
+                                                "AppRepo",
+                                                "Added active user ID: $initiatorUserId (Initiator)"
+                                            )
                                         }
                                     } else {
                                         if (activeUserNames.contains(initiatorUserId)) {
                                             activeUserNames.remove(initiatorUserId)
-                                            Log.d("AppRepo", "Removed inactive user ID: $initiatorUserId (Initiator)")
+                                            Log.d(
+                                                "AppRepo",
+                                                "Removed inactive user ID: $initiatorUserId (Initiator)"
+                                            )
                                         }
                                     }
                                     callback(activeUserNames.toList())
@@ -157,6 +195,49 @@ class RecentChatRepository @Inject constructor(
                     }
                 }
         }
+    }
+
+    fun deleteRecentChat(
+        recentChatId: String,
+        currentUserId: String
+    ) {
+        deleteRecentChatForUser(recentChatId, currentUserId)
+    }
+
+    private fun deleteRecentChatForUser(
+        recentChatId: String,
+        userId: String
+    ) {
+        firestore.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val recentChats =
+                        document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
+
+                    val updatedRecentChats = recentChats.filterNot { meet ->
+                        meet["recentChatId"] == recentChatId
+                    }
+
+                    firestore.collection("users").document(userId)
+                        .update("recentChats", updatedRecentChats)
+                        .addOnSuccessListener {
+                            Log.d(
+                                "RecentChats",
+                                "Recent Chat successfully deleted for $userId"
+                            )
+                        }.addOnFailureListener { e ->
+                            Log.e("RecentChats", "Failed to delete Recent Chat for $userId", e)
+                        }
+
+                } else {
+                    Log.e("RecentChats", "User document does not exist: $userId")
+                }
+
+
+            }.addOnFailureListener { e ->
+                Log.e("RecentChats", "Error retrieving user document: $userId", e)
+            }
+
     }
 
 }

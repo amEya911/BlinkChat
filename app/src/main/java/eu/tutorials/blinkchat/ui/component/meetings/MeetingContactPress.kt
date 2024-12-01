@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -81,8 +82,9 @@ fun MeetingContactPress(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         MeetingPressMenu(
-                            onCancelClick = {onEvent(MeetingsEvent.OnMeetingDismissed)},
-                            onRescheduleMeet = {onEvent(MeetingsEvent.OnRescheduleClicked)}
+                            onCancelClicked = {onEvent(MeetingsEvent.OnMeetingDismissed)},
+                            onRescheduleMeet = {onEvent(MeetingsEvent.OnRescheduleClicked)},
+                            onCallOffClicked = {onEvent(MeetingsEvent.OnCallOffClicked(meeting))}
                         )
                     }
                 }
@@ -93,8 +95,9 @@ fun MeetingContactPress(
 
 @Composable
 fun MeetingPressMenu(
-    onCancelClick:() -> Unit,
-    onRescheduleMeet: () -> Unit
+    onCancelClicked:() -> Unit,
+    onRescheduleMeet: () -> Unit,
+    onCallOffClicked: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -117,9 +120,15 @@ fun MeetingPressMenu(
             MenuDivider()
 
             MenuItem(
+                text = "Call Off",
+                icon = Icons.Default.DeleteForever,
+                onClick = onCallOffClicked
+            )
+
+            MenuItem(
                 text = "Cancel",
                 icon = Icons.Default.Clear,
-                onClick = onCancelClick
+                onClick = onCancelClicked
             )
         }
     }

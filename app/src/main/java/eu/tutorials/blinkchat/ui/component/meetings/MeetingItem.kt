@@ -83,7 +83,6 @@ fun MeetingItem(
             val formattedDate = remember(meeting.date) { formatMeetingDate(meeting.date) }
             val createdBy = if (meetingsState.currentUserId == meeting.createdBy.id) "You" else "Them"
 
-
             Text(text = "${meeting.time} $formattedDate", textAlign = TextAlign.End)
             Text(text = "Created by: $createdBy")
         }

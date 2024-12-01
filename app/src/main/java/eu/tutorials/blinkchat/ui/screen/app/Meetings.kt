@@ -27,7 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.MeetingsEvent
 import eu.tutorials.blinkchat.ui.component.AppBar
-import eu.tutorials.blinkchat.ui.component.inbox.ScheduleMeetDialog
+import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingItem
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor

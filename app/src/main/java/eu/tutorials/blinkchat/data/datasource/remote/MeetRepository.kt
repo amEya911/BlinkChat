@@ -177,13 +177,13 @@ class MeetRepository @Inject constructor(
 
     fun rescheduleMeet(
         meetingId: String,
-        createdBy: Contact,
-        createdWith: Contact,
+        currentUserId: String,
+        otherUserId: String,
         newDate: String,
         newTime: String
     ) {
-        rescheduleMeetForUser(meetingId, createdBy.id, newDate, newTime)
-        rescheduleMeetForUser(meetingId, createdWith.id, newDate, newTime)
+        rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime)
+        rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime)
     }
 
     private fun rescheduleMeetForUser(
@@ -222,6 +222,49 @@ class MeetRepository @Inject constructor(
                 } else {
                     Log.e("ScheduledMeets", "User document does not exist: $userId")
                 }
+            }.addOnFailureListener { e ->
+                Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
+            }
+    }
+
+    fun deleteMeet(
+        meetingId: String,
+        currentUserId: String,
+        otherUserId: String
+    ) {
+        deleteMeetForUser(meetingId, currentUserId)
+        deleteMeetForUser(meetingId, otherUserId)
+    }
+
+    private fun deleteMeetForUser(
+        meetingId: String,
+        userId: String
+    ) {
+        firestore.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val scheduledMeets =
+                        document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
+
+                    val updatedMeets = scheduledMeets.filterNot { meet ->
+                        meet["meetingId"] == meetingId
+                    }
+
+                    firestore.collection("users").document(userId)
+                        .update("scheduledMeets", updatedMeets)
+                        .addOnSuccessListener {
+                            Log.d(
+                                "ScheduledMeets",
+                                "Meeting successfully deleted for $userId"
+                            )
+                        }.addOnFailureListener { e ->
+                            Log.e("ScheduledMeets", "Failed to delete meeting for $userId", e)
+                        }
+
+                } else {
+                    Log.e("ScheduledMeets", "User document does not exist: $userId")
+                }
+
             }.addOnFailureListener { e ->
                 Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
             }

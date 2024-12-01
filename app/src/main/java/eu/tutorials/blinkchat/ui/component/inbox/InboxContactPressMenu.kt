@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.component.inbox
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -89,6 +91,7 @@ fun InboxContactPress(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ContactPressMenu(
+                        isRecentChat = !state.isAllContactsClicked,
                         onEnterClick = {
                             onEvent(InboxEvent.OnEnterChatRoom)
                             onEvent(InboxEvent.OnContactDismissed)
@@ -97,6 +100,18 @@ fun InboxContactPress(
                         onScheduleAMeet = {
                             onEvent(InboxEvent.OnScheduleAMeetClick)
                             onEvent(InboxEvent.OnContactDismissed)
+                        },
+                        onDeleteRecentChat = {
+                            if (!state.isAllContactsClicked) {
+                                val recentChatContact = state.recentContacts.find {
+                                    it.contact.id == contact.id
+                                }
+                                if (recentChatContact != null) {
+                                    onEvent(InboxEvent.OnDeleteRecentChat(recentChatContact))
+                                } else {
+                                    Log.w("ContactPressMenu", "No matching recent chat found for contact ID: ${contact.id}")
+                                }
+                            }
                         }
                     )
                 }
@@ -107,9 +122,11 @@ fun InboxContactPress(
 
 @Composable
 fun ContactPressMenu(
+    isRecentChat: Boolean,
     onEnterClick: () -> Unit,
     onCancelClick: () -> Unit,
-    onScheduleAMeet: () -> Unit
+    onScheduleAMeet: () -> Unit,
+    onDeleteRecentChat: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -140,6 +157,15 @@ fun ContactPressMenu(
             )
 
             MenuDivider()
+
+            if (isRecentChat) {
+                MenuItem(
+                    text = "Delete Recent Chat",
+                    icon = Icons.Default.Delete,
+                    onClick = onDeleteRecentChat
+                )
+                MenuDivider()
+            }
 
             MenuItem(
                 text = "Cancel",

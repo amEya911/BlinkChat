@@ -19,6 +19,7 @@ import eu.tutorials.blinkchat.data.datasource.remote.RecentChatRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.model.RecentChatContact
 import eu.tutorials.blinkchat.data.state.InboxState
 import eu.tutorials.blinkchat.util.HashUtil
 import kotlinx.coroutines.Dispatchers
@@ -112,6 +113,13 @@ class InboxViewModel @Inject constructor(
                     isScheduleAMeetClicked = false
                 )
             }
+
+            is InboxEvent.OnDeleteRecentChat -> {
+                deleteRecentChat(event.recentChatContact.recentChatId)
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
         }
     }
 
@@ -145,14 +153,23 @@ class InboxViewModel @Inject constructor(
             recentChatRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
                 val allContacts = _inboxState.value.contacts
                 Log.d("saala", "allContacts: ${_inboxState.value.contacts}")
-                val matchedRecentContacts = recentChatUserIds.mapNotNull { userId ->
-                    allContacts.find { it.id == userId }
+
+                val matchedRecentContacts = recentChatUserIds.mapNotNull { (userId, recentChatId) ->
+                    val contact = allContacts.find { it.id == userId }
+                    if (contact != null) {
+                        RecentChatContact(recentChatId = recentChatId, contact = contact)
+                    } else {
+                        null
+                    }
                 }
+
                 Log.d("saala", "matchedRecentContacts: $matchedRecentContacts")
+
                 _inboxState.value = _inboxState.value.copy(
                     recentContacts = matchedRecentContacts
                 )
             }
+
             Log.d("saala", "recentContacts: ${_inboxState.value.recentContacts}")
 
             recentChatRepository.listenForPresence(currentUserId) { activeUserNames ->
@@ -163,6 +180,18 @@ class InboxViewModel @Inject constructor(
         } else {
             Log.e("saala", "Current user is not logged in.")
         }
+    }
+
+    private fun deleteRecentChat(recentChatId: String) {
+        val currentUserId = userRepository.currentUserId()
+        if (currentUserId == null) {
+            Log.e("RecentChats", "Current user details not loaded.")
+            return
+        }
+        recentChatRepository.deleteRecentChat(
+            currentUserId = currentUserId,
+            recentChatId = recentChatId
+        )
     }
 
 

@@ -1,10 +1,11 @@
 package eu.tutorials.blinkchat.data.state
 
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.model.RecentChatContact
 
 data class InboxState(
     val contacts: List<Contact> = emptyList(),
-    val recentContacts: List<Contact> = emptyList(),
+    val recentContacts: List<RecentChatContact> = emptyList(),
     val isContactClicked: Boolean = false,
     val searchQuery: String? = null,
     val searchResults: List<Contact> = emptyList(),

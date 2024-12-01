@@ -9,4 +9,5 @@ sealed class MeetingsEvent {
     data class OnRescheduleConfirmed(val meeting: Meeting, val newDate: String, val newTime: String): MeetingsEvent()
     data object OnRescheduleClicked: MeetingsEvent()
     data object OnRescheduleDismissed: MeetingsEvent()
+    data class OnCallOffClicked(val meeting: Meeting): MeetingsEvent()
 }

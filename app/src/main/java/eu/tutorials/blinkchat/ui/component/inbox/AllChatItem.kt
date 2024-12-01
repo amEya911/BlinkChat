@@ -24,18 +24,16 @@ import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
-import eu.tutorials.blinkchat.data.state.InboxState
 
 @Composable
-fun ChatItem(
-    inboxState: InboxState,
+fun AllChatItem(
     contact: Contact,
     onEvent: (InboxEvent) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(12.dp)
             .clickable {
                 onEvent(InboxEvent.OnContactClicked(contact))
             },
@@ -46,7 +44,7 @@ fun ChatItem(
                 model = contact.photoUri,
                 contentDescription = "photoUri",
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(35.dp)
                     .clip(RoundedCornerShape(20.dp))
             )
         } else {
@@ -54,7 +52,7 @@ fun ChatItem(
                 painter = painterResource(id = R.drawable.profile_image),
                 contentDescription = "Profile Image",
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(35.dp)
                     .clip(RoundedCornerShape(20.dp))
             )
         }
@@ -63,12 +61,9 @@ fun ChatItem(
 
         Text(
             text = contact.displayName,
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = if (inboxState.usersInChatRoom.contains(contact.id)) Color.Red else Color.White
+            color = Color.White
         )
     }
-    HorizontalDivider(
-        color = Color.White.copy(alpha = 0.4f)
-    )
 }
