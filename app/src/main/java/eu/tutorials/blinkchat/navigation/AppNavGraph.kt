@@ -35,6 +35,8 @@ import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.MeetingsViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun AppNavGraph() {
@@ -58,6 +60,12 @@ fun AppNavGraph() {
 
     val inboxViewModel: InboxViewModel = hiltViewModel()
     val inboxState = inboxViewModel.inboxState.collectAsState().value
+
+    val meetingsViewModel: MeetingsViewModel = hiltViewModel()
+    val meetingsState = meetingsViewModel.meetingsState.collectAsState().value
+
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val settingsState = settingsViewModel.settingsState.collectAsState().value
 
     val chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
     val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
@@ -102,7 +110,11 @@ fun AppNavGraph() {
             route = Graph.APP
         ) {
             composable(AppScreen.Meetings.route) {
-                Meetings(modifier = Modifier.padding(paddingValues))
+                Meetings(
+                    modifier = Modifier.padding(paddingValues),
+                    meetingsState = meetingsState,
+                    onEvent = meetingsViewModel::onEvent
+                )
             }
 
             composable(AppScreen.Chats.route) {
@@ -117,7 +129,11 @@ fun AppNavGraph() {
             }
 
             composable(AppScreen.Settings.route) {
-                Settings()
+                Settings(
+                    modifier = Modifier.padding(paddingValues),
+                    settingsState = settingsState,
+                    onEvent = settingsViewModel::onEvent
+                )
             }
 
             composable(

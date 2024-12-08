@@ -93,7 +93,7 @@ class LoginWithPhoneViewModel @Inject constructor(
 
                 val user = auth.currentUser
                 user?.let {
-                    val hashedId = HashUtil.hashPhoneNumber(it.phoneNumber ?: "Unknown Number") // Use the HashUtil
+                    val hashedId = HashUtil.hashPhoneNumber(it.phoneNumber ?: "Unknown Number")
                     val contact = Contact(
                         id = hashedId,
                         displayName = it.displayName ?: "Unknown User",

@@ -5,9 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -26,15 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
-import eu.tutorials.blinkchat.data.state.ChatRoomState
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatInputBar
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatRoomTopBar
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
-import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 
 @Composable
 fun ChatRoom(

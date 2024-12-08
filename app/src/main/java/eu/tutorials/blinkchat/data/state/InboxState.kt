@@ -17,5 +17,7 @@ data class InboxState(
     val usersInChatRoom: List<String> = emptyList(),
     val isScheduleAMeetClicked: Boolean = false,
     val scheduleDate: String? = null,
-    val scheduleTime: String? = null
+    val scheduleTime: String? = null,
+    val isSelectedContactBlocked: Boolean = false,
+    val error: String? = null
 )

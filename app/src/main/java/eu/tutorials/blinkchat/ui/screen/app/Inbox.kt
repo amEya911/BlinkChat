@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ fun Inbox(
 ) {
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
         onEvent(InboxEvent.LoadRecentChats)
@@ -52,6 +54,14 @@ fun Inbox(
             onEvent(InboxEvent.ResetEnterChatRoom)
         }
     }
+
+    LaunchedEffect(key1 = inboxState.error) {
+        inboxState.error?.let { errorMessage ->
+            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+            onEvent(InboxEvent.OnClearError) // Dispatch an event to clear the error
+        }
+    }
+
 
     val contentModifier = if (inboxState.isContactClicked || inboxState.isScheduleAMeetClicked) Modifier.blur(20.dp) else Modifier
 

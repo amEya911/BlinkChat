@@ -2,6 +2,7 @@ package eu.tutorials.blinkchat.ui.viewmodel
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
@@ -31,7 +32,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InboxViewModel @Inject constructor(
-    private val context: Context,
+    private val appContext: Application,
     private val appRepository: AppRepository,
     private val userRepository: UserRepository,
     private val meetRepository: MeetRepository,
@@ -61,6 +62,11 @@ class InboxViewModel @Inject constructor(
                     isContactClicked = true,
                     selectedContact = event.contact
                 )
+                checkIfUserIsBlocked(event.contact.id) { isBlocked ->
+                    _inboxState.value = _inboxState.value.copy(
+                        isSelectedContactBlocked = isBlocked
+                    )
+                }
             }
 
             InboxEvent.OnContactDismissed -> {
@@ -119,6 +125,24 @@ class InboxViewModel @Inject constructor(
                 _inboxState.value = _inboxState.value.copy(
                     isContactClicked = false
                 )
+            }
+
+            InboxEvent.OnBlockUser -> {
+                blockUser()
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
+
+            InboxEvent.OnUnblockUser -> {
+                unblockUser()
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
+
+            InboxEvent.OnClearError -> {
+                _inboxState.value = _inboxState.value.copy(error = null)
             }
         }
     }
@@ -183,7 +207,7 @@ class InboxViewModel @Inject constructor(
     }
 
     private fun deleteRecentChat(recentChatId: String) {
-        val currentUserId = userRepository.currentUserId()
+        val currentUserId = _inboxState.value.currentUserContact?.id
         if (currentUserId == null) {
             Log.e("RecentChats", "Current user details not loaded.")
             return
@@ -194,6 +218,48 @@ class InboxViewModel @Inject constructor(
         )
     }
 
+    private fun blockUser() {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        val otherUserId = _inboxState.value.selectedContact?.id
+        if (currentUserId == null) {
+            Log.e("BlockUser", "Current user details not loaded.")
+            return
+        }
+        if (otherUserId == null) {
+            Log.e("BlockUser", "No contact Selected")
+            return
+        }
+        userRepository.blockUser(currentUserId, otherUserId)
+    }
+
+    private fun checkIfUserIsBlocked(
+        otherUserId: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        if (currentUserId == null) {
+            Log.e("BlockUser", "Current user details not loaded.")
+            onResult(false)
+            return
+        }
+        userRepository.checkIfUserIsBlocked(currentUserId, otherUserId) { result ->
+            onResult(result)
+        }
+    }
+
+    private fun unblockUser() {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        val otherUserId = _inboxState.value.selectedContact?.id
+        if (currentUserId == null) {
+            Log.e("BlockUser", "Current user details not loaded.")
+            return
+        }
+        if (otherUserId == null) {
+            Log.e("BlockUser", "No contact Selected")
+            return
+        }
+        userRepository.unBlockUser(currentUserId, otherUserId)
+    }
 
     private fun addScheduleMeets() {
         val currentUserContact = _inboxState.value.currentUserContact
@@ -213,14 +279,22 @@ class InboxViewModel @Inject constructor(
             Log.e("ScheduledMeets", "Date or Time not selected")
             return
         }
-        checkRecipientExists(otherUserContact.id) { exists ->
-            meetRepository.addSchedule(
-                currentUserContact = currentUserContact,
-                otherUserContact = otherUserContact,
-                ifOtherUserExists = exists,
-                date = date,
-                time =time
-            )
+        userRepository.checkIfUserIsBlocked(otherUserContact.id, currentUserContact.id) { result ->
+            if (result) {
+                _inboxState.value = _inboxState.value.copy(
+                    error = "Error Scheduling Meet"
+                )
+            } else {
+                checkRecipientExists(otherUserContact.id) { exists ->
+                    meetRepository.addSchedule(
+                        currentUserContact = currentUserContact,
+                        otherUserContact = otherUserContact,
+                        ifOtherUserExists = exists,
+                        date = date,
+                        time = time
+                    )
+                }
+            }
         }
     }
 
@@ -239,7 +313,7 @@ class InboxViewModel @Inject constructor(
     }
 
     private fun loadContacts(activity: Activity) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
+        if (ActivityCompat.checkSelfPermission(appContext, Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(
@@ -256,7 +330,7 @@ class InboxViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val contactsList = mutableListOf<LocalContact>()
-                val cursor = context.contentResolver.query(
+                val cursor = appContext.contentResolver.query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                     arrayOf(
                         ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
@@ -334,7 +408,6 @@ class InboxViewModel @Inject constructor(
         }
     }
 
-
     private fun createChatRoom() {
         val initiatorUser = _inboxState.value.currentUserContact
         val recipientUser = _inboxState.value.selectedContact
@@ -350,22 +423,30 @@ class InboxViewModel @Inject constructor(
             return
         }
 
-        checkRecipientExists(recipientUser.id) { exists ->
-            appRepository.createChatRoom(
-                initiatorUser = initiatorUser,
-                recipientUser = recipientUser,
-                recipientUserExists = exists,
-                context = context
-            ) { chatRoomId ->
-                if (chatRoomId != null) {
-                    _inboxState.value = _inboxState.value.copy(
-                        isEnterChatRoom = true,
-                        navigateToChatId = chatRoomId
-                    )
-                } else {
-                    Log.e("InboxViewModel", "Failed to create chat room.")
-                }
-            }
+        userRepository.checkIfUserIsBlocked(recipientUser.id, initiatorUser.id) { result ->
+           if (result) {
+               _inboxState.value  = _inboxState.value.copy(
+                   error = "Error Creating room"
+               )
+           } else {
+               checkRecipientExists(recipientUser.id) { exists ->
+                   appRepository.createChatRoom(
+                       initiatorUser = initiatorUser,
+                       recipientUser = recipientUser,
+                       recipientUserExists = exists,
+                       context = appContext
+                   ) { chatRoomId ->
+                       if (chatRoomId != null) {
+                           _inboxState.value = _inboxState.value.copy(
+                               isEnterChatRoom = true,
+                               navigateToChatId = chatRoomId
+                           )
+                       } else {
+                           Log.e("InboxViewModel", "Failed to create chat room.")
+                       }
+                   }
+               }
+           }
         }
     }
 

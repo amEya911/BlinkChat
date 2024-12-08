@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.MeetingsEvent
+import eu.tutorials.blinkchat.data.state.MeetingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
@@ -37,9 +38,9 @@ import eu.tutorials.blinkchat.ui.viewmodel.MeetingsViewModel
 @Composable
 fun Meetings(
     modifier: Modifier = Modifier,
-    meetingsViewModel: MeetingsViewModel = hiltViewModel()
+    meetingsState: MeetingsState,
+    onEvent: (MeetingsEvent) -> Unit
 ) {
-    val meetingsState = meetingsViewModel.meetingsState.collectAsState().value
 
     val contentModifier = if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
 
@@ -106,7 +107,7 @@ fun Meetings(
 
                 LazyColumn {
                     items(updatedMatchedContacts.reversed()) { meeting ->
-                        MeetingItem(meeting, meetingsState, meetingsViewModel::onEvent)
+                        MeetingItem(meeting, meetingsState, onEvent)
                     }
                 }
             }
@@ -114,21 +115,21 @@ fun Meetings(
         if (meetingsState.isMeetingClicked) {
             MeetingContactPress(
                 meetingsState = meetingsState,
-                onEvent = meetingsViewModel::onEvent
+                onEvent = onEvent
             ) { meeting ->
                 MeetingItem(
                     meeting = meeting,
                     meetingsState = meetingsState,
-                    onEvent = meetingsViewModel::onEvent
+                    onEvent = onEvent
                 )
             }
         }
         if (meetingsState.isRescheduleClicked) {
             ScheduleMeetDialog(
-                onDismiss = { meetingsViewModel.onEvent(MeetingsEvent.OnMeetingDismissed) },
+                onDismiss = { onEvent(MeetingsEvent.OnMeetingDismissed) },
                 onConfirm = { date, time ->
                     meetingsState.selectedMeeting?.let { meeting ->
-                        meetingsViewModel.onEvent(
+                        onEvent(
                             MeetingsEvent.OnRescheduleConfirmed(
                                 meeting,
                                 date,

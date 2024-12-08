@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -91,6 +92,7 @@ fun InboxContactPress(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ContactPressMenu(
+                        inboxState = state,
                         isRecentChat = !state.isAllContactsClicked,
                         onEnterClick = {
                             onEvent(InboxEvent.OnEnterChatRoom)
@@ -112,7 +114,9 @@ fun InboxContactPress(
                                     Log.w("ContactPressMenu", "No matching recent chat found for contact ID: ${contact.id}")
                                 }
                             }
-                        }
+                        },
+                        onBlockUser = { onEvent(InboxEvent.OnBlockUser) },
+                        onUnblockUser = { onEvent(InboxEvent.OnUnblockUser)}
                     )
                 }
             }
@@ -122,11 +126,14 @@ fun InboxContactPress(
 
 @Composable
 fun ContactPressMenu(
+    inboxState: InboxState,
     isRecentChat: Boolean,
     onEnterClick: () -> Unit,
     onCancelClick: () -> Unit,
     onScheduleAMeet: () -> Unit,
-    onDeleteRecentChat: () -> Unit
+    onDeleteRecentChat: () -> Unit,
+    onBlockUser: () -> Unit,
+    onUnblockUser: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -142,19 +149,23 @@ fun ContactPressMenu(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            MenuItem(
-                text = "Enter",
-                icon = Icons.Default.Chat,
-                onClick = onEnterClick
-            )
+            if (!inboxState.isSelectedContactBlocked) {
+                MenuItem(
+                    text = "Enter",
+                    icon = Icons.Default.Chat,
+                    onClick = onEnterClick
+                )
+            }
 
             MenuDivider()
 
-            MenuItem(
-                text = "Schedule a Meet",
-                icon = Icons.Default.Schedule,
-                onClick = onScheduleAMeet
-            )
+            if (!inboxState.isSelectedContactBlocked) {
+                MenuItem(
+                    text = "Schedule a Meet",
+                    icon = Icons.Default.Schedule,
+                    onClick = onScheduleAMeet
+                )
+            }
 
             MenuDivider()
 
@@ -166,6 +177,14 @@ fun ContactPressMenu(
                 )
                 MenuDivider()
             }
+
+            MenuItem(
+                text = if (!inboxState.isSelectedContactBlocked) "Block ${inboxState.selectedContact?.displayName}" else "Unblock ${inboxState.selectedContact?.displayName}",
+                icon = Icons.Default.Block,
+                onClick = if (!inboxState.isSelectedContactBlocked) onBlockUser else onUnblockUser
+            )
+
+            MenuDivider()
 
             MenuItem(
                 text = "Cancel",
