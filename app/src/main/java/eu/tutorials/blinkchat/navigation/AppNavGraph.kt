@@ -23,13 +23,18 @@ import eu.tutorials.blinkchat.ui.screen.app.Settings
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.TextColor
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavType
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
+import eu.tutorials.blinkchat.data.event.SettingsEvent
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.screen.app.AddBlockUsers
+import eu.tutorials.blinkchat.ui.screen.app.BlockedUsers
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
 import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
@@ -42,6 +47,7 @@ import eu.tutorials.blinkchat.ui.viewmodel.SettingsViewModel
 fun AppNavGraph() {
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
+    Log.d("Timepass", "currentRoute: $currentRoute")
 
     val systemUiController = rememberSystemUiController()
     LaunchedEffect(currentRoute) {
@@ -53,7 +59,6 @@ fun AppNavGraph() {
                 systemUiController.setNavigationBarColor(color = TextFieldColor)
             }
         }
-
     }
 
     Log.d("AppNavGraph", "current root: $currentRoute")
@@ -73,32 +78,12 @@ fun AppNavGraph() {
     Scaffold(
         containerColor = BackgroundColor,
         contentColor = TextColor,
-//        topBar = {
-//            if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
-//                AppBar(
-//                    title = when (currentRoute) {
-//                        AppScreen.Meetings.route -> "Meets"
-//                        AppScreen.Chats.route -> "Chats"
-//                        AppScreen.Settings.route -> "Settings"
-//                        else -> "Error"
-//                    },
-//                    showIcon = currentRoute != AppScreen.Settings.route,
-//                    onIconClick = {
-//                        when (currentRoute) {
-//                            AppScreen.Meetings.route -> {}
-//                            AppScreen.Chats.route -> {
-//                                inboxViewModel.onEvent(InboxEvent.OnAllContactsIconClicked)
-//                            }
-//
-//                            AppScreen.Settings.route -> {}
-//                        }
-//                    },
-//                    iconResId = if (currentRoute == AppScreen.Meetings.route) R.drawable.calendar else Icons.Default.AccountCircle
-//                )
-//            }
-//        },
         bottomBar = {
-            if (currentRoute != null && !currentRoute.startsWith(AppScreen.ChatRoom.route)) {
+            if (currentRoute != null &&
+                !currentRoute.startsWith(AppScreen.ChatRoom.route) &&
+                !currentRoute.startsWith(AppScreen.BlockedUsers.route) &&
+                !currentRoute.startsWith(AppScreen.AddBlockUsers.route)
+            ) {
                 BottomNavBar(navController = navController)
             }
         },
@@ -132,7 +117,13 @@ fun AppNavGraph() {
                 Settings(
                     modifier = Modifier.padding(paddingValues),
                     settingsState = settingsState,
-                    onEvent = settingsViewModel::onEvent
+                    onEvent = settingsViewModel::onEvent,
+                    onBlockUserClicked = { navController.navigate(AppScreen.BlockedUsers.route) },
+                    logout = {
+                        navController.navigate(Graph.AUTH) {
+                            popUpTo(Graph.APP) { inclusive = true }
+                        }
+                    }
                 )
             }
 
@@ -155,10 +146,40 @@ fun AppNavGraph() {
 
                 if (chatRoomId != null) {
                     ChatRoom(chatRoomId = chatRoomId)
-                    Log.e("AppNavGraph", "successful $chatRoomId")
+                    Log.d("AppNavGraph", "successful $chatRoomId")
                 } else {
                     Log.e("AppNavGraph", "chatRoomId is null")
                 }
+            }
+
+            composable(AppScreen.BlockedUsers.route) {
+                BlockedUsers(
+                    modifier = Modifier.padding(paddingValues),
+                    blockedUsers = settingsState.blockedUsers,
+                    onBackClicked = { navController.popBackStack() },
+                    onUnblockClicked = { otherUserId ->
+                        inboxViewModel.onEvent(InboxEvent.OnUnblockUser(otherUserId = otherUserId))
+                        navController.popBackStack()
+                    },
+                    onAddBlockUsers = {
+                        navController.popBackStack()
+                        navController.navigate(AppScreen.AddBlockUsers.route)
+                    }
+                )
+            }
+
+            composable(AppScreen.AddBlockUsers.route) {
+                AddBlockUsers(
+                    modifier = Modifier.padding(paddingValues),
+                    contacts = inboxState.contacts.filterNot { contact ->
+                        settingsState.blockedUsers.any { blockedUser -> blockedUser.id == contact.id }
+                    },
+                    onBackClicked = {navController.popBackStack()},
+                    onBlockUser = { userId ->
+                        inboxViewModel.onEvent(InboxEvent.OnBlockUser(userId))
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }
@@ -169,6 +190,14 @@ sealed class AppScreen(val route: String) {
     data object Chats : AppScreen("chats")
     data object Settings : AppScreen("settings")
     data object ChatRoom : AppScreen("chat-room")
+    data object BlockedUsers : AppScreen("blocked-users")
+    data object AddBlockUsers: AppScreen("add-block-users")
+}
+
+@Composable
+fun currentRoute(navController: NavController): String? {
+    val navBackStackEntry = navController.currentBackStackEntryAsState().value
+    return navBackStackEntry?.destination?.route
 }
 
 

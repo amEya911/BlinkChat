@@ -13,5 +13,6 @@ data class ChatRoomState(
     val currentUserMessage: String = "",
     val otherUserMessage: String = "",
     val readMessage: String? = null,
-    val contacts: List<Contact> = emptyList()
+    val contacts: List<Contact> = emptyList(),
+    val isAddButtonClicked: Boolean = false
 )

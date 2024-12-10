@@ -58,7 +58,7 @@ fun Inbox(
     LaunchedEffect(key1 = inboxState.error) {
         inboxState.error?.let { errorMessage ->
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-            onEvent(InboxEvent.OnClearError) // Dispatch an event to clear the error
+            onEvent(InboxEvent.OnClearError)
         }
     }
 
@@ -69,7 +69,6 @@ fun Inbox(
         topBar = {
             AppBar(
                 title = "Chats",
-                showIcon = true,
                 onIconClick = { onEvent(InboxEvent.OnAllContactsIconClicked) },
                 iconResId = Icons.Default.AccountCircle
             )

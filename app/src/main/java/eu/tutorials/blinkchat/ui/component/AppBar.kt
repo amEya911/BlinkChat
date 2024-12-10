@@ -20,9 +20,10 @@ import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 @Composable
 fun AppBar(
     title: String,
-    showIcon: Boolean = false,
     iconResId: Any? = null,
-    onIconClick: (() -> Unit)? = null
+    onIconClick: () -> Unit = {},
+    navigationIcon: ImageVector? = null,
+    onNavigationIconClicked: () -> Unit = {}
 ) {
     TopAppBar(
         title = {
@@ -37,8 +38,8 @@ fun AppBar(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                if (showIcon) {
-                    IconButton(onClick = { onIconClick?.invoke() }) {
+                iconResId?.let{
+                    IconButton(onClick = { onIconClick.invoke() }) {
                         when (iconResId) {
                             is Int -> {
                                 Icon(
@@ -56,6 +57,13 @@ fun AppBar(
                             }
                         }
                     }
+                }
+            }
+        },
+        navigationIcon = {
+            navigationIcon?.let {
+                IconButton(onClick = onNavigationIconClicked) {
+                    Icon(imageVector = navigationIcon, contentDescription = "Back")
                 }
             }
         },

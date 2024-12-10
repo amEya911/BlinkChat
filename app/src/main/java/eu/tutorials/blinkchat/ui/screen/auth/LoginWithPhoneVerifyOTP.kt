@@ -109,6 +109,7 @@ fun LoginWithPhoneVerifyOTP(
 
             if (loginState.isLoggedIn) {
                 onOTPLoginSuccessful()
+                viewModel.onEvent(LoginWithPhoneEvent.OnDismiss)
             } else {
                 loginState.verificationError?.let {
                     Text(text = it, color = Color.Red, modifier = Modifier.padding(16.dp))

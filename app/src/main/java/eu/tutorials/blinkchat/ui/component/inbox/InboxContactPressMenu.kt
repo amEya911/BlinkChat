@@ -115,8 +115,8 @@ fun InboxContactPress(
                                 }
                             }
                         },
-                        onBlockUser = { onEvent(InboxEvent.OnBlockUser) },
-                        onUnblockUser = { onEvent(InboxEvent.OnUnblockUser)}
+                        onBlockUser = { onEvent(InboxEvent.OnBlockUser(state.selectedContact.id)) },
+                        onUnblockUser = { onEvent(InboxEvent.OnUnblockUser(state.selectedContact.id))}
                     )
                 }
             }

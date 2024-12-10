@@ -71,21 +71,21 @@ sealed class BottomNavScreen(
     val selectedIcon: ImageVector,
     val unSelectedIcon: ImageVector
 ) {
-    object Meetings: BottomNavScreen(
+    data object Meetings: BottomNavScreen(
         route = AppScreen.Meetings.route,
         title = "Meets",
         selectedIcon = Icons.Filled.DateRange,
         unSelectedIcon = Icons.Outlined.DateRange
     )
 
-    object Chats: BottomNavScreen(
+    data object Chats: BottomNavScreen(
         route = AppScreen.Chats.route,
         title = "Chats",
         selectedIcon = Icons.Filled.Email,
         unSelectedIcon = Icons.Outlined.Email
     )
 
-    object Settings: BottomNavScreen(
+    data object Settings: BottomNavScreen(
         route = AppScreen.Settings.route,
         title = "Settings",
         selectedIcon = Icons.Filled.Settings,
@@ -93,14 +93,5 @@ sealed class BottomNavScreen(
     )
 }
 
-@Composable
-fun currentRoute(navController: NavController): String? {
-    val navBackStackEntry = navController.currentBackStackEntryAsState().value
-    return navBackStackEntry?.destination?.route
-}
 
-@Preview(showBackground = true)
-@Composable
-fun BottomNavBarPreview() {
-    BottomNavBar(rememberNavController())
-}
+

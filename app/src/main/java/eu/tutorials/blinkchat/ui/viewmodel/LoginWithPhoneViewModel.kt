@@ -44,6 +44,11 @@ class LoginWithPhoneViewModel @Inject constructor(
             is LoginWithPhoneEvent.VerifyCode -> {
                 verifyVerificationCode(_loginWithPhoneState.value.verificationCode, event.verificationId)
             }
+            LoginWithPhoneEvent.OnDismiss -> {
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                    isLoggedIn = false
+                )
+            }
         }
     }
 

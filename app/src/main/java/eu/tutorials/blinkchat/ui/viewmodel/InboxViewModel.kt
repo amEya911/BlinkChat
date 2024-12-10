@@ -127,15 +127,15 @@ class InboxViewModel @Inject constructor(
                 )
             }
 
-            InboxEvent.OnBlockUser -> {
-                blockUser()
+            is InboxEvent.OnBlockUser -> {
+                blockUser(otherUserId = event.otherUserId)
                 _inboxState.value = _inboxState.value.copy(
                     isContactClicked = false
                 )
             }
 
-            InboxEvent.OnUnblockUser -> {
-                unblockUser()
+            is InboxEvent.OnUnblockUser -> {
+                unblockUser(otherUserId = event.otherUserId)
                 _inboxState.value = _inboxState.value.copy(
                     isContactClicked = false
                 )
@@ -218,9 +218,8 @@ class InboxViewModel @Inject constructor(
         )
     }
 
-    private fun blockUser() {
+    private fun blockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id
-        val otherUserId = _inboxState.value.selectedContact?.id
         if (currentUserId == null) {
             Log.e("BlockUser", "Current user details not loaded.")
             return
@@ -247,9 +246,8 @@ class InboxViewModel @Inject constructor(
         }
     }
 
-    private fun unblockUser() {
+    private fun unblockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id
-        val otherUserId = _inboxState.value.selectedContact?.id
         if (currentUserId == null) {
             Log.e("BlockUser", "Current user details not loaded.")
             return

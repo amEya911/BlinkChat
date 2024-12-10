@@ -1,6 +1,10 @@
 package eu.tutorials.blinkchat.ui.viewmodel
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -68,6 +72,16 @@ class ChatRoomViewModel @Inject constructor(
                         currentUserId, _chatRoomState.value.initiatorId, _chatRoomState.value.recipientId
                     )
                 }
+            }
+            ChatRoomEvent.OnAddButtonClicked -> {
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    isAddButtonClicked = !_chatRoomState.value.isAddButtonClicked
+                )
+            }
+
+            is ChatRoomEvent.OnCopyRoomLinkClicked -> {
+                val url = "https://vanishtest.netlify.app/${event.chatRoomId}"
+                copyToClipboard(url, event.context)
             }
         }
     }
@@ -181,5 +195,11 @@ class ChatRoomViewModel @Inject constructor(
                 appRepository.deleteMessages(id)
             }
         }
+    }
+
+    private fun copyToClipboard(url: String, context: Context) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("chatRoomLink", url)
+        clipboard.setPrimaryClip(clip)
     }
 }

@@ -23,10 +23,12 @@ import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
 import eu.tutorials.blinkchat.data.state.ChatRoomState
 import eu.tutorials.blinkchat.ui.theme.LightGray
-import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 
 @Composable
-fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
+fun ChatInputBar(
+    onEvent: (ChatRoomEvent) -> Unit,
+    chatRoomState: ChatRoomState
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,7 +49,7 @@ fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
                 )
             }
         } else {
-            IconButton(onClick = {  }) {
+            IconButton(onClick = { onEvent(ChatRoomEvent.OnAddButtonClicked) }) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add",
@@ -64,7 +66,7 @@ fun ChatInputBar(viewModel: ChatRoomViewModel, chatRoomState: ChatRoomState) {
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {
-                viewModel.onEvent(ChatRoomEvent.OnMessageTyping(""))
+                onEvent(ChatRoomEvent.OnMessageTyping(""))
             }) {
                 Icon(
                     painter = painterResource(id = R.drawable.eraser),

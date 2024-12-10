@@ -1,6 +1,6 @@
 package eu.tutorials.blinkchat.data.event
 
 sealed class SettingsEvent {
-    data object OnDisplayBlockedUsers: SettingsEvent()
-    data object OnDismissDisplayBlockedUsers: SettingsEvent()
+    data object OnLoadBlockedUsers: SettingsEvent()
+    data object Logout : SettingsEvent()
 }
