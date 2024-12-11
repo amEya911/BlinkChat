@@ -24,7 +24,7 @@ class MeetRepository @Inject constructor(
             "createdWith" to otherUserContact,
             "date" to date,
             "time" to time,
-            "createAt" to System.currentTimeMillis()
+            "createdAt" to System.currentTimeMillis()
         )
 
         addScheduleToUser(
@@ -117,7 +117,7 @@ class MeetRepository @Inject constructor(
                         val createdWithMap = meet["createdWith"] as? Map<String, Any>
                         val date = meet["date"] as? String ?: ""
                         val time = meet["time"] as? String ?: ""
-
+                        val createdAt = meet["createdAt"] as? Long ?: 0L
 
                         val createdBy = createdByMap?.let { map ->
                             Contact(
@@ -149,11 +149,11 @@ class MeetRepository @Inject constructor(
                         if (meetingId != null) {
                             if (createdBy?.id != currentUserId) {
                                 createdBy?.let {
-                                    Meeting(meetingId, it, it, date, time)
+                                    Meeting(meetingId, it, it, date, time, createdAt)
                                 }
                             } else if (createdWith?.id != currentUserId) {
                                 createdWith?.let {
-                                    Meeting(meetingId, createdBy, it, date, time)
+                                    Meeting(meetingId, createdBy, it, date, time, createdAt)
                                 }
                             } else {
                                 null
@@ -203,6 +203,7 @@ class MeetRepository @Inject constructor(
                             meet.toMutableMap().apply {
                                 this["date"] = newDate
                                 this["time"] = newTime
+                                this["createdAt"] = System.currentTimeMillis()
                             }
                         } else {
                             meet

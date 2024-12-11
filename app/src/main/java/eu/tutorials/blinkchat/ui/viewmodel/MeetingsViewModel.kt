@@ -1,6 +1,8 @@
 package eu.tutorials.blinkchat.ui.viewmodel
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +17,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import eu.tutorials.blinkchat.util.DateTimeUtils.toLocalDateTime
 
+@RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class MeetingsViewModel @Inject constructor(
     private val meetRepository: MeetRepository,
@@ -30,6 +34,7 @@ class MeetingsViewModel @Inject constructor(
         loadMeetings()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onEvent(event: MeetingsEvent) {
         when(event) {
             MeetingsEvent.OnLoadMeetings -> {
@@ -72,6 +77,22 @@ class MeetingsViewModel @Inject constructor(
                 )
                 deleteMeet(meeting = event.meeting)
             }
+
+            MeetingsEvent.OnSortByCreatedAt -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isSortByCreatedAt = true,
+                    meetings = _meetingsSate.value.meetings.sortedBy { it.createdAt }
+                )
+            }
+
+            MeetingsEvent.OnSortByTime -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isSortByCreatedAt = false,
+                    meetings = _meetingsSate.value.meetings.sortedByDescending { meeting ->
+                        meeting.date.toLocalDateTime(meeting.time)
+                    }
+                )
+            }
         }
     }
 
@@ -80,8 +101,13 @@ class MeetingsViewModel @Inject constructor(
         if (currentUserId != null) {
             meetRepository.listenForMeetings(currentUserId) { meeting: List<Meeting> ->
                 Log.d("ScheduledMeets", "meeting: $meeting")
+                val sortedMeetings = if (_meetingsSate.value.isSortByCreatedAt) {
+                    meeting.sortedBy { it.createdAt }
+                } else {
+                    meeting.sortedByDescending { it.date.toLocalDateTime(it.time) }
+                }
                 _meetingsSate.value = _meetingsSate.value.copy(
-                    meetings = meeting,
+                    meetings = sortedMeetings,
                     currentUserId = currentUserId
                 )
             }

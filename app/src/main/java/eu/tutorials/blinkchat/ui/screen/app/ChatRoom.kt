@@ -4,10 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CopyAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,9 +24,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
-import eu.tutorials.blinkchat.ui.component.chatroom.ChatInputBar
+import eu.tutorials.blinkchat.data.state.ChatRoomState
+import eu.tutorials.blinkchat.ui.component.chatroom.AddButtonClicked
+import eu.tutorials.blinkchat.ui.component.chatroom.ChatBottomBar
+import eu.tutorials.blinkchat.ui.component.chatroom.ChatInput
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatRoomTopBar
-import eu.tutorials.blinkchat.ui.component.inbox.MenuItem
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 
@@ -63,7 +62,7 @@ fun ChatRoom(
             }
         },
         containerColor = BackgroundColor,
-        bottomBar = { ChatInputBar(onEvent = chatRoomViewModel::onEvent, chatRoomState) },
+        bottomBar = { ChatBottomBar(onEvent = chatRoomViewModel::onEvent, chatRoomState) },
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundColor)
@@ -90,81 +89,23 @@ fun ChatRoom(
                     }
                 }
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    color = Color.Gray,
-                    thickness = 1.dp
+                    thickness = 1.dp,
+                    color = Color.Gray
                 )
 
-                LazyColumn(
+                ChatInput(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    item {
-                        if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .weight(1f),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "To start typing, wait for other user to enter the chat room",
-                                    color = Color.Red,
-                                    fontSize = 18.sp
-                                )
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .weight(1f)
-                            ) {
-                                BasicTextField(
-                                    value = chatRoomState.currentUserMessage,
-                                    onValueChange = { newText ->
-                                        chatRoomViewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    textStyle = TextStyle(
-                                        color = Color.Transparent,
-                                        fontSize = 16.sp,
-                                        fontFamily = FontFamily.Default
-                                    ),
-                                    cursorBrush = SolidColor(Color.White)
-                                )
-                                Text(
-                                    text = buildAnnotatedString {
-                                        val readMessage = chatRoomState.readMessage
-                                        val currentMessage = chatRoomState.currentUserMessage
-
-                                        if (readMessage != null && currentMessage.startsWith(readMessage)) {
-                                            withStyle(style = SpanStyle(color = Color.Green)) {
-                                                append(readMessage)
-                                            }
-                                            withStyle(style = SpanStyle(color = Color.Yellow)) {
-                                                append(currentMessage.removePrefix(readMessage))
-                                            }
-                                        } else {
-                                            withStyle(style = SpanStyle(color = Color.Yellow)) {
-                                                append(currentMessage)
-                                            }
-                                        }
-                                    },
-                                    style = TextStyle(
-                                        color = Color.Transparent,
-                                        fontSize = 16.sp,
-                                        fontFamily = FontFamily.Default
-                                    )
-                                )
-                            }
-                        }
+                        .weight(1f),
+                    chatRoomState = chatRoomState,
+                    onMessageTyping = { newText ->
+                        chatRoomViewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
                     }
-                }
+                )
             }
 
             if (chatRoomState.isAddButtonClicked) {
@@ -179,30 +120,3 @@ fun ChatRoom(
     }
 }
 
-@Composable
-fun AddButtonClicked(
-    modifier: Modifier = Modifier,
-    onRoomLinkClicked: () -> Unit
-) {
-    Card(
-        modifier = modifier
-            .width(220.dp)
-            .wrapContentHeight(),
-        colors = CardDefaults.cardColors(
-            containerColor =  MaterialTheme.colorScheme.secondary.copy(
-                alpha = 0.5f
-            )
-        ),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            MenuItem(
-                text = "Copy Room Link",
-                icon = Icons.Default.CopyAll,
-                onClick = onRoomLinkClicked
-            )
-        }
-    }
-}

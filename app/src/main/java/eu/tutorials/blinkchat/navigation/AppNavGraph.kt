@@ -1,7 +1,9 @@
 package eu.tutorials.blinkchat.navigation
 
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -33,21 +35,24 @@ import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.event.SettingsEvent
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.screen.app.AddBlockUsers
 import eu.tutorials.blinkchat.ui.screen.app.BlockedUsers
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
+import eu.tutorials.blinkchat.ui.screen.app.ScheduleAMeet
 import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.MeetingsViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.ScheduleAMeetViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.SettingsViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
-    Log.d("Timepass", "currentRoute: $currentRoute")
 
     val systemUiController = rememberSystemUiController()
     LaunchedEffect(currentRoute) {
@@ -68,6 +73,9 @@ fun AppNavGraph() {
 
     val meetingsViewModel: MeetingsViewModel = hiltViewModel()
     val meetingsState = meetingsViewModel.meetingsState.collectAsState().value
+
+    val scheduleAMeetViewModel: ScheduleAMeetViewModel = hiltViewModel()
+    val scheduleAMeetState = scheduleAMeetViewModel.scheduleAMeetState.collectAsState().value
 
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val settingsState = settingsViewModel.settingsState.collectAsState().value
@@ -98,7 +106,20 @@ fun AppNavGraph() {
                 Meetings(
                     modifier = Modifier.padding(paddingValues),
                     meetingsState = meetingsState,
-                    onEvent = meetingsViewModel::onEvent
+                    onEvent = meetingsViewModel::onEvent,
+                    onAddClicked = {navController.navigate(AppScreen.ScheduleAMeet.route)}
+                )
+            }
+
+            composable(AppScreen.ScheduleAMeet.route) {
+                ScheduleAMeet(
+                    contacts = inboxState.contacts,
+                    onBackClicked = {navController.popBackStack()},
+                    onScheduleConfirmed = { contact, date, time ->
+                        inboxViewModel.onEvent(InboxEvent.OnScheduleConfirmed(contact, date, time))
+                    },
+                    scheduleAMeetState = scheduleAMeetState,
+                    onEvent = scheduleAMeetViewModel::onEvent
                 )
             }
 
@@ -109,20 +130,6 @@ fun AppNavGraph() {
                     modifier = Modifier.padding(paddingValues),
                     onStartChatWithContact = { chatRoomId ->
                         navController.navigate("${AppScreen.ChatRoom.route}/$chatRoomId")
-                    }
-                )
-            }
-
-            composable(AppScreen.Settings.route) {
-                Settings(
-                    modifier = Modifier.padding(paddingValues),
-                    settingsState = settingsState,
-                    onEvent = settingsViewModel::onEvent,
-                    onBlockUserClicked = { navController.navigate(AppScreen.BlockedUsers.route) },
-                    logout = {
-                        navController.navigate(Graph.AUTH) {
-                            popUpTo(Graph.APP) { inclusive = true }
-                        }
                     }
                 )
             }
@@ -150,6 +157,20 @@ fun AppNavGraph() {
                 } else {
                     Log.e("AppNavGraph", "chatRoomId is null")
                 }
+            }
+
+            composable(AppScreen.Settings.route) {
+                Settings(
+                    modifier = Modifier.padding(paddingValues),
+                    settingsState = settingsState,
+                    onEvent = settingsViewModel::onEvent,
+                    onBlockUserClicked = { navController.navigate(AppScreen.BlockedUsers.route) },
+                    logout = {
+                        navController.navigate(Graph.AUTH) {
+                            popUpTo(Graph.APP) { inclusive = true }
+                        }
+                    }
+                )
             }
 
             composable(AppScreen.BlockedUsers.route) {
@@ -192,6 +213,7 @@ sealed class AppScreen(val route: String) {
     data object ChatRoom : AppScreen("chat-room")
     data object BlockedUsers : AppScreen("blocked-users")
     data object AddBlockUsers: AppScreen("add-block-users")
+    data object ScheduleAMeet: AppScreen("schedule-a-meet")
 }
 
 @Composable

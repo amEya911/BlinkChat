@@ -81,8 +81,8 @@ fun BlockedUsers(
             ) {
                 LazyColumn {
                     items(blockedUsers) { user ->
-                        BlockedUserItem(
-                            blockedUser = user.toContact(),
+                        UserItem(
+                            user = user.toContact(),
                             buttonName = "Unblock",
                             onClick = {
                                 onUnblockClicked(user.id)
@@ -97,9 +97,9 @@ fun BlockedUsers(
 }
 
 @Composable
-fun BlockedUserItem(
+fun UserItem(
     modifier: Modifier = Modifier,
-    blockedUser: Contact,
+    user: Contact,
     buttonName: String,
     onClick: (String) -> Unit
 ) {
@@ -119,9 +119,9 @@ fun BlockedUserItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (blockedUser.photoUri != null) {
+                if (user.photoUri != null) {
                     AsyncImage(
-                        model = blockedUser.photoUri,
+                        model = user.photoUri,
                         contentDescription = "photoUri",
                         modifier = Modifier
                             .size(40.dp)
@@ -139,13 +139,13 @@ fun BlockedUserItem(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = blockedUser.displayName,
+                    text = user.displayName,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
             Button(
-                onClick = { onClick(blockedUser.id) }
+                onClick = { onClick(user.id) }
             ) {
                 Text(text = buttonName)
             }

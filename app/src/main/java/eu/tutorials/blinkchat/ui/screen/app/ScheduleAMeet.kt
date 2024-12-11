@@ -16,21 +16,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import eu.tutorials.blinkchat.data.event.ScheduleAMeetEvent
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.state.ScheduleAMeetState
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 
 @Composable
-fun AddBlockUsers(
+fun ScheduleAMeet(
     modifier: Modifier = Modifier,
     contacts: List<Contact>,
     onBackClicked: () -> Unit,
-    onBlockUser: (String) -> Unit
+    onScheduleConfirmed: (Contact, String, String) -> Unit,
+    scheduleAMeetState: ScheduleAMeetState,
+    onEvent: (ScheduleAMeetEvent) -> Unit
 ) {
     Scaffold(
         topBar = {
             AppBar(
-                title = "Block Users",
+                title = "Schedule A Meet",
                 navigationIcon = Icons.Default.ArrowBackIosNew,
                 onNavigationIconClicked = onBackClicked
             )
@@ -52,9 +57,9 @@ fun AddBlockUsers(
                     items(contacts.sortedBy { it.displayName }) { user ->
                         UserItem(
                             user = user,
-                            buttonName = "Block",
+                            buttonName = "Schedule",
                             onClick = {
-                                onBlockUser(user.id)
+                                onEvent(ScheduleAMeetEvent.OnButtonClicked(selectedContact = user))
                             }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -62,6 +67,18 @@ fun AddBlockUsers(
                 }
             }
         }
+    }
+
+    if (scheduleAMeetState.showDialog && scheduleAMeetState.selectedContact != null) {
+        ScheduleMeetDialog(
+            onConfirm = { date, time ->
+                onScheduleConfirmed(scheduleAMeetState.selectedContact, date, time)
+                onEvent(ScheduleAMeetEvent.OnDismiss)
+            },
+            onDismiss = {
+                onEvent(ScheduleAMeetEvent.OnDismiss)
+            }
+        )
     }
 }
 

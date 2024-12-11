@@ -5,5 +5,6 @@ data class Meeting(
     val createdBy: Contact,
     val otherUserContact: Contact,
     val date: String,
-    val time: String
+    val time: String,
+    val createdAt: Long
 )

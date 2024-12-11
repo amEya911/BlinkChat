@@ -9,5 +9,6 @@ data class MeetingsState(
     val contacts: List<Contact> = emptyList(),
     val isMeetingClicked: Boolean = false,
     val selectedMeeting: Meeting? = null,
-    val isRescheduleClicked: Boolean = false
+    val isRescheduleClicked: Boolean = false,
+    val isSortByCreatedAt: Boolean = true
 )

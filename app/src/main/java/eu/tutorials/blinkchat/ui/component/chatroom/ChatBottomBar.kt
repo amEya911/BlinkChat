@@ -25,7 +25,7 @@ import eu.tutorials.blinkchat.data.state.ChatRoomState
 import eu.tutorials.blinkchat.ui.theme.LightGray
 
 @Composable
-fun ChatInputBar(
+fun ChatBottomBar(
     onEvent: (ChatRoomEvent) -> Unit,
     chatRoomState: ChatRoomState
 ) {

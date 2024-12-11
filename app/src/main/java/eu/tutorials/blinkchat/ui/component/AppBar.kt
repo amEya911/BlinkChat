@@ -20,7 +20,7 @@ import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 @Composable
 fun AppBar(
     title: String,
-    iconResId: Any? = null,
+    iconResId: ImageVector? = null,
     onIconClick: () -> Unit = {},
     navigationIcon: ImageVector? = null,
     onNavigationIconClicked: () -> Unit = {}
@@ -38,24 +38,13 @@ fun AppBar(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                iconResId?.let{
+                iconResId?.let {
                     IconButton(onClick = { onIconClick.invoke() }) {
-                        when (iconResId) {
-                            is Int -> {
-                                Icon(
-                                    painter = painterResource(id = iconResId),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
-                            is ImageVector -> {
-                                Icon(
-                                    imageVector = iconResId,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
-                        }
+                        Icon(
+                            imageVector = iconResId,
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp)
+                        )
                     }
                 }
             }

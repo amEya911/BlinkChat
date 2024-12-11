@@ -10,4 +10,6 @@ sealed class MeetingsEvent {
     data object OnRescheduleClicked: MeetingsEvent()
     data object OnRescheduleDismissed: MeetingsEvent()
     data class OnCallOffClicked(val meeting: Meeting): MeetingsEvent()
+    data object OnSortByCreatedAt: MeetingsEvent()
+    data object OnSortByTime: MeetingsEvent()
 }

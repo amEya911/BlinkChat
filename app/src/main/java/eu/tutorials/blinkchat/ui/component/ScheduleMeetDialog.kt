@@ -227,7 +227,6 @@ fun TimePicker(selectedDate: String, onTimeSelected: (String?) -> Unit) {
         timePickerDialog.show()
     }
 
-    // Trigger the initial dialog display
     showTimePickerDialog()
 }
 

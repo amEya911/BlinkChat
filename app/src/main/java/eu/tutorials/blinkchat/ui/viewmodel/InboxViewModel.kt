@@ -111,7 +111,11 @@ class InboxViewModel @Inject constructor(
                     scheduleTime = event.time,
                     isScheduleAMeetClicked = false
                 )
-                addScheduleMeets()
+                addScheduleMeets(
+                    otherUserContact = event.otherUserContact,
+                    date = event.date,
+                    time = event.time
+                )
             }
 
             InboxEvent.OnScheduleDismissed -> {
@@ -259,11 +263,12 @@ class InboxViewModel @Inject constructor(
         userRepository.unBlockUser(currentUserId, otherUserId)
     }
 
-    private fun addScheduleMeets() {
+    private fun addScheduleMeets(
+        otherUserContact: Contact?,
+        date: String?,
+        time: String?
+    ) {
         val currentUserContact = _inboxState.value.currentUserContact
-        val otherUserContact = _inboxState.value.selectedContact
-        val date = _inboxState.value.scheduleDate
-        val time = _inboxState.value.scheduleTime
 
         if (currentUserContact == null) {
             Log.e("ScheduledMeets", "CurrentUserId not loaded")

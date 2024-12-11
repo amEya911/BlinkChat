@@ -15,7 +15,7 @@ sealed class InboxEvent {
     data object LoadRecentChats: InboxEvent()
     data object OnScheduleAMeetClick: InboxEvent()
     data object OnScheduleDismissed: InboxEvent()
-    data class OnScheduleConfirmed(val date: String, val time: String) : InboxEvent()
+    data class OnScheduleConfirmed(val otherUserContact: Contact?, val date: String, val time: String) : InboxEvent()
     data class OnDeleteRecentChat(val recentChatContact: RecentChatContact): InboxEvent()
     data class OnBlockUser(val otherUserId: String): InboxEvent()
     data class OnUnblockUser(val otherUserId: String): InboxEvent()
