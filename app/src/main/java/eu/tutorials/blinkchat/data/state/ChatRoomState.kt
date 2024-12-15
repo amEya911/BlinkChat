@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.data.state
 
+import android.graphics.Bitmap
 import eu.tutorials.blinkchat.data.model.Contact
 
 data class ChatRoomState(
@@ -14,5 +15,6 @@ data class ChatRoomState(
     val otherUserMessage: String = "",
     val readMessage: String? = null,
     val contacts: List<Contact> = emptyList(),
-    val isAddButtonClicked: Boolean = false
+    val isCameraVisible: Boolean = false,
+    val capturedImage: Bitmap? = null,
 )

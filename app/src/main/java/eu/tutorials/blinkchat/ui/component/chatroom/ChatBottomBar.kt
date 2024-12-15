@@ -1,5 +1,7 @@
 package eu.tutorials.blinkchat.ui.component.chatroom
 
+import android.app.Activity
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CopyAll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -26,8 +29,11 @@ import eu.tutorials.blinkchat.ui.theme.LightGray
 
 @Composable
 fun ChatBottomBar(
+    onRoomLinkClicked: () -> Unit,
     onEvent: (ChatRoomEvent) -> Unit,
-    chatRoomState: ChatRoomState
+    chatRoomState: ChatRoomState,
+    context: Context,
+    activity: Activity
 ) {
     Row(
         modifier = Modifier
@@ -49,15 +55,17 @@ fun ChatBottomBar(
                 )
             }
         } else {
-            IconButton(onClick = { onEvent(ChatRoomEvent.OnAddButtonClicked) }) {
+            IconButton(onClick = { onRoomLinkClicked() }) {
                 Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
+                    imageVector = Icons.Default.CopyAll,
+                    contentDescription = "Copy",
                     tint = Color.Black
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {  }) {
+            IconButton(onClick = {
+                onEvent(ChatRoomEvent.OnLaunchCamera(context = context, activity = activity))
+            }) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = "Camera",

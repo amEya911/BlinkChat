@@ -1,16 +1,12 @@
 package eu.tutorials.blinkchat.data.model
 
+import android.graphics.Bitmap
+
 data class Message(
     val messageText: String? = null,
-    val readMessage: String? = null
+    val readMessage: String? = null,
+    val image: Bitmap? = null
 )
 
-//enum class AttachmentType {
-//    TEXT, IMAGE, GIF, VIDEO, AUDIO, LOCATION, CONTACT, FILE
-//}
-//enum class SentMessageStatus {
-//    SENT, DELIVERED, READ, PENDING, FAILED
-//}
 
-//val messageStatus: SentMessageStatus
-//val attachmentType: AttachmentType
+

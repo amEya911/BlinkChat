@@ -1,10 +1,10 @@
 package eu.tutorials.blinkchat.ui.viewmodel
 
+import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -73,15 +73,31 @@ class ChatRoomViewModel @Inject constructor(
                     )
                 }
             }
-            ChatRoomEvent.OnAddButtonClicked -> {
-                _chatRoomState.value = _chatRoomState.value.copy(
-                    isAddButtonClicked = !_chatRoomState.value.isAddButtonClicked
-                )
-            }
 
             is ChatRoomEvent.OnCopyRoomLinkClicked -> {
                 val url = "https://vanishtest.netlify.app/${event.chatRoomId}"
                 copyToClipboard(url, event.context)
+            }
+
+            is ChatRoomEvent.OnLaunchCamera -> {
+                if (!chatRoomState.value.isCameraVisible) {
+                    _chatRoomState.value = _chatRoomState.value.copy(isCameraVisible = true)
+                }
+            }
+
+            is ChatRoomEvent.OnCaptureImage -> {
+                _chatRoomState.value.capturedImage?.recycle()
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    capturedImage = event.updatedPhoto
+                )
+            }
+
+            ChatRoomEvent.OnRetakePhoto -> {
+                _chatRoomState.value = _chatRoomState.value.copy(capturedImage = null)
+            }
+
+            ChatRoomEvent.OnAccessMedia -> {
+
             }
         }
     }

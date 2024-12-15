@@ -1,31 +1,21 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
-import android.util.Log
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import eu.tutorials.blinkchat.data.event.ChatRoomEvent
-import eu.tutorials.blinkchat.data.state.ChatRoomState
-import eu.tutorials.blinkchat.ui.component.chatroom.AddButtonClicked
+import eu.tutorials.blinkchat.ui.component.chatroom.CameraScreen
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatBottomBar
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatInput
 import eu.tutorials.blinkchat.ui.component.chatroom.ChatRoomTopBar
@@ -37,12 +27,14 @@ fun ChatRoom(
     chatRoomId: String,
     chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
 ) {
-    Log.d("ChatRoom", "Launching ChatRoom with chatRoomId: $chatRoomId")
     val context = LocalContext.current
+    val activity = context as? Activity
+
     val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
     val lifecycleOwner = LocalLifecycleOwner.current
+
     LaunchedEffect(Unit) {
-        chatRoomViewModel.onEvent(ChatRoomEvent.OnLoadChatRoomDetails(chatRoomId))
+        chatRoomViewModel.onEvent(ChatRoomEvent.OnLoadChatRoomDetails(chatRoomId, context))
         chatRoomViewModel.onEvent(ChatRoomEvent.OnSetupAppLifecycleObserver(lifecycleOwner))
     }
 
@@ -50,71 +42,97 @@ fun ChatRoom(
         chatRoomViewModel.onEvent(ChatRoomEvent.OnOtherUserMessageReceived)
     }
 
-    Scaffold(
-        topBar = {
-            val otherUserId = chatRoomState.otherUserContact?.id
-            val associatedContact = chatRoomState.contacts.find { it.id == otherUserId }
-
-            if (associatedContact != null) {
-                ChatRoomTopBar(associatedContact, chatRoomState.isOtherUserInChatRoom)
-            } else {
-                Text(text = "Loading...")
+    if (chatRoomState.isCameraVisible) {
+        CameraScreen(
+            onPhotoCaptured = { bitmap ->
+                chatRoomViewModel.onEvent(ChatRoomEvent.OnCaptureImage(bitmap))
+            },
+            lastCapturedPhoto = chatRoomState.capturedImage,
+            onRetakePhoto = {
+                chatRoomViewModel.onEvent(ChatRoomEvent.OnRetakePhoto)
+            },
+            onAccessMedia = {
+                chatRoomViewModel.onEvent(ChatRoomEvent.OnAccessMedia)
+            },
+            onSendPhoto = { bitmap ->
+                //chatRoomViewModel.onEvent(ChatRoomEvent.OnSendPhoto(bitmap))
             }
-        },
-        containerColor = BackgroundColor,
-        bottomBar = { ChatBottomBar(onEvent = chatRoomViewModel::onEvent, chatRoomState) },
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundColor)
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .imePadding()
-    ) { innerPadding ->
-        Box(
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                val otherUserId = chatRoomState.otherUserContact?.id
+                val associatedContact = chatRoomState.contacts.find { it.id == otherUserId }
+
+                if (associatedContact != null) {
+                    ChatRoomTopBar(associatedContact, chatRoomState.isOtherUserInChatRoom)
+                } else {
+                    Text(text = "Loading...")
+                }
+            },
+            containerColor = BackgroundColor,
+            bottomBar = {
+                activity?.let {
+                    ChatBottomBar(
+                        onRoomLinkClicked = {
+                            chatRoomViewModel.onEvent(
+                                ChatRoomEvent.OnCopyRoomLinkClicked(
+                                    chatRoomId,
+                                    context
+                                )
+                            )
+                        },
+                        onEvent = chatRoomViewModel::onEvent,
+                        chatRoomState,
+                        context,
+                        activity,
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            Column(
+                .background(BackgroundColor)
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .imePadding()
+        ) { innerPadding ->
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp)
+                    .padding(innerPadding)
             ) {
-                LazyColumn(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                        .fillMaxSize()
+                        .padding(8.dp)
                 ) {
-                    item {
-                        Text(text = chatRoomState.otherUserMessage)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        item {
+                            Text(text = chatRoomState.otherUserMessage)
+                        }
                     }
+
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        thickness = 1.dp,
+                        color = Color.Gray
+                    )
+
+                    ChatInput(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        chatRoomState = chatRoomState,
+                        onMessageTyping = { newText ->
+                            chatRoomViewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
+                        }
+                    )
                 }
-
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    thickness = 1.dp,
-                    color = Color.Gray
-                )
-
-                ChatInput(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    chatRoomState = chatRoomState,
-                    onMessageTyping = { newText ->
-                        chatRoomViewModel.onEvent(ChatRoomEvent.OnMessageTyping(newText))
-                    }
-                )
-            }
-
-            if (chatRoomState.isAddButtonClicked) {
-                AddButtonClicked(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(8.dp),
-                    onRoomLinkClicked = { chatRoomViewModel.onEvent(ChatRoomEvent.OnCopyRoomLinkClicked(chatRoomId, context)) }
-                )
             }
         }
     }
