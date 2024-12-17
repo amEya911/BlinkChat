@@ -17,4 +17,14 @@ object HashUtil {
             ""
         }
     }
+
+    fun hashString(input: String): String {
+        return try {
+            val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
+            bytes.joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            Log.e("HashUtil", "Failed to hash string: $input", e)
+            ""
+        }
+    }
 }

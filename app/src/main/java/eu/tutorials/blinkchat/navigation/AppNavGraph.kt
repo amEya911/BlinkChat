@@ -26,6 +26,7 @@ import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.TextColor
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
@@ -40,6 +41,7 @@ import eu.tutorials.blinkchat.ui.screen.app.AddBlockUsers
 import eu.tutorials.blinkchat.ui.screen.app.BlockedUsers
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
 import eu.tutorials.blinkchat.ui.screen.app.ScheduleAMeet
+import eu.tutorials.blinkchat.ui.screen.guest.Guest
 import eu.tutorials.blinkchat.ui.theme.LightGray
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
@@ -50,21 +52,14 @@ import eu.tutorials.blinkchat.ui.viewmodel.SettingsViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(navHostController: NavHostController) {
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
 
     val systemUiController = rememberSystemUiController()
-    LaunchedEffect(currentRoute) {
-        currentRoute?.let {
-            if (it.startsWith(AppScreen.ChatRoom.route)) {
-                systemUiController.setSystemBarsColor(color = LightGray)
-            } else {
-                systemUiController.setSystemBarsColor(color = BackgroundColor)
-                systemUiController.setNavigationBarColor(color = TextFieldColor)
-            }
-        }
-    }
+    systemUiController.setSystemBarsColor(color = BackgroundColor)
+    systemUiController.setNavigationBarColor(color = TextFieldColor)
+
 
     Log.d("AppNavGraph", "current root: $currentRoute")
 
@@ -107,14 +102,14 @@ fun AppNavGraph() {
                     modifier = Modifier.padding(paddingValues),
                     meetingsState = meetingsState,
                     onEvent = meetingsViewModel::onEvent,
-                    onAddClicked = {navController.navigate(AppScreen.ScheduleAMeet.route)}
+                    onAddClicked = { navController.navigate(AppScreen.ScheduleAMeet.route) }
                 )
             }
 
             composable(AppScreen.ScheduleAMeet.route) {
                 ScheduleAMeet(
                     contacts = inboxState.contacts,
-                    onBackClicked = {navController.popBackStack()},
+                    onBackClicked = { navController.popBackStack() },
                     onScheduleConfirmed = { contact, date, time ->
                         inboxViewModel.onEvent(InboxEvent.OnScheduleConfirmed(contact, date, time))
                     },
@@ -129,34 +124,9 @@ fun AppNavGraph() {
                     onEvent = inboxViewModel::onEvent,
                     modifier = Modifier.padding(paddingValues),
                     onStartChatWithContact = { chatRoomId ->
-                        navController.navigate("${AppScreen.ChatRoom.route}/$chatRoomId")
+                        navHostController.navigate("${AppScreen.ChatRoom.route}/$chatRoomId")
                     }
                 )
-            }
-
-            composable(
-                route = "${AppScreen.ChatRoom.route}/{chatRoomId}",
-                deepLinks = listOf(
-                    navDeepLink {
-                        uriPattern = "https://vanishtest.netlify.app/{chatRoomId}"
-                        action = Intent.ACTION_VIEW
-                    }
-                ),
-                arguments = listOf(
-                    navArgument("chatRoomId") {
-                        type = NavType.StringType
-                        nullable = true
-                    }
-                )
-            ) { backStackEntry ->
-                val chatRoomId = backStackEntry.arguments?.getString("chatRoomId")
-
-                if (chatRoomId != null) {
-                    ChatRoom(chatRoomId = chatRoomId)
-                    Log.d("AppNavGraph", "successful $chatRoomId")
-                } else {
-                    Log.e("AppNavGraph", "chatRoomId is null")
-                }
             }
 
             composable(AppScreen.Settings.route) {
@@ -195,7 +165,7 @@ fun AppNavGraph() {
                     contacts = inboxState.contacts.filterNot { contact ->
                         settingsState.blockedUsers.any { blockedUser -> blockedUser.id == contact.id }
                     },
-                    onBackClicked = {navController.popBackStack()},
+                    onBackClicked = { navController.popBackStack() },
                     onBlockUser = { userId ->
                         inboxViewModel.onEvent(InboxEvent.OnBlockUser(userId))
                         navController.popBackStack()
@@ -212,8 +182,8 @@ sealed class AppScreen(val route: String) {
     data object Settings : AppScreen("settings")
     data object ChatRoom : AppScreen("chat-room")
     data object BlockedUsers : AppScreen("blocked-users")
-    data object AddBlockUsers: AppScreen("add-block-users")
-    data object ScheduleAMeet: AppScreen("schedule-a-meet")
+    data object AddBlockUsers : AppScreen("add-block-users")
+    data object ScheduleAMeet : AppScreen("schedule-a-meet")
 }
 
 @Composable

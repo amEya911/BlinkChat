@@ -437,7 +437,8 @@ class InboxViewModel @Inject constructor(
                        initiatorUser = initiatorUser,
                        recipientUser = recipientUser,
                        recipientUserExists = exists,
-                       context = appContext
+                       context = appContext,
+                       isGuest = false
                    ) { chatRoomId ->
                        if (chatRoomId != null) {
                            _inboxState.value = _inboxState.value.copy(

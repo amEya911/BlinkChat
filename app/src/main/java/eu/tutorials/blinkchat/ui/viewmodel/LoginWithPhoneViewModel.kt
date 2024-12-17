@@ -68,6 +68,7 @@ class LoginWithPhoneViewModel @Inject constructor(
                 }
 
                 override fun onVerificationFailed(e: FirebaseException) {
+                    Log.e("LoginWithPhoneViewModel", "Verification failed: ${e.message}")
                     _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                         verificationError = "Verification failed: ${e.message}"
                     )

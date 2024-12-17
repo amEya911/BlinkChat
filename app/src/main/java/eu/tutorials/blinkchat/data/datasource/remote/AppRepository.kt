@@ -32,6 +32,7 @@ class AppRepository @Inject constructor(
         initiatorUser: Contact,
         recipientUser: Contact,
         context: Context,
+        isGuest: Boolean,
         recipientUserExists: Boolean,
         callback: (String?) -> Unit
     ) {
@@ -49,7 +50,7 @@ class AppRepository @Inject constructor(
                 }
                 callback(existingChatRoomId)
             } else {
-                createNewChatRoom(initiatorUser, recipientUser, context, recipientUserExists, callback)
+                createNewChatRoom(initiatorUser, recipientUser, context, isGuest, recipientUserExists, callback)
             }
         }
     }
@@ -97,6 +98,7 @@ class AppRepository @Inject constructor(
         initiatorUser: Contact,
         recipientUser: Contact,
         context: Context,
+        isGuest: Boolean,
         recipientUserExists: Boolean,
         callback: (String?) -> Unit
     ) {
@@ -116,9 +118,19 @@ class AppRepository @Inject constructor(
         firestore.collection("chatRooms").document(chatRoomId).set(chatRoomData)
             .addOnSuccessListener {
                 callback(chatRoomId)
-                recentChatRepository.updateRecentChats(initiatorUser.id, recipientUser, chatRoomId)
-                if (recipientUserExists) {
-                    recentChatRepository.updateRecentChats(recipientUser.id, initiatorUser, chatRoomId)
+                if (!isGuest) {
+                    recentChatRepository.updateRecentChats(
+                        initiatorUser.id,
+                        recipientUser,
+                        chatRoomId
+                    )
+                    if (recipientUserExists) {
+                        recentChatRepository.updateRecentChats(
+                            recipientUser.id,
+                            initiatorUser,
+                            chatRoomId
+                        )
+                    }
                 }
             }
             .addOnFailureListener { exception ->

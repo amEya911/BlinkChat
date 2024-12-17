@@ -107,4 +107,7 @@ dependencies {
     implementation(libs.androidx.camera.extensions)
 
     implementation(libs.coil)
+
+    implementation (libs.google.firebase.auth)
+    implementation (libs.firebase.core)
 }

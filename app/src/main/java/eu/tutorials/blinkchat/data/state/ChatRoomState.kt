@@ -16,5 +16,5 @@ data class ChatRoomState(
     val readMessage: String? = null,
     val contacts: List<Contact> = emptyList(),
     val isCameraVisible: Boolean = false,
-    val capturedImage: Bitmap? = null,
+    val capturedImage: Bitmap? = null
 )

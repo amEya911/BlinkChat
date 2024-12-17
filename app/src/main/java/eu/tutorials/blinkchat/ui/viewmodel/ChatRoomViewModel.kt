@@ -1,6 +1,5 @@
 package eu.tutorials.blinkchat.ui.viewmodel
 
-import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -28,14 +27,18 @@ class ChatRoomViewModel @Inject constructor(
     private val appRepository: AppRepository,
     private val userRepository: UserRepository,
     private val localRepository: LocalRepository
-
 ) : ViewModel() {
 
     private val _chatRoomState = MutableStateFlow(ChatRoomState())
     val chatRoomState: StateFlow<ChatRoomState> = _chatRoomState
 
     private var chatRoomId: String? = null
-    private val currentUserId = userRepository.currentUserId()!!
+    private lateinit var currentUserId: String
+
+    fun init(id: String?, chatRoomId: String) {
+        this.chatRoomId = chatRoomId
+        this.currentUserId = id ?: userRepository.currentUserId() ?: ""
+    }
 
     fun onEvent(event: ChatRoomEvent) {
         when (event) {
@@ -115,6 +118,9 @@ class ChatRoomViewModel @Inject constructor(
                     initiatorId = initiatorId,
                     recipientId = recipientId
                 )
+                Log.d("nope", "currentUserId in ViewModel: $currentUserId")
+                Log.d("nope", "currentUserContact: ${_chatRoomState.value.currentUserContact?.id}")
+                Log.d("nope", "otherUserContact: ${_chatRoomState.value.otherUserContact?.id}")
                 updatePresence(true)
                 otherUser?.let {
                     userRepository.listenForPresenceUpdates(chatRoomId) { activeUsers ->
@@ -130,7 +136,6 @@ class ChatRoomViewModel @Inject constructor(
                                 else -> false
                             }
                         )
-
 
                         if (!_chatRoomState.value.isCurrentUserInChatRoom || !_chatRoomState.value.isOtherUserInChatRoom) {
                             onEvent(ChatRoomEvent.DeleteMessages)
@@ -188,6 +193,8 @@ class ChatRoomViewModel @Inject constructor(
                 )
             }
         }
+        Log.d("Presence", isPresent.toString())
+        Log.d("Presence", currentUserId)
     }
 
     private fun setupAppLifecycleObserver(lifecycleOwner: LifecycleOwner) {

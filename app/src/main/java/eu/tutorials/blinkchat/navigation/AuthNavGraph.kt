@@ -1,5 +1,7 @@
 package eu.tutorials.blinkchat.navigation
 
+import android.util.Log
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -7,6 +9,8 @@ import androidx.navigation.compose.navigation
 import eu.tutorials.blinkchat.ui.screen.auth.LoginOptions
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyOTP
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyPhone
+import eu.tutorials.blinkchat.ui.screen.guest.Guest
+import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(
@@ -18,7 +22,9 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 onClickLoginButton = {
                     navController.navigate(AuthScreen.LoginWithPhoneVerifyPhone.route)
                 },
-                onClickGuestButton = {}
+                onClickGuestButton = {
+                    navController.navigate(AuthScreen.GuestHome.route)
+                }
             )
         }
 
@@ -44,6 +50,17 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(AuthScreen.GuestHome.route) {
+            Guest(
+                onButtonClick = { chatRoomId, userId ->
+                    navController.navigate("${AppScreen.ChatRoom.route}/$chatRoomId?id=$userId") {
+                        popUpTo(Graph.AUTH) { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }
 
@@ -51,4 +68,5 @@ sealed class AuthScreen(val route: String) {
     data object LoginOptions : AuthScreen("login-options")
     data object LoginWithPhoneVerifyPhone : AuthScreen("login-with-phone-verify-phone")
     data object LoginWithPhoneVerifyOTP : AuthScreen("login-with-phone-verify-otp")
+    data object GuestHome: AuthScreen("guest-home")
 }

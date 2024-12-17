@@ -29,7 +29,8 @@ import eu.tutorials.blinkchat.ui.theme.LightGray
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatRoomTopBar(
-    contact: Contact,
+    displayName: String?,
+    photoUri: String?,
     isOnline: Boolean
 ) {
     TopAppBar(
@@ -41,7 +42,7 @@ fun ChatRoomTopBar(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = contact.displayName,
+                    text = displayName ?: "Unknown",
                     color = Color.Black,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -53,9 +54,9 @@ fun ChatRoomTopBar(
                     modifier = Modifier.padding(start = 8.dp)
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                if (contact.photoUri != null) {
+                if (photoUri != null) {
                     AsyncImage(
-                        model = contact.photoUri,
+                        model = photoUri,
                         contentDescription = "Profile Picture",
                         modifier = Modifier
                             .padding(end = 16.dp)
@@ -75,20 +76,5 @@ fun ChatRoomTopBar(
         },
         expandedHeight = 80.dp,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = LightGray)
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ChatRoomTopBarPreview(modifier: Modifier = Modifier) {
-    ChatRoomTopBar(
-        contact = Contact(
-            id = "",
-            displayName = "Ameya Kulkarni",
-            phoneNumber = "1234567890",
-            photoThumbnailUri = null,
-            photoUri = null
-        ),
-        isOnline = false
     )
 }

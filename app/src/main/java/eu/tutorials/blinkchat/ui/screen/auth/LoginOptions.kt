@@ -48,6 +48,7 @@ fun LoginOptions(
 
         if (loginOptionsState.isGuestClicked) {
             onClickGuestButton()
+            viewModel.onEvent(LoginOptionsEvent.Reset)
         }
     }
 
@@ -130,12 +131,3 @@ fun LoginOptions(
         }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun LoginOptionsPreview() {
-//    LoginOptions(
-//        onCLickLoginButton = {},
-//        onClickGuestButton = {}
-//    )
-//}

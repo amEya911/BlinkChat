@@ -3,7 +3,9 @@ accompanistSystemuicontroller = "0.31.1-alpha"
 agp = "8.6.0-rc01"
 androidxNavigationCompose = "2.8.3"
 cameraCore = "1.4.1"
+firebaseAuth = "23.1.0"
 firebaseBom = "33.4.0"
+firebaseCore = "21.1.1"
 gson = "2.10.1"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
@@ -51,8 +53,10 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-core = { module = "com.google.firebase:firebase-core", version.ref = "firebaseCore" }
 firebase-database = { module = "com.google.firebase:firebase-database" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+google-firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 jakewharton-threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabpVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
