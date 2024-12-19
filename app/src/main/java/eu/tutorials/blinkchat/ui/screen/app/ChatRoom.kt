@@ -2,6 +2,8 @@ package eu.tutorials.blinkchat.ui.screen.app
 
 import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,7 +39,6 @@ fun ChatRoom(
     chatRoomId: String,
     chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
 ) {
-    Log.d("nope", "Chat: $id")
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -86,7 +87,7 @@ fun ChatRoom(
                 )
 
             },
-            containerColor = BackgroundColor,
+            containerColor = Color(0xff1F1E22),
             bottomBar = {
                 activity?.let {
                     ChatBottomBar(
@@ -102,6 +103,7 @@ fun ChatRoom(
                         chatRoomState,
                         context,
                         activity,
+                        chatRoomViewModel
                     )
                 }
             },

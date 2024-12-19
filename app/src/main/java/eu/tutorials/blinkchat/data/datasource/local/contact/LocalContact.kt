@@ -1,4 +1,4 @@
-package eu.tutorials.blinkchat.data.datasource.local
+package eu.tutorials.blinkchat.data.datasource.local.contact
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

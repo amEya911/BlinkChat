@@ -125,7 +125,8 @@ fun AppNavGraph(navHostController: NavHostController) {
                     modifier = Modifier.padding(paddingValues),
                     onStartChatWithContact = { chatRoomId ->
                         navHostController.navigate("${AppScreen.ChatRoom.route}/$chatRoomId")
-                    }
+                    },
+                    inboxViewModel = inboxViewModel
                 )
             }
 

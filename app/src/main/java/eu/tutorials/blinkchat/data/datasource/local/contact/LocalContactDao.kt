@@ -1,4 +1,4 @@
-package eu.tutorials.blinkchat.data.datasource.local
+package eu.tutorials.blinkchat.data.datasource.local.contact
 
 import androidx.room.Dao
 import androidx.room.Delete

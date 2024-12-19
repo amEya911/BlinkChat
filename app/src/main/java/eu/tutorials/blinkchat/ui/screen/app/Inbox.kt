@@ -1,7 +1,16 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
+import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,26 +26,102 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
+import androidx.core.content.ContextCompat
+import eu.tutorials.blinkchat.data.event.ChatRoomEvent
 import eu.tutorials.blinkchat.data.event.InboxEvent
 import eu.tutorials.blinkchat.data.state.InboxState
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.CameraPermissionTextProvider
+import eu.tutorials.blinkchat.ui.component.ContactPermissionTextProvider
+import eu.tutorials.blinkchat.ui.component.NotificationPermissionTextProvider
+import eu.tutorials.blinkchat.ui.component.PermissionDialog
+import eu.tutorials.blinkchat.ui.component.RecordAudioPermissionTextProvider
 import eu.tutorials.blinkchat.ui.component.inbox.InboxContactPress
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.inbox.AllChatItem
 import eu.tutorials.blinkchat.ui.component.inbox.RecentChatItem
 import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 import eu.tutorials.blinkchat.ui.theme.TextFieldColor
+import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
 
 @Composable
 fun Inbox(
     inboxState: InboxState,
     onEvent: (InboxEvent) -> Unit,
     modifier: Modifier = Modifier,
-    onStartChatWithContact: (String) -> Unit
+    onStartChatWithContact: (String) -> Unit,
+    inboxViewModel: InboxViewModel
 ) {
     val activity = LocalContext.current as? Activity
     var searchQuery = inboxState.searchQuery
     val context = LocalContext.current
+    val visiblePermissionDialogQueue = inboxViewModel.visiblePermissionDialogQueue.collectAsState().value
+
+    val contactsPermissionResultLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            onEvent(
+                InboxEvent.OnPermissionResult(
+                    permission = Manifest.permission.READ_CONTACTS,
+                    isGranted = isGranted
+                )
+            )
+        }
+    )
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = {}
+    )
+
+    visiblePermissionDialogQueue?.let { permission ->
+        val permissionTextProvider = when (permission) {
+            Manifest.permission.READ_CONTACTS -> ContactPermissionTextProvider()
+            else -> throw IllegalArgumentException("Unsupported permission: $permission")
+        }
+
+        PermissionDialog(
+            permissionTextProvider = permissionTextProvider,
+            isPermanentlyDeclined = activity?.let {
+                !shouldShowRequestPermissionRationale(it, permission)
+            } ?: true,
+            onDismiss = { onEvent(InboxEvent.OnDismissPermissionDialog) },
+            onOkClick = {
+                onEvent(InboxEvent.OnDismissPermissionDialog)
+            },
+            onGoToAppSettingsClick = {
+                activity?.openAppSettings()
+            }
+        )
+    }
+
+
+
+    LaunchedEffect(key1 = inboxState.isAllContactsClicked) {
+        if (inboxState.isAllContactsClicked) {
+            contactsPermissionResultLauncher.launch(
+                Manifest.permission.READ_CONTACTS
+            )
+        }
+    }
+
+    LaunchedEffect(key1 = true) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val isGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!isGranted) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                Log.d("Permissions3", "Notification permission already granted")
+            }
+        } else {
+            Log.d("Permissions3", "Notification permission not required on this Android version")
+        }
+    }
 
     LaunchedEffect(key1 = true) {
         onEvent(InboxEvent.LoadRecentChats)
@@ -153,4 +238,11 @@ fun Inbox(
             )
         }
     }
+}
+
+fun Activity.openAppSettings() {
+    Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
+    ).also(::startActivity)
 }

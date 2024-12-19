@@ -3,7 +3,6 @@ package eu.tutorials.blinkchat.ui.viewmodel
 import android.Manifest
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.util.Log
@@ -11,8 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import eu.tutorials.blinkchat.data.datasource.local.LocalContact
-import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
+import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContact
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
@@ -46,6 +44,9 @@ class InboxViewModel @Inject constructor(
 
     private val _inboxState = MutableStateFlow(InboxState())
     val inboxState: StateFlow<InboxState> = _inboxState
+
+    private val _visiblePermissionDialogQueue = MutableStateFlow<String?>(null)
+    val visiblePermissionDialogQueue: StateFlow<String?> = _visiblePermissionDialogQueue
 
     init {
         loadCurrentUser()
@@ -148,6 +149,16 @@ class InboxViewModel @Inject constructor(
             InboxEvent.OnClearError -> {
                 _inboxState.value = _inboxState.value.copy(error = null)
             }
+
+            InboxEvent.OnDismissPermissionDialog -> {
+                _visiblePermissionDialogQueue.value = null
+            }
+
+            is InboxEvent.OnPermissionResult -> {
+                if (!event.isGranted && _visiblePermissionDialogQueue.value != event.permission) {
+                    _visiblePermissionDialogQueue.value = event.permission
+                }
+            }
         }
     }
 
@@ -165,7 +176,10 @@ class InboxViewModel @Inject constructor(
                             photoThumbnailUri = currentUserDetails.photoThumbnailUri
                         )
                     )
-                    Log.d("InboxViewModel", "currentUserContact: ${_inboxState.value.currentUserContact}")
+                    Log.d(
+                        "InboxViewModel",
+                        "currentUserContact: ${_inboxState.value.currentUserContact}"
+                    )
                 } else {
                     Log.e("InboxViewModel", "Failed to retrieve current user details.")
                 }
@@ -317,7 +331,8 @@ class InboxViewModel @Inject constructor(
 
     private fun loadContacts(activity: Activity) {
         if (ActivityCompat.checkSelfPermission(appContext, Manifest.permission.READ_CONTACTS)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
 
             ActivityCompat.requestPermissions(
                 activity,
@@ -347,10 +362,14 @@ class InboxViewModel @Inject constructor(
                 )
 
                 cursor?.use { contactsCursor ->
-                    val nameIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                    val numberIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                    val photoUriIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
-                    val photoThumbnailUriIndex = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
+                    val nameIndex =
+                        contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                    val numberIndex =
+                        contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                    val photoUriIndex =
+                        contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
+                    val photoThumbnailUriIndex =
+                        contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
 
                     val uniqueContacts = mutableSetOf<String>()
                     while (contactsCursor.moveToNext()) {
@@ -427,30 +446,30 @@ class InboxViewModel @Inject constructor(
         }
 
         userRepository.checkIfUserIsBlocked(recipientUser.id, initiatorUser.id) { result ->
-           if (result) {
-               _inboxState.value  = _inboxState.value.copy(
-                   error = "Error Creating room"
-               )
-           } else {
-               checkRecipientExists(recipientUser.id) { exists ->
-                   appRepository.createChatRoom(
-                       initiatorUser = initiatorUser,
-                       recipientUser = recipientUser,
-                       recipientUserExists = exists,
-                       context = appContext,
-                       isGuest = false
-                   ) { chatRoomId ->
-                       if (chatRoomId != null) {
-                           _inboxState.value = _inboxState.value.copy(
-                               isEnterChatRoom = true,
-                               navigateToChatId = chatRoomId
-                           )
-                       } else {
-                           Log.e("InboxViewModel", "Failed to create chat room.")
-                       }
-                   }
-               }
-           }
+            if (result) {
+                _inboxState.value = _inboxState.value.copy(
+                    error = "Error Creating room"
+                )
+            } else {
+                checkRecipientExists(recipientUser.id) { exists ->
+                    appRepository.createChatRoom(
+                        initiatorUser = initiatorUser,
+                        recipientUser = recipientUser,
+                        recipientUserExists = exists,
+                        context = appContext,
+                        isGuest = false
+                    ) { chatRoomId ->
+                        if (chatRoomId != null) {
+                            _inboxState.value = _inboxState.value.copy(
+                                isEnterChatRoom = true,
+                                navigateToChatId = chatRoomId
+                            )
+                        } else {
+                            Log.e("InboxViewModel", "Failed to create chat room.")
+                        }
+                    }
+                }
+            }
         }
     }
 

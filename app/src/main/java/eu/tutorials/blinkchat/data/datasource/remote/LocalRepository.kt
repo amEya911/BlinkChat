@@ -1,7 +1,7 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
-import eu.tutorials.blinkchat.data.datasource.local.AppDatabase
-import eu.tutorials.blinkchat.data.datasource.local.LocalContact
+import eu.tutorials.blinkchat.data.datasource.local.contact.AppDatabase
+import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContact
 import javax.inject.Inject
 
 class LocalRepository @Inject constructor(

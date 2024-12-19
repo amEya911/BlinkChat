@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
     implementation (libs.gson)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     implementation (libs.libphonenumber)
     implementation (libs.accompanist.systemuicontroller)
@@ -110,4 +111,10 @@ dependencies {
 
     implementation (libs.google.firebase.auth)
     implementation (libs.firebase.core)
+
+   implementation(libs.google.firebase.messaging)
+
+   implementation(libs.retrofit)
+    implementation(libs.converter.moshi)
+
 }

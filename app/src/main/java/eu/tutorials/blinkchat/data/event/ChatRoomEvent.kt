@@ -16,5 +16,7 @@ sealed class ChatRoomEvent {
     data class OnCaptureImage(val updatedPhoto: Bitmap?): ChatRoomEvent()
     data object OnRetakePhoto: ChatRoomEvent()
     data object OnAccessMedia: ChatRoomEvent()
+    data object OnDismissPermissionDialog: ChatRoomEvent()
+    data class OnPermissionResult(val permission: String, val isGranted: Boolean): ChatRoomEvent()
     //ata class OnSendPhoto(val bitmap: Bitmap): ChatRoomEvent()
 }

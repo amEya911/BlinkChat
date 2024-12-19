@@ -8,8 +8,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import eu.tutorials.blinkchat.data.datasource.local.AppDatabase
-import eu.tutorials.blinkchat.data.datasource.local.LocalContactDao
+import eu.tutorials.blinkchat.data.datasource.local.contact.AppDatabase
+import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.RecentChatRepository

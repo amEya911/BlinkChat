@@ -1,6 +1,6 @@
 package eu.tutorials.blinkchat.data.model
 
-import eu.tutorials.blinkchat.data.datasource.local.LocalContact
+import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContact
 
 data class Contact(
     val id: String,

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -31,6 +32,9 @@ class ChatRoomViewModel @Inject constructor(
 
     private val _chatRoomState = MutableStateFlow(ChatRoomState())
     val chatRoomState: StateFlow<ChatRoomState> = _chatRoomState
+
+    private val _visiblePermissionDialogQueue = MutableStateFlow<List<String>>(emptyList())
+    val visiblePermissionDialogQueue: StateFlow<List<String>> = _visiblePermissionDialogQueue
 
     private var chatRoomId: String? = null
     private lateinit var currentUserId: String
@@ -102,6 +106,18 @@ class ChatRoomViewModel @Inject constructor(
             ChatRoomEvent.OnAccessMedia -> {
 
             }
+
+            ChatRoomEvent.OnDismissPermissionDialog -> {
+                _visiblePermissionDialogQueue.value = _visiblePermissionDialogQueue.value.drop(_visiblePermissionDialogQueue.value.size)
+            }
+
+            is ChatRoomEvent.OnPermissionResult -> {
+                Log.d("Permissions1", "Permission: ${event.permission}, Granted: ${event.isGranted}")
+                if (!event.isGranted && !_visiblePermissionDialogQueue.value.contains(event.permission)) {
+                    _visiblePermissionDialogQueue.value += event.permission
+                }
+            }
+
         }
     }
 

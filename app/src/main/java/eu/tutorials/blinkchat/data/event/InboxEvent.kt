@@ -20,4 +20,6 @@ sealed class InboxEvent {
     data class OnBlockUser(val otherUserId: String): InboxEvent()
     data class OnUnblockUser(val otherUserId: String): InboxEvent()
     data object OnClearError: InboxEvent()
+    data object OnDismissPermissionDialog: InboxEvent()
+    data class OnPermissionResult(val permission: String, val isGranted: Boolean): InboxEvent()
 }
