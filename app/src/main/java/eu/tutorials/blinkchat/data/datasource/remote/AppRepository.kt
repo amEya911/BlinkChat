@@ -1,18 +1,26 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Message
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
 import javax.inject.Inject
 
@@ -202,6 +210,54 @@ class AppRepository @Inject constructor(
             .update("$messageField.messageText", messageText)
             .addOnFailureListener {
                 Log.e("AppRepo", "Failed to update typing message: ${it.message}")
+            }
+    }
+
+    fun updateImage(
+        chatRoomId: String,
+        image: Uri,
+        currentUserId: String,
+        initiatorUserId: String,
+        recipientUserId: String
+    ) {
+        val imageRef = Firebase.storage.reference.child("images/${UUID.randomUUID()}")
+        imageRef.putFile(image).continueWithTask { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    Log.d("Kya ", it.toString())
+                    throw it
+                }
+            }
+            imageRef.downloadUrl
+        }.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val downloadUri = task.result
+                sendImage(
+                    chatRoomId,
+                    downloadUri.toString(),
+                    currentUserId, initiatorUserId, recipientUserId
+                )
+            }
+        }
+    }
+
+    private fun sendImage(
+        chatRoomId: String,
+        image: String,
+        currentUserId: String,
+        initiatorUserId: String,
+        recipientUserId: String
+    ) {
+        val messageField = when (currentUserId) {
+            initiatorUserId -> "initiatorMessage"
+            recipientUserId -> "recipientMessage"
+            else -> return
+        }
+
+        firestore.collection("chatRooms").document(chatRoomId)
+            .update("$messageField.image", FieldValue.arrayUnion(image))
+            .addOnFailureListener {
+                Log.e("AppRepo", "Failed to update image: ${it.message}")
             }
     }
 

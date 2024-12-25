@@ -42,9 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import eu.tutorials.blinkchat.data.event.InboxEvent
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
-import eu.tutorials.blinkchat.data.state.InboxState
+import eu.tutorials.blinkchat.data.state.app.InboxState
 
 @Composable
 fun InboxContactPress(
@@ -72,7 +72,7 @@ fun InboxContactPress(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.6f))
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.2f))
                 )
 
                 Column(
@@ -84,7 +84,7 @@ fun InboxContactPress(
                 ) {
                     Box(
                         modifier = Modifier
-                            .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     ) {
                         contactComposable(contact)
                     }

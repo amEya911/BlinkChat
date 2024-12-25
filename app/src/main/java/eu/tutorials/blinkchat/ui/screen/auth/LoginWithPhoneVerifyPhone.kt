@@ -15,15 +15,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.LoginWithPhoneViewModel
-import eu.tutorials.blinkchat.data.event.LoginWithPhoneEvent
+import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
+import eu.tutorials.blinkchat.data.event.auth.LoginWithPhoneEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
-import eu.tutorials.blinkchat.ui.theme.LightButtonColor
-import eu.tutorials.blinkchat.ui.theme.TextColor
-import eu.tutorials.blinkchat.ui.theme.TextFieldColor
-
 
 @Composable
 fun LoginWithPhoneVerifyPhone(
@@ -45,7 +40,7 @@ fun LoginWithPhoneVerifyPhone(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -56,13 +51,13 @@ fun LoginWithPhoneVerifyPhone(
             Text(
                 text = "Verification",
                 fontSize = 54.sp,
-                color = TextColor
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Enter Phone Number",
                 fontSize = 16.sp,
-                color = TextColor
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.weight(0.5f))
             TextField(
@@ -90,13 +85,13 @@ fun LoginWithPhoneVerifyPhone(
                     .fillMaxWidth(0.8f)
                     .height(60.dp)
                     .clip(RoundedCornerShape(30.dp)),
-                colors = TextFieldDefaults.colors().copy(
-                    focusedContainerColor = TextFieldColor,
-                    unfocusedContainerColor = TextFieldColor,
-                    focusedTextColor = Color.Gray,
-                    unfocusedTextColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 )
@@ -114,7 +109,7 @@ fun LoginWithPhoneVerifyPhone(
                 modifier = Modifier
                     .width(300.dp)
                     .height(45.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LightButtonColor)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
             ) {
                 Text(
                     text = "Get OTP"

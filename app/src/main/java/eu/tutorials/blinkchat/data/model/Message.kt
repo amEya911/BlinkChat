@@ -1,12 +1,7 @@
 package eu.tutorials.blinkchat.data.model
 
-import android.graphics.Bitmap
-
 data class Message(
-    val messageText: String? = null,
+    val messageText: String = "",
     val readMessage: String? = null,
-    val image: Bitmap? = null
+    val imageUrls: List<String>? = null
 )
-
-
-

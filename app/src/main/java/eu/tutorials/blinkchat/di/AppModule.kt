@@ -10,10 +10,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import eu.tutorials.blinkchat.data.datasource.local.contact.AppDatabase
 import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContactDao
+import eu.tutorials.blinkchat.data.datasource.local.notification.FcmApi
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
+import eu.tutorials.blinkchat.data.datasource.remote.NotificationRepository
 import eu.tutorials.blinkchat.data.datasource.remote.RecentChatRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -22,8 +29,31 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUsersRepository(): UserRepository {
-        return UserRepository(FirebaseFirestore.getInstance())
+    fun provideFcmApi(): FcmApi {
+
+        return Retrofit.Builder()
+            .baseUrl("https://fcm.googleapis.com/")
+            .addConverterFactory(MoshiConverterFactory.create())
+            .build()
+            .create(FcmApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        firestore: FirebaseFirestore,
+        fcmApi: FcmApi
+    ): NotificationRepository {
+        return NotificationRepository(firestore, fcmApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUsersRepository(
+        firestore: FirebaseFirestore,
+        notificationRepository: NotificationRepository
+    ): UserRepository {
+        return UserRepository(firestore, notificationRepository)
     }
 
     @Provides
@@ -49,9 +79,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMeetRepository(
-        firestore: FirebaseFirestore
+        firestore: FirebaseFirestore,
+        notificationRepository: NotificationRepository
     ): MeetRepository {
-        return MeetRepository(firestore)
+        return MeetRepository(firestore, notificationRepository)
     }
 
     @Provides

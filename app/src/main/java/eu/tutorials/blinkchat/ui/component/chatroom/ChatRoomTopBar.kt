@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -23,8 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.model.Contact
-import eu.tutorials.blinkchat.ui.theme.LightGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,12 +42,12 @@ fun ChatRoomTopBar(
             ) {
                 Text(
                     text = displayName ?: "Unknown",
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (isOnline) "Online" else "Offline",
+                    text = if (isOnline) "Online" else "Offline", // Red Dot/ Green Dot
                     fontSize = 20.sp,
                     color = if (isOnline) Color.Green else Color.Red,
                     modifier = Modifier.padding(start = 8.dp)
@@ -75,6 +74,8 @@ fun ChatRoomTopBar(
             }
         },
         expandedHeight = 80.dp,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = LightGray)
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
     )
 }

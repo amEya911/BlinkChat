@@ -3,12 +3,14 @@ package eu.tutorials.blinkchat.data.datasource.remote
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.util.HashUtil
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val notificationRepository: NotificationRepository
 ) {
     fun addUserDetails(contact: Contact) {
         firestore.collection("users").document(contact.id)
@@ -16,11 +18,21 @@ class UserRepository @Inject constructor(
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     Log.d("UserRepository", "User already exists: ${contact.displayName}")
+                    notificationRepository.getFCMToken { token ->
+                        token?.let {
+                            notificationRepository.addFcmToken(contact.id, it)
+                        } ?: Log.d("UserRepository", "FCM Token is null.")
+                    }
                 } else {
                     firestore.collection("users").document(contact.id)
                         .set(contact)
                         .addOnSuccessListener {
                             Log.d("UserRepository", "User details added for ${contact.displayName}")
+                            notificationRepository.getFCMToken { token ->
+                                token?.let {
+                                    notificationRepository.addFcmToken(contact.id, it)
+                                } ?: Log.d("UserRepository", "FCM Token is null.")
+                            }
                         }
                         .addOnFailureListener { e ->
                             Log.e("UserRepository", "Error adding user details: ${e.message}")
@@ -106,7 +118,8 @@ class UserRepository @Inject constructor(
 
     fun blockUser(
         currentUserId: String,
-        otherUserId: String
+        otherUserId: String,
+        onResult: (Boolean, String?) -> Unit,
     ) {
         firestore.collection("users").document(currentUserId).get()
             .addOnSuccessListener { document ->
@@ -118,21 +131,26 @@ class UserRepository @Inject constructor(
                     firestore.collection("users").document(currentUserId)
                         .update("blockedUserIds", newUserIds)
                         .addOnSuccessListener {
+                            onResult(true, null)
                             Log.d("BlockUser", "Successfully blocked $otherUserId")
-                        }.addOnFailureListener {
+                        }.addOnFailureListener { e->
+                            onResult(false, e.localizedMessage)
                             Log.d("BlockUser", "Failed to block $otherUserId")
                         }
                 } else {
                     firestore.collection("users").document(currentUserId)
                         .set(mapOf("blockedUserIds" to listOf(otherUserId)))
                         .addOnSuccessListener {
+                            onResult(true, null)
                             Log.d("BlockUser", "Successfully blocked $otherUserId")
-                        }.addOnFailureListener {
+                        }.addOnFailureListener { e->
+                            onResult(false, e.localizedMessage)
                             Log.d("BlockUser", "Failed to block $otherUserId")
                         }
                 }
 
             }.addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
                 Log.e("BlockUser", "Failed to retrieve user document: $currentUserId", e)
             }
     }
@@ -181,28 +199,93 @@ class UserRepository @Inject constructor(
 
     fun unBlockUser(
         currentUserId: String,
-        otherUserId: String
+        otherUserId: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
         firestore.collection("users").document(currentUserId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    // Get the current blockedUserIds (ensure it's a list of Strings)
                     val userIds = document.get("blockedUserIds") as? List<String> ?: emptyList()
-                    val newUserIds = userIds.filterNot { userId -> userId == otherUserId }
+                    if (userIds.contains(otherUserId)) {
+                        val newUserIds = userIds.filterNot { it == otherUserId }
 
-                    firestore.collection("users").document(currentUserId)
-                        .update("blockedUserIds", newUserIds)
-                        .addOnSuccessListener {
-                            Log.d("BlockUser", "Successfully unblocked $otherUserId")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("BlockUser", "Failed to unblock $otherUserId: ${e.message}")
-                        }
+                        firestore.collection("users").document(currentUserId)
+                            .update("blockedUserIds", newUserIds)
+                            .addOnSuccessListener {
+                                onResult(true, null)
+                                Log.d("BlockUser", "Successfully unblocked $otherUserId")
+                            }
+                            .addOnFailureListener { e ->
+                                onResult(false, e.localizedMessage)
+                                Log.e("BlockUser", "Failed to unblock $otherUserId: ${e.message}")
+                            }
+                    } else {
+                        onResult(false, "User is not blocked")
+                        Log.e("BlockUser", "User $otherUserId is not blocked")
+                    }
                 } else {
+                    onResult(false, "User not found")
                     Log.e("BlockUser", "User document not found for ID: $currentUserId")
                 }
             }
             .addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
                 Log.e("BlockUser", "Error retrieving user document: $currentUserId", e)
+            }
+    }
+
+    fun logout() {
+        val currentUserId = currentUserId() ?: return
+
+        notificationRepository.getFCMToken { token ->
+            token?.let {
+                notificationRepository.removeFcmToken(currentUserId, it)
+            } ?: Log.d("UserRepository", "FCM Token is null.")
+        }
+
+        FirebaseAuth.getInstance().signOut()
+        Log.d("UserRepository", "User logged out.")
+    }
+
+    fun deleteAccount(onResult: (Boolean) -> Unit) {
+        val currentUserId = currentUserId()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+
+        if (currentUserId == null || currentUser == null) {
+            Log.e("UserRepository", "Cannot delete account: User is not authenticated.")
+            onResult(false)
+            return
+        }
+
+        // Step 1: Delete user's data from Firestore
+        firestore.collection("users").document(currentUserId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d("UserRepository", "User data deleted successfully for $currentUserId.")
+
+                // Step 2: Delete the user's authentication
+                currentUser.delete()
+                    .addOnSuccessListener {
+                        Log.d("UserRepository", "User account deleted successfully.")
+
+                        // Step 3: Remove FCM token
+                        notificationRepository.getFCMToken { token ->
+                            token?.let {
+                                notificationRepository.removeFcmToken(currentUserId, it)
+                                Log.d("UserRepository", "FCM token removed successfully.")
+                            }
+                            onResult(true)
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("UserRepository", "Failed to delete user account: ${e.message}")
+                        onResult(false)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("UserRepository", "Failed to delete user data: ${e.message}")
+                onResult(false)
             }
     }
 

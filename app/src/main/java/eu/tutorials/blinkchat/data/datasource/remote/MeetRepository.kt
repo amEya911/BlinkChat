@@ -1,21 +1,27 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
 import android.util.Log
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Meeting
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
 class MeetRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val notificationRepository: NotificationRepository
 ) {
     fun addSchedule(
         currentUserContact: Contact,
         otherUserContact: Contact,
         ifOtherUserExists: Boolean,
         date: String,
-        time: String
+        time: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
         val meetingId = UUID.randomUUID().toString()
         val scheduledMeetEntry = mapOf(
@@ -32,7 +38,8 @@ class MeetRepository @Inject constructor(
             scheduledMeetEntry,
             otherUserContact.displayName,
             date,
-            time
+            time,
+            onResult
         )
 
         if (ifOtherUserExists) {
@@ -41,8 +48,35 @@ class MeetRepository @Inject constructor(
                 scheduledMeetEntry,
                 currentUserContact.displayName,
                 date,
-                time
+                time,
+                onResult
             )
+            notifyOtherUser(currentUserContact.id, otherUserContact.id, date, time)
+        }
+    }
+
+    private fun notifyOtherUser(
+        currentUserId: String,
+        otherUserId: String,
+        date: String,
+        time: String
+    ) {
+        notificationRepository.getFcmTokens(otherUserId) { tokens ->
+            Log.d("NotificationRepo", "token: $tokens")
+            // Launch a coroutine for sending notifications
+            CoroutineScope(Dispatchers.IO).launch {
+                tokens.forEach { token ->
+                    try {
+                        notificationRepository.sendNotification(
+                            to = token,
+                            title = "New Schedule Created",
+                            body = "User $currentUserId has scheduled a meeting on $date at $time."
+                        )
+                    } catch (e: Exception) {
+                        Log.e("NotificationRepo", "Failed to send notification: ${e.message}")
+                    }
+                }
+            }
         }
     }
 
@@ -51,7 +85,8 @@ class MeetRepository @Inject constructor(
         scheduledMeetEntry: Map<String, Any>,
         otherUserDisplayName: String,
         date: String,
-        time: String
+        time: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
@@ -69,7 +104,9 @@ class MeetRepository @Inject constructor(
                                         "on $date " +
                                         "at $time"
                             )
-                        }.addOnFailureListener {
+                            onResult(true, null)
+                        }.addOnFailureListener { e ->
+                            onResult(false, e.localizedMessage)
                             Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
                         }
                 } else {
@@ -82,11 +119,14 @@ class MeetRepository @Inject constructor(
                                         "on $date " +
                                         "at $time"
                             )
-                        }.addOnFailureListener {
+                            onResult(true, null)
+                        }.addOnFailureListener { e ->
+                            onResult(false, e.localizedMessage)
                             Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
                         }
                 }
             }.addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
                 Log.e("ScheduledMeets", "Failed to retrieve user document: $userId", e)
             }
     }
@@ -180,17 +220,40 @@ class MeetRepository @Inject constructor(
         currentUserId: String,
         otherUserId: String,
         newDate: String,
-        newTime: String
+        newTime: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
-        rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime)
-        rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime)
+        var completed = 0
+        var success = true
+        var errorMessage: String? = null
+
+        // Function to handle the result of rescheduling for each user
+        val handleResult: (Boolean, String?) -> Unit = { result, message ->
+            completed++
+            if (!result) {
+                success = false
+                errorMessage = message ?: "Unknown error"
+            }
+
+            // If both operations are completed, update the final result
+            if (completed == 2) {
+                if (success) {
+                    onResult(true, null) // Both users succeeded
+                } else {
+                    onResult(false, errorMessage) // At least one failed
+                }
+            }
+        }
+        rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime, handleResult)
+        rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, handleResult)
     }
 
     private fun rescheduleMeetForUser(
         meetingId: String,
         userId: String,
         newDate: String,
-        newTime: String
+        newTime: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
@@ -213,17 +276,21 @@ class MeetRepository @Inject constructor(
                     firestore.collection("users").document(userId)
                         .update("scheduledMeets", updatedMeets)
                         .addOnSuccessListener {
+                            onResult(true, null)
                             Log.d(
                                 "ScheduledMeets",
                                 "Meeting successfully rescheduled for $userId to $newDate at $newTime"
                             )
                         }.addOnFailureListener { e ->
+                            onResult(false, e.localizedMessage)
                             Log.e("ScheduledMeets", "Failed to reschedule meeting for $userId", e)
                         }
                 } else {
+                    onResult(false, "User does not exist")
                     Log.e("ScheduledMeets", "User document does not exist: $userId")
                 }
             }.addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
                 Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
             }
     }
@@ -231,15 +298,38 @@ class MeetRepository @Inject constructor(
     fun deleteMeet(
         meetingId: String,
         currentUserId: String,
-        otherUserId: String
+        otherUserId: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
-        deleteMeetForUser(meetingId, currentUserId)
-        deleteMeetForUser(meetingId, otherUserId)
+        var completed = 0
+        var success = true
+        var errorMessage: String? = null
+
+        // Function to handle the result of rescheduling for each user
+        val handleResult: (Boolean, String?) -> Unit = { result, message ->
+            completed++
+            if (!result) {
+                success = false
+                errorMessage = message ?: "Unknown error"
+            }
+
+            // If both operations are completed, update the final result
+            if (completed == 2) {
+                if (success) {
+                    onResult(true, null) // Both users succeeded
+                } else {
+                    onResult(false, errorMessage) // At least one failed
+                }
+            }
+        }
+        deleteMeetForUser(meetingId, currentUserId, handleResult)
+        deleteMeetForUser(meetingId, otherUserId, handleResult)
     }
 
     private fun deleteMeetForUser(
         meetingId: String,
-        userId: String
+        userId: String,
+        onResult: (Boolean, String?) -> Unit
     ) {
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
@@ -247,27 +337,35 @@ class MeetRepository @Inject constructor(
                     val scheduledMeets =
                         document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
 
-                    val updatedMeets = scheduledMeets.filterNot { meet ->
-                        meet["meetingId"] == meetingId
+                    val meetToDelete = scheduledMeets.find { it["meetingId"] == meetingId }
+
+                    if (meetToDelete != null) {
+                        firestore.collection("users").document(userId)
+                            .update("scheduledMeets", FieldValue.arrayRemove(meetToDelete))
+                            .addOnSuccessListener {
+                                onResult(true, null)
+                                Log.d(
+                                    "ScheduledMeets",
+                                    "Meeting successfully deleted for $userId"
+                                )
+                            }.addOnFailureListener { e ->
+                                onResult(false, e.localizedMessage)
+                                Log.e("ScheduledMeets", "Failed to delete meeting for $userId", e)
+                            }
+                    } else {
+                        onResult(false, "Meeting not found")
+                        Log.e("ScheduledMeets", "Meeting not found for $meetingId in $userId")
                     }
 
-                    firestore.collection("users").document(userId)
-                        .update("scheduledMeets", updatedMeets)
-                        .addOnSuccessListener {
-                            Log.d(
-                                "ScheduledMeets",
-                                "Meeting successfully deleted for $userId"
-                            )
-                        }.addOnFailureListener { e ->
-                            Log.e("ScheduledMeets", "Failed to delete meeting for $userId", e)
-                        }
-
                 } else {
+                    onResult(false, "User does not exist")
                     Log.e("ScheduledMeets", "User document does not exist: $userId")
                 }
 
             }.addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
                 Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
             }
     }
+
 }

@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -42,23 +44,29 @@ fun PermissionDialog(
                         .fillMaxWidth()
                         .clickable {
                             if (isPermanentlyDeclined) {
+                                onDismiss()
                                 onGoToAppSettingsClick()
                             } else {
                                 onOkClick()
                             }
                         }
                         .padding(16.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             }
         },
         title = {
-            Text(text = "Permission required")
+            Text(
+                text = "Permission required",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         },
         text = {
             Text(
                 text = permissionTextProvider.getDescription(
                     isPermanentlyDeclined = isPermanentlyDeclined
-                )
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         modifier = modifier

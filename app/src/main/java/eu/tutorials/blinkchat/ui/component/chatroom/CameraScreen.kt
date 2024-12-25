@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.component.chatroom
 
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -8,6 +9,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.LinearLayout
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
@@ -33,24 +35,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.rememberImagePainter
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
-    onPhotoCaptured: (Bitmap) -> Unit,
-    lastCapturedPhoto: Bitmap? = null,
+    onPhotoCaptured: (Uri) -> Unit, // Changed to pass Uri instead of Bitmap
+    lastCapturedPhoto: Uri? = null, // Changed to Uri
     onRetakePhoto: () -> Unit,
     onAccessMedia: () -> Unit,
-    onSendPhoto: (Bitmap) -> Unit
+    onSendPhoto: (Uri) -> Unit, // Changed to accept Uri
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -58,21 +62,25 @@ fun CameraScreen(
 
     val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-            onPhotoCaptured(bitmap)
-            Log.d("CameraContent", bitmap.toString())
+            onPhotoCaptured(it) // Pass Uri directly
+            Log.d("CameraContent", it.toString())
         }
     }
 
+    BackHandler(onBack = {
+        onBack()
+    })
+
     if (lastCapturedPhoto != null) {
         LastPhotoPreview(
-            lastCapturedPhoto = lastCapturedPhoto,
-            onSendPhoto = { bitmap ->
-                onSendPhoto(bitmap)
+            lastCapturedPhoto = lastCapturedPhoto, // Pass Uri
+            onSendPhoto = { uri ->
+                onSendPhoto(uri) // Pass Uri
             },
             onRetakePhoto = {
                 onRetakePhoto()
-            }
+            },
+            context = context
         )
     } else {
         Scaffold(
@@ -120,7 +128,6 @@ fun CameraScreen(
     }
 }
 
-
 fun Bitmap.rotateBitmap(rotationDegrees: Int): Bitmap {
     val matrix = Matrix().apply {
         postRotate(-rotationDegrees.toFloat())
@@ -132,7 +139,7 @@ fun Bitmap.rotateBitmap(rotationDegrees: Int): Bitmap {
 private fun capturePhoto(
     context: Context,
     cameraController: LifecycleCameraController,
-    onPhotoCaptured: (Bitmap) -> Unit
+    onPhotoCaptured: (Uri) -> Unit
 ) {
     val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
 
@@ -142,7 +149,10 @@ private fun capturePhoto(
                 .toBitmap()
                 .rotateBitmap(image.imageInfo.rotationDegrees)
 
-            onPhotoCaptured(correctedBitmap)
+            val uri = bitmapToUri(context, correctedBitmap) // Convert Bitmap to Uri
+            if (uri != null) {
+                onPhotoCaptured(uri) // Pass the Uri to the callback
+            }
             image.close()
         }
 
@@ -152,16 +162,42 @@ private fun capturePhoto(
     })
 }
 
+fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
+    // Prepare a byte array output stream to write the bitmap into
+    val byteArrayOutputStream = ByteArrayOutputStream()
+
+    // Compress the bitmap to the output stream (JPEG format)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+
+    // Create a ContentValues object to hold metadata for the image
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, "captured_image_${System.currentTimeMillis()}.jpg")
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/YourAppName") // Store in Pictures
+    }
+
+    // Insert the image into MediaStore and get a URI
+    val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+    // Open an OutputStream to write the data into the content provider
+    uri?.let {
+        context.contentResolver.openOutputStream(it)?.use { outputStream ->
+            byteArrayOutputStream.writeTo(outputStream)
+        }
+    }
+
+    // Return the URI of the image in MediaStore
+    return uri
+}
+
 @Composable
 private fun LastPhotoPreview(
     modifier: Modifier = Modifier,
-    lastCapturedPhoto: Bitmap,
-    onSendPhoto: (Bitmap) -> Unit,
-    onRetakePhoto: () -> Unit
+    lastCapturedPhoto: Uri, // Accept Uri instead of Bitmap
+    onSendPhoto: (Uri) -> Unit,
+    onRetakePhoto: () -> Unit,
+    context: Context
 ) {
-    val capturedPhoto: ImageBitmap =
-        remember(lastCapturedPhoto.hashCode()) { lastCapturedPhoto.asImageBitmap() }
-
     Scaffold(
         bottomBar = {
             BottomAppBar {
@@ -176,7 +212,9 @@ private fun LastPhotoPreview(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(onClick = { onSendPhoto(lastCapturedPhoto) }) {
+                IconButton(onClick = {
+                    onSendPhoto(lastCapturedPhoto) // Send Uri directly
+                }) {
                     Icon(
                         imageVector = Icons.Filled.Send,
                         contentDescription = "Send photo"
@@ -191,8 +229,9 @@ private fun LastPhotoPreview(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
+            // Use the Uri for image display, perhaps load it with a library like Coil for URI-based images
             Image(
-                bitmap = capturedPhoto,
+                painter = rememberImagePainter(lastCapturedPhoto),
                 contentDescription = "Last captured photo",
                 contentScale = ContentScale.Fit
             )

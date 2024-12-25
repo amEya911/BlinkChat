@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.component.inbox
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.event.InboxEvent
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
 
 @Composable
@@ -36,7 +37,8 @@ fun AllChatItem(
             .padding(12.dp)
             .clickable {
                 onEvent(InboxEvent.OnContactClicked(contact))
-            },
+            }
+            .background(MaterialTheme.colorScheme.surface),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (contact.photoUri != null) {
@@ -63,7 +65,7 @@ fun AllChatItem(
             text = contact.displayName,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

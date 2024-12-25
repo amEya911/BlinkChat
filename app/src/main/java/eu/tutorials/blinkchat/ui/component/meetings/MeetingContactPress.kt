@@ -33,9 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import eu.tutorials.blinkchat.data.event.MeetingsEvent
+import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
 import eu.tutorials.blinkchat.data.model.Meeting
-import eu.tutorials.blinkchat.data.state.MeetingsState
+import eu.tutorials.blinkchat.data.state.app.MeetingsState
 import eu.tutorials.blinkchat.ui.component.inbox.MenuDivider
 import eu.tutorials.blinkchat.ui.component.inbox.MenuItem
 
@@ -65,7 +65,7 @@ fun MeetingContactPress(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.6f))
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.4f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -76,7 +76,7 @@ fun MeetingContactPress(
                     ) {
                         Box(
                             modifier = Modifier
-                                .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                .border(2.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                         ) {
                             contactComposable(meeting)
                         }

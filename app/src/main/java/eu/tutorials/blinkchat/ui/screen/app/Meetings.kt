@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -25,17 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.event.MeetingsEvent
-import eu.tutorials.blinkchat.data.state.MeetingsState
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
+import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
+import eu.tutorials.blinkchat.data.state.app.MeetingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.CustomTextField
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingItem
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
-import eu.tutorials.blinkchat.ui.theme.TextFieldColor
 
 @Composable
 fun Meetings(
@@ -44,17 +46,21 @@ fun Meetings(
     onEvent: (MeetingsEvent) -> Unit,
     onAddClicked: () -> Unit
 ) {
-    val contentModifier = if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
+    val contentModifier =
+        if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Scaffold(
         topBar = {
-            AppBar(
-                title = "Meetings",
-                onIconClick = { onAddClicked()},
-                iconResId = Icons.Default.Add
-            )
+            if (!(meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked)) {
+                AppBar(
+                    title = "Meetings",
+                    onIconClick = { onAddClicked() },
+                    iconResId = Icons.Default.Add
+                )
+            }
         },
-        containerColor = BackgroundColor
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(
             modifier = modifier
@@ -66,71 +72,36 @@ fun Meetings(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                TextField(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = {
-                        Text(
-                            "Search",
-                            fontSize = 14.sp,
-                            color = Color.Black.copy(alpha = 0.4f)
-                        )
+                CustomTextField(
+                    value = meetingsState.searchQuery ?: "",
+                    onValueChange = { query ->
+                        onEvent(MeetingsEvent.OnSearchUsers(query))
                     },
-                    singleLine = true,
+                    placeholderText = "Search",
                     modifier = Modifier
                         .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(15.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldColor,
-                        unfocusedContainerColor = TextFieldColor,
-                        focusedTextColor = Color.Gray,
-                        unfocusedTextColor = Color.Gray,
-                        focusedPlaceholderColor = Color.Gray,
-                        unfocusedPlaceholderColor = Color.Gray,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    )
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Created At",
-                        fontSize = 16.sp,
-                        color = if (meetingsState.isSortByCreatedAt) Color.Blue else Color.Gray,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                onEvent(MeetingsEvent.OnSortByCreatedAt)
-                            }
-                            .padding(8.dp)
-                    )
-                    Text(
-                        text = "Time",
-                        fontSize = 16.sp,
-                        color = if (!meetingsState.isSortByCreatedAt) Color.Blue else Color.Gray,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                onEvent(MeetingsEvent.OnSortByTime)
-                            }
-                            .padding(8.dp)
-                    )
-                }
+                SegmentedButton(
+                    isSortByCreatedAt = meetingsState.isSortByCreatedAt,
+                    onSortByCreatedAt = { onEvent(MeetingsEvent.OnSortByCreatedAt) },
+                    onSortByTime = { onEvent(MeetingsEvent.OnSortByTime) }
+                )
+
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val updatedMatchedContacts = meetingsState.meetings.map { meeting ->
-                    val updatedOtherUserContact = meetingsState.contacts.find { it.id == meeting.otherUserContact.id }
-                    Log.d("nhi-bey", "updatedOtherUserContact: $updatedOtherUserContact")
+                val displayedMeetings = if (meetingsState.searchQuery.isNullOrBlank()) {
+                    meetingsState.meetings
+                } else {
+                    meetingsState.searchResults
+                }
+
+                val updatedMatchedContacts = displayedMeetings.map { meeting ->
+                    val updatedOtherUserContact =
+                        meetingsState.contacts.find { it.id == meeting.otherUserContact.id }
                     if (updatedOtherUserContact != null) {
                         meeting.copy(otherUserContact = updatedOtherUserContact)
                     } else {
@@ -146,6 +117,7 @@ fun Meetings(
             }
         }
         if (meetingsState.isMeetingClicked) {
+            keyboardController?.hide()
             MeetingContactPress(
                 meetingsState = meetingsState,
                 onEvent = onEvent
@@ -171,6 +143,53 @@ fun Meetings(
                         )
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun SegmentedButton(
+    isSortByCreatedAt: Boolean,
+    onSortByCreatedAt: () -> Unit,
+    onSortByTime: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f))
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isSortByCreatedAt) MaterialTheme.colorScheme.inversePrimary else Color.Transparent)
+                .clickable { onSortByCreatedAt() }
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Created At",
+                fontSize = 16.sp,
+                color = if (isSortByCreatedAt) Color.White else MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (!isSortByCreatedAt) MaterialTheme.colorScheme.inversePrimary else Color.Transparent)
+                .clickable { onSortByTime() }
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Time",
+                fontSize = 16.sp,
+                color = if (!isSortByCreatedAt) Color.White else MaterialTheme.colorScheme.onSurface
             )
         }
     }

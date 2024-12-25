@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.event.MeetingsEvent
+import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
 import eu.tutorials.blinkchat.data.model.Meeting
-import eu.tutorials.blinkchat.data.state.MeetingsState
+import eu.tutorials.blinkchat.data.state.app.MeetingsState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle

@@ -16,15 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusOrder
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -45,22 +40,15 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import androidx.hilt.navigation.compose.hiltViewModel
-import eu.tutorials.blinkchat.data.event.LoginWithPhoneEvent
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
-import eu.tutorials.blinkchat.ui.theme.LightButtonColor
-import eu.tutorials.blinkchat.ui.theme.LightGray
-import eu.tutorials.blinkchat.ui.theme.TextColor
-import eu.tutorials.blinkchat.ui.theme.TextFieldColor
-import eu.tutorials.blinkchat.ui.viewmodel.LoginWithPhoneViewModel
+import eu.tutorials.blinkchat.data.event.auth.LoginWithPhoneEvent
+import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 
 @Composable
 fun LoginWithPhoneVerifyOTP(
@@ -70,13 +58,12 @@ fun LoginWithPhoneVerifyOTP(
     onOTPLoginSuccessful: () -> Unit
 ) {
     val loginState = viewModel.loginWithPhoneState.collectAsState().value
-
     val displayMobileNumber = mobileNumber ?: loginState.mobileNumber
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -87,13 +74,13 @@ fun LoginWithPhoneVerifyOTP(
             Text(
                 text = "Verification",
                 fontSize = 54.sp,
-                color = TextColor
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Enter OTP sent to $displayMobileNumber",
                 fontSize = 16.sp,
-                color = TextColor
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.weight(0.5f))
 //            TextField(
@@ -136,7 +123,7 @@ fun LoginWithPhoneVerifyOTP(
                 modifier = Modifier
                     .width(300.dp)
                     .height(45.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LightButtonColor)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
             ) {
                 Text(
                     text = "Verify Code"
@@ -182,9 +169,9 @@ fun OTPTextField(
         modifier = modifier
             .border(
                 width = 1.dp,
-                color = Color.Black
+                color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
-            .background(TextFieldColor),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
         BasicTextField(
@@ -196,11 +183,11 @@ fun OTPTextField(
                     onNumberChanged(newNumber.toIntOrNull())
                 }
             },
-            cursorBrush = SolidColor(Color.Black),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             singleLine = true,
             textStyle = TextStyle(
                 textAlign = TextAlign.Center,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             ),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
@@ -225,7 +212,7 @@ fun OTPTextField(
                     Text(
                         text = "-",
                         textAlign = TextAlign.Center,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Light,
                         modifier = Modifier

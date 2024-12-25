@@ -15,7 +15,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
-import eu.tutorials.blinkchat.data.state.ChatRoomState
+import eu.tutorials.blinkchat.data.state.app.ChatRoomState
 
 @Composable
 fun ChatInput(
@@ -37,7 +37,7 @@ fun ChatInput(
     } else {
         Box(modifier = modifier) {
             BasicTextField(
-                value = chatRoomState.currentUserMessage,
+                value = chatRoomState.currentUserMessage.messageText,
                 onValueChange = onMessageTyping,
                 modifier = Modifier.fillMaxSize(),
                 textStyle = TextStyle(
@@ -49,8 +49,8 @@ fun ChatInput(
             )
             Text(
                 text = buildAnnotatedString {
-                    val readMessage = chatRoomState.readMessage
-                    val currentMessage = chatRoomState.currentUserMessage
+                    val readMessage = chatRoomState.otherUserMessage.readMessage
+                    val currentMessage = chatRoomState.currentUserMessage.messageText
 
                     if (readMessage != null && currentMessage.startsWith(readMessage)) {
                         withStyle(style = SpanStyle(color = Color.Green)) {

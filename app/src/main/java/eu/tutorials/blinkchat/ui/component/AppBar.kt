@@ -14,7 +14,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +32,7 @@ fun AppBar(
             ) {
                 Text(
                     text = title,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -43,7 +42,8 @@ fun AppBar(
                         Icon(
                             imageVector = iconResId,
                             contentDescription = null,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -52,11 +52,11 @@ fun AppBar(
         navigationIcon = {
             navigationIcon?.let {
                 IconButton(onClick = onNavigationIconClicked) {
-                    Icon(imageVector = navigationIcon, contentDescription = "Back")
+                    Icon(imageVector = navigationIcon, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary,)
                 }
             }
         },
         expandedHeight = 100.dp,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
     )
 }

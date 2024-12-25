@@ -1,7 +1,5 @@
 package eu.tutorials.blinkchat.navigation
 
-import android.util.Log
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -9,8 +7,7 @@ import androidx.navigation.compose.navigation
 import eu.tutorials.blinkchat.ui.screen.auth.LoginOptions
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyOTP
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyPhone
-import eu.tutorials.blinkchat.ui.screen.guest.Guest
-import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
+import eu.tutorials.blinkchat.ui.screen.auth.Guest
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(

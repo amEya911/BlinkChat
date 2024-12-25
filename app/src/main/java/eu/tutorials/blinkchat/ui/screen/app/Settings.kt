@@ -28,10 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import eu.tutorials.blinkchat.data.event.SettingsEvent
-import eu.tutorials.blinkchat.data.state.SettingsState
+import eu.tutorials.blinkchat.data.event.app.SettingsEvent
+import eu.tutorials.blinkchat.data.state.app.SettingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
 
 @Composable
 fun Settings(
@@ -39,16 +38,19 @@ fun Settings(
     settingsState: SettingsState,
     onEvent: (SettingsEvent) -> Unit,
     onBlockUserClicked: () -> Unit,
-    logout: () -> Unit
+    navigateToLoginScreen: () -> Unit
 ) {
     LaunchedEffect(key1 = settingsState.blockedUsers) {
         onEvent(SettingsEvent.OnLoadBlockedUsers)
     }
-//    LaunchedEffect(key1 = settingsState.isLoggedIn) {
-//        if (!settingsState.isLoggedIn) {
-//            logout()
-//        }
-//    }
+
+    LaunchedEffect(key1 = settingsState) {
+        when {
+            settingsState.isLoggedOut -> navigateToLoginScreen()
+            settingsState.isAccountDeleted -> navigateToLoginScreen()
+        }
+    }
+
     Scaffold(
         topBar = {
             AppBar(
@@ -56,51 +58,64 @@ fun Settings(
                 onIconClick = {}
             )
         },
-        containerColor = BackgroundColor
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ActionButton(
-                onClick = {
-                    onBlockUserClicked()
-                },
-                text = "Blocked",
-                icon = Icons.Default.Block,
-                count = settingsState.blockedUsers.size
-            )
+            if (settingsState.isLoading) {
+                Text("Loading...", modifier = Modifier.padding(16.dp))
+            } else {
+                ActionButton(
+                    //modifier = modifier.padding(innerPadding),
+                    onClick = {
+                        onBlockUserClicked()
+                    },
+                    text = "Blocked",
+                    icon = Icons.Default.Block,
+                    count = settingsState.blockedUsers.size
+                )
 
-            ActionButton(
-                onClick = {onEvent(SettingsEvent.Logout)},
-                text = "Log Out",
-                icon = Icons.Default.Logout
-            )
+                ActionButton(
+                    //modifier = modifier.padding(innerPadding),
+                    onClick = {
+                        onEvent(SettingsEvent.OnLogout)
+                    },
+                    text = "Log Out",
+                    icon = Icons.Default.Logout
+                )
 
-            ActionButton(
-                onClick = {},
-                text = "Delete Account",
-                icon = Icons.Default.Delete
-            )
+                ActionButton(
+                    //modifier = modifier.padding(innerPadding),
+                    onClick = {
+                        onEvent(SettingsEvent.OnDeleteAccount)
+                    },
+                    text = "Delete Account",
+                    icon = Icons.Default.Delete
+                )
+            }
         }
     }
 }
 
 @Composable
 fun ActionButton(
+    modifier: Modifier = Modifier,
     icon: ImageVector,
     onClick: () -> Unit = {},
     text: String = "Click Me",
     count: Int? = null
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        backgroundColor = BackgroundColor,
+        backgroundColor = MaterialTheme.colorScheme.surfaceBright,
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp
     ) {
@@ -116,18 +131,20 @@ fun ActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                count?.let { Text(text = "$count") }
+                count?.let { Text(text = "$count" ,color = MaterialTheme.colorScheme.primary) }
                 Icon(
                     imageVector = Icons.Default.ArrowForwardIos,
                     contentDescription = "Forward Arrow",

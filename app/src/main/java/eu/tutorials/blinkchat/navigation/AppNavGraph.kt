@@ -1,65 +1,57 @@
 package eu.tutorials.blinkchat.navigation
 
-import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import eu.tutorials.blinkchat.ui.screen.app.Inbox
 import eu.tutorials.blinkchat.ui.screen.app.Meetings
 import eu.tutorials.blinkchat.ui.screen.app.Settings
-import eu.tutorials.blinkchat.ui.theme.BackgroundColor
-import eu.tutorials.blinkchat.ui.theme.TextColor
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import eu.tutorials.blinkchat.R
-import eu.tutorials.blinkchat.data.event.InboxEvent
-import eu.tutorials.blinkchat.data.event.SettingsEvent
-import eu.tutorials.blinkchat.ui.component.AppBar
-import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
-import eu.tutorials.blinkchat.ui.screen.app.AddBlockUsers
-import eu.tutorials.blinkchat.ui.screen.app.BlockedUsers
-import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
-import eu.tutorials.blinkchat.ui.screen.app.ScheduleAMeet
-import eu.tutorials.blinkchat.ui.screen.guest.Guest
-import eu.tutorials.blinkchat.ui.theme.LightGray
-import eu.tutorials.blinkchat.ui.theme.TextFieldColor
-import eu.tutorials.blinkchat.ui.viewmodel.ChatRoomViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.InboxViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.MeetingsViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.ScheduleAMeetViewModel
-import eu.tutorials.blinkchat.ui.viewmodel.SettingsViewModel
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
+import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
+import eu.tutorials.blinkchat.ui.screen.additional.AddBlockUsers
+import eu.tutorials.blinkchat.ui.screen.additional.BlockedUsers
+import eu.tutorials.blinkchat.ui.screen.additional.ScheduleAMeet
+import eu.tutorials.blinkchat.ui.viewmodel.additional.AddBlockUsersViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.additional.BlockedUsersViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.app.ChatRoomViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.app.InboxViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.app.MeetingsViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.additional.ScheduleAMeetViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.app.SettingsViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(navHostController: NavHostController) {
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(color = BackgroundColor)
-    systemUiController.setNavigationBarColor(color = TextFieldColor)
-
+    systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.background)
+    systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.secondaryContainer)
 
     Log.d("AppNavGraph", "current root: $currentRoute")
 
@@ -75,20 +67,47 @@ fun AppNavGraph(navHostController: NavHostController) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val settingsState = settingsViewModel.settingsState.collectAsState().value
 
+    val blockedUsersViewModel: BlockedUsersViewModel = hiltViewModel()
+    val blockedUsersState = blockedUsersViewModel.blockedUsersState.collectAsState().value
+
+    val addBlockUsersViewModel: AddBlockUsersViewModel = hiltViewModel()
+    val addBlockUsersState = addBlockUsersViewModel.addBlockUsersState.collectAsState().value
+
     val chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
     val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
 
+    LaunchedEffect(inboxState.snackbarMessage) {
+        inboxState.snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            inboxViewModel.onEvent(InboxEvent.OnSnackbarDisplayed)
+        }
+    }
+
+    LaunchedEffect(meetingsState.snackbarMessage) {
+        Log.d("Snack", "${meetingsState.snackbarMessage}")
+        meetingsState.snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            meetingsViewModel.onEvent(MeetingsEvent.OnSnackbarDisplayed)
+        }
+    }
+
     Scaffold(
-        containerColor = BackgroundColor,
-        contentColor = TextColor,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         bottomBar = {
             if (currentRoute != null &&
                 !currentRoute.startsWith(AppScreen.ChatRoom.route) &&
                 !currentRoute.startsWith(AppScreen.BlockedUsers.route) &&
-                !currentRoute.startsWith(AppScreen.AddBlockUsers.route)
+                !currentRoute.startsWith(AppScreen.AddBlockUsers.route) &&
+                !currentRoute.startsWith(AppScreen.ScheduleAMeet.route)
             ) {
                 BottomNavBar(navController = navController)
             }
+        },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState
+            )
         },
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
     ) { paddingValues ->
@@ -136,8 +155,8 @@ fun AppNavGraph(navHostController: NavHostController) {
                     settingsState = settingsState,
                     onEvent = settingsViewModel::onEvent,
                     onBlockUserClicked = { navController.navigate(AppScreen.BlockedUsers.route) },
-                    logout = {
-                        navController.navigate(Graph.AUTH) {
+                    navigateToLoginScreen = {
+                        navHostController.navigate(Graph.AUTH) {
                             popUpTo(Graph.APP) { inclusive = true }
                         }
                     }
@@ -156,7 +175,9 @@ fun AppNavGraph(navHostController: NavHostController) {
                     onAddBlockUsers = {
                         navController.popBackStack()
                         navController.navigate(AppScreen.AddBlockUsers.route)
-                    }
+                    },
+                    blockedUsersState = blockedUsersState,
+                    onEvent = blockedUsersViewModel::onEvent
                 )
             }
 
@@ -170,7 +191,9 @@ fun AppNavGraph(navHostController: NavHostController) {
                     onBlockUser = { userId ->
                         inboxViewModel.onEvent(InboxEvent.OnBlockUser(userId))
                         navController.popBackStack()
-                    }
+                    },
+                    addBlockUsersState = addBlockUsersState,
+                    onEvent = addBlockUsersViewModel::onEvent
                 )
             }
         }
