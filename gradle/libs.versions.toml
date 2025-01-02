@@ -2,6 +2,7 @@
 accompanistSystemuicontroller = "0.31.1-alpha"
 agp = "8.6.0-rc01"
 androidxNavigationCompose = "2.8.3"
+awsAndroidSdkCore = "2.66.0"
 cameraCore = "1.4.1"
 converterMoshi = "2.9.0"
 firebaseAdmin = "9.1.1"
@@ -9,6 +10,7 @@ firebaseAuth = "23.1.0"
 firebaseBom = "33.4.0"
 firebaseCore = "21.1.1"
 firebaseMessaging = "24.4.0"
+googleAuthLibraryOauth2Http = "1.18.0"
 gson = "2.10.1"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
@@ -58,6 +60,8 @@ androidx-navigation-ui = { module = "androidx.navigation:navigation-ui", version
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomKtx" }
+aws-android-sdk-core = { module = "com.amazonaws:aws-android-sdk-core", version.ref = "awsAndroidSdkCore" }
+aws-android-sdk-s3 = { module = "com.amazonaws:aws-android-sdk-s3", version.ref = "awsAndroidSdkCore" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterMoshi" }
 converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "converterMoshi" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
@@ -68,6 +72,7 @@ firebase-core = { module = "com.google.firebase:firebase-core", version.ref = "f
 firebase-database = { module = "com.google.firebase:firebase-database" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "googleAuthLibraryOauth2Http" }
 google-firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
 google-firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }

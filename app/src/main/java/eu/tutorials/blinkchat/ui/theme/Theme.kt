@@ -14,6 +14,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 //private val DarkColorScheme = darkColorScheme(
 //    primary = Purple80,
@@ -304,7 +305,6 @@ val unspecified_scheme = ColorFamily(
 @Composable
 fun BlinkChatTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable() () -> Unit
 ) {
@@ -314,14 +314,20 @@ fun BlinkChatTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> darkColorScheme()
-        else -> lightColorScheme()
+        darkTheme -> darkScheme
+        else -> lightScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,
-        content = content
+        content = {
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setSystemBarsColor(
+                color = colorScheme.background
+            )
+            content()
+        }
     )
 }
 

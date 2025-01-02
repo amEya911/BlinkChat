@@ -7,10 +7,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import eu.tutorials.blinkchat.data.datasource.local.contact.AppDatabase
 import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContactDao
 import eu.tutorials.blinkchat.data.datasource.local.notification.FcmApi
+import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.NotificationRepository
@@ -30,12 +32,17 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFcmApi(): FcmApi {
-
         return Retrofit.Builder()
             .baseUrl("https://fcm.googleapis.com/")
             .addConverterFactory(MoshiConverterFactory.create())
             .build()
             .create(FcmApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideThemePreferences(@ApplicationContext context: Context): ThemePreferences {
+        return ThemePreferences(context)
     }
 
     @Provides
@@ -71,9 +78,10 @@ object AppModule {
     @Provides
     fun provideAppRepository(
         firestore: FirebaseFirestore,
-        recentChatRepository: RecentChatRepository
+        recentChatRepository: RecentChatRepository,
+        notificationRepository: NotificationRepository
     ): AppRepository {
-        return AppRepository(firestore, recentChatRepository)
+        return AppRepository(firestore, recentChatRepository, notificationRepository)
     }
 
     @Provides

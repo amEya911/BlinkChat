@@ -50,6 +50,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    packagingOptions{
+        exclude("mozilla/public-suffix-list.txt")
+        exclude("META-INF/DEPENDENCIES")
+    }
 }
 
 dependencies {
@@ -112,9 +117,16 @@ dependencies {
     implementation (libs.google.firebase.auth)
     implementation (libs.firebase.core)
 
-   implementation(libs.google.firebase.messaging)
+    implementation(libs.google.firebase.messaging)
+    implementation(libs.google.auth.library.oauth2.http) // Use the latest version
 
-   implementation(libs.retrofit)
+    //implementation ("com.google.firebase:firebase-inappmessaging-display")
+
+    implementation (libs.aws.android.sdk.s3)
+    implementation (libs.aws.android.sdk.core)
+
+
+    implementation(libs.retrofit)
     implementation(libs.converter.moshi)
     implementation (libs.converter.gson)
 

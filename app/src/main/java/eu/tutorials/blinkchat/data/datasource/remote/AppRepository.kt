@@ -8,13 +8,18 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.amazonaws.auth.CognitoCachingCredentialsProvider
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.s3.AmazonS3Client
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.model.Image
 import eu.tutorials.blinkchat.data.model.Message
+import eu.tutorials.blinkchat.util.IdentityPoolId
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,11 +31,13 @@ import javax.inject.Inject
 
 class AppRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val recentChatRepository: RecentChatRepository
+    private val recentChatRepository: RecentChatRepository,
+    private val notificationRepository: NotificationRepository
 ) {
 
     private fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(network)
         return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
@@ -42,23 +49,51 @@ class AppRepository @Inject constructor(
         context: Context,
         isGuest: Boolean,
         recipientUserExists: Boolean,
+        notifyOtherUser: Boolean,
         callback: (String?) -> Unit
     ) {
         if (!isNetworkAvailable(context)) {
-            Toast.makeText(context, "No internet connection. Room creation failed.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                "No internet connection. Room creation failed.",
+                Toast.LENGTH_LONG
+            ).show()
             callback(null)
             return
         }
 
         checkChatRoomExists(initiatorUser, recipientUser) { existingChatRoomId ->
             if (existingChatRoomId != null) {
-                recentChatRepository.updateRecentChats(initiatorUser.id, recipientUser, existingChatRoomId)
+                recentChatRepository.updateRecentChats(
+                    initiatorUser.id,
+                    recipientUser,
+                    existingChatRoomId
+                )
                 if (recipientUserExists) {
-                    recentChatRepository.updateRecentChats(recipientUser.id, initiatorUser, existingChatRoomId)
+                    recentChatRepository.updateRecentChats(
+                        recipientUser.id,
+                        initiatorUser,
+                        existingChatRoomId
+                    )
                 }
                 callback(existingChatRoomId)
             } else {
-                createNewChatRoom(initiatorUser, recipientUser, context, isGuest, recipientUserExists, callback)
+                createNewChatRoom(
+                    initiatorUser,
+                    recipientUser,
+                    context,
+                    isGuest,
+                    recipientUserExists,
+                    callback
+                )
+                if (notifyOtherUser) {
+                    notificationRepository.notifyOtherUser(
+                        currentUserId = initiatorUser.id,
+                        otherUserId = recipientUser.id,
+                        title = "New room created",
+                        body = "${initiatorUser.id} has created a new chat room with you"
+                    )
+                }
             }
         }
     }
@@ -92,7 +127,11 @@ class AppRepository @Inject constructor(
                         }
                     }
                     .addOnFailureListener { exception ->
-                        Log.e("ChatRoom", "Error checking reverse chat room: ${exception.message}", exception)
+                        Log.e(
+                            "ChatRoom",
+                            "Error checking reverse chat room: ${exception.message}",
+                            exception
+                        )
                         callback(null)
                     }
             }
@@ -142,7 +181,11 @@ class AppRepository @Inject constructor(
                 }
             }
             .addOnFailureListener { exception ->
-                Toast.makeText(context, "Failed to create chat room: ${exception.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    "Failed to create chat room: ${exception.message}",
+                    Toast.LENGTH_LONG
+                ).show()
                 Log.e("ChatRoom", "Error creating chat room: ${exception.message}", exception)
                 callback(null)
             }
@@ -159,8 +202,10 @@ class AppRepository @Inject constructor(
                 val initiatorUser = (snapshot.get("initiatorUser") as? Map<*, *>)?.toContact()
                 val recipientUser = (snapshot.get("recipientUser") as? Map<*, *>)?.toContact()
 
-                val initiatorId = initiatorUser?.id ?: throw Exception("Initiator user ID is missing")
-                val recipientId = recipientUser?.id ?: throw Exception("Recipient user ID is missing")
+                val initiatorId =
+                    initiatorUser?.id ?: throw Exception("Initiator user ID is missing")
+                val recipientId =
+                    recipientUser?.id ?: throw Exception("Recipient user ID is missing")
 
                 when (currentId) {
                     initiatorId -> Result.success(
@@ -198,7 +243,8 @@ class AppRepository @Inject constructor(
         messageText: String,
         currentUserId: String,
         initiatorUserId: String,
-        recipientUserId: String
+        recipientUserId: String,
+        isDeleteImage: Boolean
     ) {
         val messageField = when (currentUserId) {
             initiatorUserId -> "initiatorMessage"
@@ -206,8 +252,16 @@ class AppRepository @Inject constructor(
             else -> return
         }
 
+        val updates = mutableMapOf<String, Any>(
+            "$messageField.messageText" to messageText
+        )
+
+        if (isDeleteImage) {
+            updates["$messageField.imageUrls"] = emptyList<String>() // Clear images if needed
+        }
+
         firestore.collection("chatRooms").document(chatRoomId)
-            .update("$messageField.messageText", messageText)
+            .update(updates)
             .addOnFailureListener {
                 Log.e("AppRepo", "Failed to update typing message: ${it.message}")
             }
@@ -218,27 +272,38 @@ class AppRepository @Inject constructor(
         image: Uri,
         currentUserId: String,
         initiatorUserId: String,
-        recipientUserId: String
+        recipientUserId: String,
+        context: Context
     ) {
-        val imageRef = Firebase.storage.reference.child("images/${UUID.randomUUID()}")
-        imageRef.putFile(image).continueWithTask { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let {
-                    Log.d("Kya ", it.toString())
-                    throw it
-                }
-            }
-            imageRef.downloadUrl
-        }.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val downloadUri = task.result
-                sendImage(
-                    chatRoomId,
-                    downloadUri.toString(),
-                    currentUserId, initiatorUserId, recipientUserId
-                )
+        val bucketName = "vanish-bucket-app"
+        val s3Key = "images/${UUID.randomUUID()}.jpg"
+
+        val s3Client = AmazonS3Client(
+            CognitoCachingCredentialsProvider(
+                context,
+                IdentityPoolId.IDENTITY_POOL_ID, // Replace with your Cognito Identity Pool ID
+                Regions.AP_SOUTH_1 // Replace with your AWS Region
+            )
+        )
+
+        val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
+        context.contentResolver.openInputStream(image)?.use { inputStream ->
+            FileOutputStream(tempFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
             }
         }
+
+        Thread {
+            try {
+                s3Client.putObject(bucketName, s3Key, tempFile)
+                val imageUrl = s3Client.getUrl(bucketName, s3Key).toString()
+                sendImage(chatRoomId, imageUrl, currentUserId, initiatorUserId, recipientUserId)
+            } catch (e: Exception) {
+                Log.e("AppRepo", "Failed to upload image to S3: ${e.message}", e)
+            } finally {
+                tempFile.delete()
+            }
+        }.start()
     }
 
     private fun sendImage(
@@ -254,10 +319,61 @@ class AppRepository @Inject constructor(
             else -> return
         }
 
+        val imageMap = mapOf(
+            "url" to image,
+            "opened" to false
+        )
+
         firestore.collection("chatRooms").document(chatRoomId)
-            .update("$messageField.image", FieldValue.arrayUnion(image))
+            .update("$messageField.imageUrls", FieldValue.arrayUnion(imageMap))
             .addOnFailureListener {
                 Log.e("AppRepo", "Failed to update image: ${it.message}")
+            }
+    }
+
+    fun updateImageStatus(
+        chatRoomId: String,
+        image: String,
+        currentUserId: String,
+        initiatorUserId: String,
+        recipientUserId: String
+    ) {
+        val messageField = when (currentUserId) {
+            initiatorUserId -> "recipientMessage.imageUrls"
+            recipientUserId -> "initiatorMessage.imageUrls"
+            else -> return
+        }
+
+        firestore.collection("chatRooms").document(chatRoomId).get()
+            .addOnSuccessListener { snapshot ->
+                val imageUrls = snapshot.get(messageField) as? List<Map<String, Any>>
+
+                val updatedImageUrls = imageUrls?.map { imageMap ->
+                    if (imageMap["url"] == image) {
+                        // Update the 'opened' status to true for the matching image
+                        imageMap.toMutableMap().apply {
+                            this["opened"] = true
+                        }
+                    } else {
+                        imageMap
+                    }
+                }
+
+                if (updatedImageUrls != null) {
+                    firestore.collection("chatRooms").document(chatRoomId)
+                        .update(messageField, updatedImageUrls)
+                        .addOnSuccessListener {
+                            Log.d("AppRepo", "Image status updated successfully.")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("AppRepo", "Failed to update image status: ${e.message}")
+                        }
+                } else {
+                    Log.e("AppRepo", "Image list is null or empty.")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("AppRepo", "Failed to fetch chat room document: ${e.message}")
             }
     }
 
@@ -288,10 +404,10 @@ class AppRepository @Inject constructor(
         currentUserId: String,
         initiatorId: String,
         recipientId: String
-    ): Flow<String> = callbackFlow {
+    ): Flow<Pair<String, List<Image>?>> = callbackFlow {
         val messageField = when (currentUserId) {
-            initiatorId -> "recipientMessage.messageText"
-            recipientId -> "initiatorMessage.messageText"
+            initiatorId -> "recipientMessage"
+            recipientId -> "initiatorMessage"
             else -> null
         } ?: return@callbackFlow
 
@@ -301,11 +417,51 @@ class AppRepository @Inject constructor(
                     Log.e("AppRepo", "Error listening for messages", e)
                     return@addSnapshotListener
                 }
-                val message = snapshot?.getString(messageField) ?: ""
-                trySend(message).isSuccess
+                val messageText = snapshot?.getString("$messageField.messageText") ?: ""
+                val imageUrls = snapshot?.get("$messageField.imageUrls") as? List<Map<String, Any>>
+                val images = imageUrls?.mapNotNull { imageMap ->
+                    val url = imageMap["url"] as? String
+                    val opened = imageMap["opened"] as? Boolean
+                    if (url != null && opened != null) Image(url, opened) else null
+                }
+                Log.d("imageUrls", "AppRepo: $images")
+
+                trySend(Pair(messageText, images)).isSuccess
             }
         awaitClose { listenerRegistration.remove() }
     }
+
+    fun listenForCurrentUserImages(
+        chatRoomId: String,
+        currentUserId: String,
+        initiatorId: String,
+        recipientId: String
+    ): Flow<List<Image>?> = callbackFlow {
+        val messageField = when (currentUserId) {
+            initiatorId -> "initiatorMessage.imageUrls"
+            recipientId -> "recipientMessage.imageUrls"
+            else -> return@callbackFlow
+        }
+
+        val listenerRegistration = firestore.collection("chatRooms").document(chatRoomId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("AppRepo", "Error listening for messages", e)
+                    return@addSnapshotListener
+                }
+
+                val imageUrls = snapshot?.get(messageField) as? List<Map<String, Any>>
+                val images = imageUrls?.mapNotNull { imageMap ->
+                    val url = imageMap["url"] as? String
+                    val opened = imageMap["opened"] as? Boolean
+                    if (url != null && opened != null) Image(url, opened) else null
+                }
+
+                trySend(images).isSuccess
+            }
+        awaitClose { listenerRegistration.remove() }
+    }
+
 
     fun listenForReadMessages(
         chatRoomId: String,
@@ -335,8 +491,8 @@ class AppRepository @Inject constructor(
 
     fun deleteMessages(chatRoomId: String) {
         val updates = mapOf(
-            "initiatorMessage.messageText" to "",
-            "recipientMessage.messageText" to ""
+            "initiatorMessage" to Message(),
+            "recipientMessage" to Message()
         )
 
         firestore.collection("chatRooms").document(chatRoomId)

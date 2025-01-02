@@ -129,7 +129,7 @@ fun ChatBottomBar(
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {
-                onEvent(ChatRoomEvent.OnMessageTyping(""))
+                onEvent(ChatRoomEvent.OnMessageTyping("", true))
             }) {
                 Icon(
                     painter = painterResource(id = R.drawable.eraser),

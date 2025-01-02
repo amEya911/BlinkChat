@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
@@ -61,7 +62,6 @@ fun Inbox(
     val keyboardController = LocalSoftwareKeyboardController.current
     val visiblePermissionDialogQueue =
         inboxViewModel.visiblePermissionDialogQueue.collectAsState().value
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val contactsPermissionResultLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -77,7 +77,7 @@ fun Inbox(
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = {}
+        onResult = { }
     )
 
     visiblePermissionDialogQueue?.let { permission ->
@@ -101,11 +101,9 @@ fun Inbox(
         )
     }
 
-    LaunchedEffect(key1 = inboxState.isAllContactsClicked) {
+    LaunchedEffect(inboxState.isAllContactsClicked) {
         if (inboxState.isAllContactsClicked) {
-            contactsPermissionResultLauncher.launch(
-                Manifest.permission.READ_CONTACTS
-            )
+            contactsPermissionResultLauncher.launch(Manifest.permission.READ_CONTACTS)
         }
     }
 
@@ -126,21 +124,14 @@ fun Inbox(
         }
     }
 
-    LaunchedEffect(key1 = true) {
-        onEvent(InboxEvent.LoadRecentChats)
+    if (inboxState.isEnterChatRoom) {
+        onStartChatWithContact(inboxState.navigateToChatId!!)
+        onEvent(InboxEvent.ResetEnterChatRoom)
     }
 
-    LaunchedEffect(inboxState.contacts) {
-        if (inboxState.contacts.isEmpty()) {
-            activity?.let { onEvent(InboxEvent.OnLoadContacts) }
-        }
-    }
-
-    LaunchedEffect(key1 = inboxState.isEnterChatRoom) {
-        if (inboxState.isEnterChatRoom) {
-            onStartChatWithContact(inboxState.navigateToChatId!!)
-            onEvent(InboxEvent.ResetEnterChatRoom)
-        }
+    if (inboxState.contacts.isEmpty()) {
+        Log.d("Parth", "parth1")
+        onEvent(InboxEvent.OnLoadContacts)
     }
 
     val contentModifier =
@@ -211,26 +202,35 @@ fun Inbox(
                     }
                 }
                 if (inboxState.isAllContactsClicked) {
-                    LazyColumn {
-                        val groupedContacts = displayedContacts
-                            .sortedBy { it.displayName }
-                            .groupBy { it.displayName.first().uppercaseChar() }
+                    if (inboxState.isLoadingContacts) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        LazyColumn {
+                            val groupedContacts = displayedContacts
+                                .sortedBy { it.displayName }
+                                .groupBy { it.displayName.first().uppercaseChar() }
 
-                        groupedContacts.forEach { (initial, contacts) ->
-                            stickyHeader {
-                                Text(
-                                    text = initial.toString(),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            items(contacts) { contact ->
-                                AllChatItem(contact = contact, onEvent = onEvent)
+                            groupedContacts.forEach { (initial, contacts) ->
+                                stickyHeader {
+                                    Text(
+                                        text = initial.toString(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .padding(8.dp),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                items(contacts) { contact ->
+                                    AllChatItem(contact = contact, onEvent = onEvent)
+                                }
                             }
                         }
                     }

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -45,24 +46,27 @@ import coil.compose.rememberImagePainter
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import androidx.compose.ui.layout.ContentScale
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
-    onPhotoCaptured: (Uri) -> Unit, // Changed to pass Uri instead of Bitmap
-    lastCapturedPhoto: Uri? = null, // Changed to Uri
+    onPhotoCaptured: (Uri) -> Unit,
+    lastCapturedPhoto: Uri? = null,
     onRetakePhoto: () -> Unit,
-    onAccessMedia: () -> Unit,
-    onSendPhoto: (Uri) -> Unit, // Changed to accept Uri
+    onSendPhoto: (Uri) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraController = remember { LifecycleCameraController(context) }
 
+    val systemUiController = rememberSystemUiController()
+    systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.background)
+
     val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            onPhotoCaptured(it) // Pass Uri directly
+            onPhotoCaptured(it)
             Log.d("CameraContent", it.toString())
         }
     }
@@ -73,20 +77,21 @@ fun CameraScreen(
 
     if (lastCapturedPhoto != null) {
         LastPhotoPreview(
-            lastCapturedPhoto = lastCapturedPhoto, // Pass Uri
+            lastCapturedPhoto = lastCapturedPhoto,
             onSendPhoto = { uri ->
-                onSendPhoto(uri) // Pass Uri
+                onSendPhoto(uri)
             },
             onRetakePhoto = {
                 onRetakePhoto()
-            },
-            context = context
+            }
         )
     } else {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
-                BottomAppBar {
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.background
+                ) {
                     IconButton(
                         onClick = { getContent.launch("image/*") }
                     ) {
@@ -95,9 +100,7 @@ fun CameraScreen(
                             contentDescription = "Access Media"
                         )
                     }
-
                     Spacer(modifier = Modifier.weight(1f))
-
                     IconButton(
                         onClick = { capturePhoto(context, cameraController, onPhotoCaptured) }
                     ) {
@@ -149,9 +152,9 @@ private fun capturePhoto(
                 .toBitmap()
                 .rotateBitmap(image.imageInfo.rotationDegrees)
 
-            val uri = bitmapToUri(context, correctedBitmap) // Convert Bitmap to Uri
+            val uri = bitmapToUri(context, correctedBitmap)
             if (uri != null) {
-                onPhotoCaptured(uri) // Pass the Uri to the callback
+                onPhotoCaptured(uri)
             }
             image.close()
         }
@@ -163,40 +166,32 @@ private fun capturePhoto(
 }
 
 fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
-    // Prepare a byte array output stream to write the bitmap into
     val byteArrayOutputStream = ByteArrayOutputStream()
 
-    // Compress the bitmap to the output stream (JPEG format)
     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
 
-    // Create a ContentValues object to hold metadata for the image
     val contentValues = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, "captured_image_${System.currentTimeMillis()}.jpg")
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/YourAppName") // Store in Pictures
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/YourAppName")
     }
 
-    // Insert the image into MediaStore and get a URI
     val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
-    // Open an OutputStream to write the data into the content provider
     uri?.let {
         context.contentResolver.openOutputStream(it)?.use { outputStream ->
             byteArrayOutputStream.writeTo(outputStream)
         }
     }
-
-    // Return the URI of the image in MediaStore
     return uri
 }
 
 @Composable
 private fun LastPhotoPreview(
     modifier: Modifier = Modifier,
-    lastCapturedPhoto: Uri, // Accept Uri instead of Bitmap
+    lastCapturedPhoto: Uri,
     onSendPhoto: (Uri) -> Unit,
-    onRetakePhoto: () -> Unit,
-    context: Context
+    onRetakePhoto: () -> Unit
 ) {
     Scaffold(
         bottomBar = {
@@ -213,7 +208,7 @@ private fun LastPhotoPreview(
                 Spacer(modifier = Modifier.weight(1f))
 
                 IconButton(onClick = {
-                    onSendPhoto(lastCapturedPhoto) // Send Uri directly
+                    onSendPhoto(lastCapturedPhoto)
                 }) {
                     Icon(
                         imageVector = Icons.Filled.Send,
@@ -229,7 +224,6 @@ private fun LastPhotoPreview(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            // Use the Uri for image display, perhaps load it with a library like Coil for URI-based images
             Image(
                 painter = rememberImagePainter(lastCapturedPhoto),
                 contentDescription = "Last captured photo",

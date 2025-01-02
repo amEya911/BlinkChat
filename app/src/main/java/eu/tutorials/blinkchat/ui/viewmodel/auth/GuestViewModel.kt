@@ -46,6 +46,7 @@ class GuestViewModel @Inject constructor(
                     recipientUser = Contact(recipientUserId, "Guest", "", null, null),
                     context = context,
                     recipientUserExists = false,
+                    notifyOtherUser = false,
                     isGuest = true
                 ) { createdRoomId ->
                     if (createdRoomId != null) {

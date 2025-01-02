@@ -1,14 +1,17 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
 import android.util.Log
+import com.google.android.gms.tasks.Task
 import retrofit2.HttpException
 import java.io.IOException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import eu.tutorials.blinkchat.data.datasource.local.notification.FcmApi
-import eu.tutorials.blinkchat.data.datasource.local.notification.NotificationBody
-import eu.tutorials.blinkchat.data.datasource.local.notification.SendMessageDto
+import eu.tutorials.blinkchat.util.NotificationSender
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class NotificationRepository @Inject constructor(
@@ -18,10 +21,10 @@ class NotificationRepository @Inject constructor(
     fun getFCMToken(onTokenReceived: (String?) -> Unit) {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { task ->
             if (task.isNotEmpty()) {
-                Log.d("FCM Message", task)
+                Log.d("FCM-Token", task)
                 onTokenReceived(task)
             } else {
-                Log.d("FCM Message", "Error")
+                Log.d("FCM-Token", "Error")
                 onTokenReceived(null)
             }
         }
@@ -31,23 +34,24 @@ class NotificationRepository @Inject constructor(
         val userDoc = firestore.collection("users").document(userId)
         userDoc.update("fcmTokens", FieldValue.arrayUnion(token))
             .addOnSuccessListener {
-                Log.d("NotificationRepo", "FCM token added successfully")
+                Log.d("FCM-Token", "FCM token added successfully")
             }
             .addOnFailureListener { e ->
-                Log.e("NotificationRepo", "Failed to add FCM token: ${e.message}")
+                Log.e("FCM-Token", "Failed to add FCM token: ${e.message}")
             }
     }
 
-    fun removeFcmToken(userId: String, token: String) {
+    fun removeFcmToken(userId: String, token: String): Task<Void> {
         val userDoc = firestore.collection("users").document(userId)
-        userDoc.update("fcmTokens", FieldValue.arrayRemove(token))
+        return userDoc.update("fcmTokens", FieldValue.arrayRemove(token))
             .addOnSuccessListener {
-                Log.d("NotificationRepo", "FCM token removed successfully")
+                Log.d("FCM-Token", "FCM token removed successfully")
             }
             .addOnFailureListener { e ->
-                Log.e("NotificationRepo", "Failed to remove FCM token: ${e.message}")
+                Log.e("FCM-Token", "Failed to remove FCM token: ${e.message}")
             }
     }
+
 
     fun getFcmTokens(userId: String, onResult: (List<String>) -> Unit) {
         firestore.collection("users").document(userId)
@@ -57,7 +61,7 @@ class NotificationRepository @Inject constructor(
                 onResult(tokens)
             }
             .addOnFailureListener { e ->
-                Log.e("NotificationRepo", "Failed to retrieve FCM tokens: ${e.message}")
+                Log.e("FCM-Token", "Failed to retrieve FCM tokens: ${e.message}")
                 onResult(emptyList())
             }
     }
@@ -67,47 +71,44 @@ class NotificationRepository @Inject constructor(
         addFcmToken(userId, newToken)
     }
 
+    fun notifyOtherUser(
+        currentUserId: String,
+        otherUserId: String,
+        title: String,
+        body: String
+    ) {
+        getFcmTokens(otherUserId) { tokens ->
+            Log.d("NotificationSender1", "Tokens for user $otherUserId: $tokens")
+            // Start a coroutine to send notifications
+            CoroutineScope(Dispatchers.IO).launch {
+                tokens.forEach { token ->
+                    try {
+                        sendNotification(
+                            to = token,
+                            title = title,
+                            body = body
+                        )
+                    } catch (e: Exception) {
+                        Log.e("NotificationSender1", "Failed to send notification: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun sendNotification(to: String, title: String, body: String) {
-        val messageDto = SendMessageDto(
-            to = to,
-            notification = NotificationBody(
+        try {
+            // Directly call sendNotification with the necessary parameters
+            NotificationSender.sendNotification(
+                targetToken = to,
                 title = title,
                 body = body
             )
-        )
-
-        try {
-            fcmApi.sendMessage(messageDto)
-            Log.d("NotificationRepo", "Notification sent successfully to $to")
         } catch (e: HttpException) {
-            Log.e(
-                "NotificationRepo",
-                "HTTP exception while sending notification: ${e.response()?.errorBody()?.string()} | Code: ${e.code()}"
-            )
+            Log.e("NotificationSender1", "HTTP Exception: ${e.message}")
         } catch (e: IOException) {
-            Log.e("NotificationRepo", "Network issue while sending notification: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("NotificationRepo", "Unexpected error while sending notification: ${e.message}")
+            Log.e("NotificationSender1", "IO Exception: ${e.message}")
         }
     }
 
-
-    suspend fun broadcastNotification(title: String, body: String) {
-        val messageDto = SendMessageDto(
-            to = null,
-            notification = NotificationBody(
-                title = title,
-                body = body
-            )
-        )
-
-        try {
-            fcmApi.broadcast(messageDto)
-            Log.d("NotificationRepo", "Broadcast notification sent successfully")
-        } catch (e: HttpException) {
-            Log.e("NotificationRepo", "Failed to broadcast notification: ${e.message()}")
-        } catch (e: IOException) {
-            Log.e("NotificationRepo", "Failed to broadcast notification due to network issue: ${e.message}")
-        }
-    }
 }

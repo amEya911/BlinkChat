@@ -14,6 +14,7 @@ import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.app.ChatRoomEvent
+import eu.tutorials.blinkchat.data.model.Image
 import eu.tutorials.blinkchat.data.model.Message
 import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.ChatRoomState
@@ -57,6 +58,13 @@ class ChatRoomViewModel @Inject constructor(
                         messageText = event.message
                     )
                 )
+                if (event.isDeleteImage) {
+                    _chatRoomState.value = _chatRoomState.value.copy(
+                        currentUserMessage = _chatRoomState.value.currentUserMessage.copy(
+                            imageUrls = emptyList()
+                        )
+                    )
+                }
                 chatRoomId?.let { id ->
                     viewModelScope.launch {
                         appRepository.updateTypingMessage(
@@ -64,7 +72,8 @@ class ChatRoomViewModel @Inject constructor(
                             event.message,
                             currentUserId,
                             _chatRoomState.value.initiatorId,
-                            _chatRoomState.value.recipientId
+                            _chatRoomState.value.recipientId,
+                            event.isDeleteImage
                         )
                     }
                 }
@@ -99,11 +108,9 @@ class ChatRoomViewModel @Inject constructor(
                 _chatRoomState.value = _chatRoomState.value.copy(isCameraVisible = false)
             }
 
-            // Handling the OnCaptureImage event
             is ChatRoomEvent.OnCaptureImage -> {
-                // No need to call recycle on Uri, as it's not applicable
                 _chatRoomState.value = _chatRoomState.value.copy(
-                    capturedImage = event.updatedPhoto // updatedPhoto is assumed to be a Uri
+                    capturedImage = event.updatedPhoto
                 )
             }
 
@@ -111,22 +118,29 @@ class ChatRoomViewModel @Inject constructor(
                 _chatRoomState.value = _chatRoomState.value.copy(capturedImage = null)
             }
 
-            ChatRoomEvent.OnAccessMedia -> {
-
-            }
-
             is ChatRoomEvent.OnSendPhoto -> {
                 chatRoomId?.let { id ->
                     viewModelScope.launch {
                         appRepository.updateImage(
                             id,
-                            event.bitmap,
+                            event.uri,
                             currentUserId,
                             _chatRoomState.value.initiatorId,
-                            _chatRoomState.value.recipientId
+                            _chatRoomState.value.recipientId,
+                            event.context
                         )
                     }
                 }
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    isCameraVisible = false,
+                    capturedImage = null,
+                    currentUserMessage = _chatRoomState.value.currentUserMessage.copy(
+                        imageUrls = _chatRoomState.value.currentUserMessage.imageUrls.orEmpty() + Image(
+                            url = event.uri.toString(),
+                            opened = false
+                        )
+                    )
+                )
             }
 
             ChatRoomEvent.OnDismissPermissionDialog -> {
@@ -139,6 +153,42 @@ class ChatRoomViewModel @Inject constructor(
                     _visiblePermissionDialogQueue.value += event.permission
                 }
             }
+
+            is ChatRoomEvent.OnViewImage -> {
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    isViewImageClicked = true,
+                    selectedViewImage = event.uri
+                )
+            }
+
+            ChatRoomEvent.OnDismissViewImage -> {
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    isViewImageClicked = false,
+                    selectedViewImage = null
+                )
+            }
+
+            is ChatRoomEvent.OnImageOpened -> {
+                _chatRoomState.value = _chatRoomState.value.copy(
+                    otherUserMessage = _chatRoomState.value.otherUserMessage.copy(
+                        imageUrls = _chatRoomState.value.otherUserMessage.imageUrls?.map { image ->
+                            if (image.url == event.image) image.copy(opened = true) else image
+                        }
+                    )
+                )
+
+                chatRoomId?.let { id ->
+                    viewModelScope.launch {
+                        appRepository.updateImageStatus(
+                            chatRoomId = id,
+                            image = event.image,
+                            currentUserId = currentUserId,
+                            initiatorUserId = _chatRoomState.value.initiatorId,
+                            recipientUserId = _chatRoomState.value.recipientId
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -149,15 +199,12 @@ class ChatRoomViewModel @Inject constructor(
             result.onSuccess { (userPair, idPair) ->
                 val (currentUser, otherUser) = userPair
                 val (initiatorId, recipientId) = idPair
-                _chatRoomState.value = ChatRoomState(
+                _chatRoomState.value = _chatRoomState.value.copy(
                     currentUserContact = currentUser,
                     otherUserContact = otherUser,
                     initiatorId = initiatorId,
                     recipientId = recipientId
                 )
-                Log.d("nope", "currentUserId in ViewModel: $currentUserId")
-                Log.d("nope", "currentUserContact: ${_chatRoomState.value.currentUserContact?.id}")
-                Log.d("nope", "otherUserContact: ${_chatRoomState.value.otherUserContact?.id}")
                 updatePresence(true)
                 otherUser?.let {
                     userRepository.listenForPresenceUpdates(chatRoomId) { activeUsers ->
@@ -185,26 +232,44 @@ class ChatRoomViewModel @Inject constructor(
                         currentUserId,
                         initiatorId,
                         recipientId
-                    ).collectLatest { message ->
+                    ).collectLatest { (message, image) ->
                         _chatRoomState.value = _chatRoomState.value.copy(
                             otherUserMessage = _chatRoomState.value.otherUserMessage.copy(
-                                messageText = message
+                                messageText = message,
+                                imageUrls = image
                             )
                         )
                     }
                 }
 
-                appRepository.listenForReadMessages(
-                    chatRoomId,
-                    currentUserId,
-                    initiatorId,
-                    recipientId
-                ) { readMessage ->
-                    _chatRoomState.value = _chatRoomState.value.copy(
-                        otherUserMessage = _chatRoomState.value.otherUserMessage.copy(
-                            readMessage = readMessage
+                viewModelScope.launch {
+                    appRepository.listenForCurrentUserImages(
+                        chatRoomId,
+                        currentUserId,
+                        initiatorId,
+                        recipientId
+                    ).collectLatest { images ->
+                        _chatRoomState.value = _chatRoomState.value.copy(
+                            currentUserMessage = _chatRoomState.value.currentUserMessage.copy(
+                                imageUrls = images
+                            )
                         )
-                    )
+                    }
+                }
+
+                viewModelScope.launch {
+                    appRepository.listenForReadMessages(
+                        chatRoomId,
+                        currentUserId,
+                        initiatorId,
+                        recipientId
+                    ) { readMessage ->
+                        _chatRoomState.value = _chatRoomState.value.copy(
+                            otherUserMessage = _chatRoomState.value.otherUserMessage.copy(
+                                readMessage = readMessage
+                            )
+                        )
+                    }
                 }
 
             }.onFailure { error ->

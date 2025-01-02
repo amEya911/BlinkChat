@@ -11,7 +11,11 @@ import eu.tutorials.blinkchat.ui.theme.BlinkChatTheme
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.isSystemInDarkTheme
+import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
+import eu.tutorials.blinkchat.data.event.app.AppTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -19,7 +23,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            BlinkChatTheme {
+            val themePreferences = ThemePreferences(applicationContext)
+            val savedTheme = themePreferences.loadTheme()
+            val darkTheme = when (savedTheme) {
+                AppTheme.SYSTEM_DEFAULT -> isSystemInDarkTheme()
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+            }
+
+            Log.d("Theme12", darkTheme.toString())
+            BlinkChatTheme(darkTheme = darkTheme) {
                 App()
             }
         }

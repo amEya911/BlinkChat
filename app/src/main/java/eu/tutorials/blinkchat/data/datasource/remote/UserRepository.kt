@@ -239,14 +239,25 @@ class UserRepository @Inject constructor(
         val currentUserId = currentUserId() ?: return
 
         notificationRepository.getFCMToken { token ->
+            Log.d("FCM-Token", "token: $token")
             token?.let {
-                notificationRepository.removeFcmToken(currentUserId, it)
-            } ?: Log.d("UserRepository", "FCM Token is null.")
+                notificationRepository.removeFcmToken(currentUserId, it).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d("FCM-Token", "FCM token removed successfully.")
+                    } else {
+                        Log.e("FCM-Token", "Failed to remove FCM token: ${task.exception?.message}")
+                    }
+                    FirebaseAuth.getInstance().signOut()
+                    Log.d("FCM-Token", "User logged out.")
+                }
+            } ?: run {
+                Log.d("FCM-Token", "FCM Token is null. Logging out user.")
+                FirebaseAuth.getInstance().signOut()
+                Log.d("FCM-Token", "User logged out.")
+            }
         }
-
-        FirebaseAuth.getInstance().signOut()
-        Log.d("UserRepository", "User logged out.")
     }
+
 
     fun deleteAccount(onResult: (Boolean) -> Unit) {
         val currentUserId = currentUserId()
@@ -258,18 +269,15 @@ class UserRepository @Inject constructor(
             return
         }
 
-        // Step 1: Delete user's data from Firestore
         firestore.collection("users").document(currentUserId)
             .delete()
             .addOnSuccessListener {
                 Log.d("UserRepository", "User data deleted successfully for $currentUserId.")
 
-                // Step 2: Delete the user's authentication
                 currentUser.delete()
                     .addOnSuccessListener {
                         Log.d("UserRepository", "User account deleted successfully.")
 
-                        // Step 3: Remove FCM token
                         notificationRepository.getFCMToken { token ->
                             token?.let {
                                 notificationRepository.removeFcmToken(currentUserId, it)

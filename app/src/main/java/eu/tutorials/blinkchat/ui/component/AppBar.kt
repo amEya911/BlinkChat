@@ -52,7 +52,7 @@ fun AppBar(
         navigationIcon = {
             navigationIcon?.let {
                 IconButton(onClick = onNavigationIconClicked) {
-                    Icon(imageVector = navigationIcon, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary,)
+                    Icon(imageVector = navigationIcon, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary,)
                 }
             }
         },

@@ -1,6 +1,5 @@
 package eu.tutorials.blinkchat.data.event.app
 
-import android.app.Activity
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.RecentChatContact
 
@@ -12,7 +11,6 @@ sealed class InboxEvent {
     data class SearchUsers(val searchQuery: String): InboxEvent()
     data object OnEnterChatRoom: InboxEvent()
     data object ResetEnterChatRoom : InboxEvent()
-    data object LoadRecentChats: InboxEvent()
     data object OnScheduleAMeetClick: InboxEvent()
     data object OnScheduleDismissed: InboxEvent()
     data class OnScheduleConfirmed(val otherUserContact: Contact?, val date: String, val time: String) : InboxEvent()

@@ -8,29 +8,33 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-//noinspection UsingMaterialAndMaterial3Libraries
-import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import eu.tutorials.blinkchat.R
+import eu.tutorials.blinkchat.data.event.app.AppTheme
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.state.app.SettingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.settings.ActionButton
+import eu.tutorials.blinkchat.ui.component.settings.AlertDialogSetting
 
 @Composable
 fun Settings(
@@ -50,6 +54,88 @@ fun Settings(
             settingsState.isAccountDeleted -> navigateToLoginScreen()
         }
     }
+
+    if (settingsState.isLogoutClicked) {
+        AlertDialogSetting(
+            text = "Are you sure you want to LOGOUT?",
+            onConfirm = {
+                onEvent(SettingsEvent.OnLogoutDismissed)
+                onEvent(SettingsEvent.OnLogout)
+            },
+            onDismiss = {
+                onEvent(SettingsEvent.OnLogoutDismissed)
+            }
+        )
+    }
+
+    if (settingsState.isDeleteAccountClicked) {
+        AlertDialogSetting(
+            text = "Are you sure you want to DELETE account?",
+            onConfirm = {
+                onEvent(SettingsEvent.OnDeleteAccountDismissed)
+                onEvent(SettingsEvent.OnDeleteAccount)
+            },
+            onDismiss = {
+                onEvent(SettingsEvent.OnDeleteAccountDismissed)
+            }
+        )
+    }
+
+    if (settingsState.isThemeClicked) {
+        ThemeSelectorBottomSheet(
+            selectedTheme = settingsState.selectedTheme,
+            onThemeSelected = { theme ->
+                onEvent(SettingsEvent.OnThemeChanged(theme))
+            },
+            onDismiss = { onEvent(SettingsEvent.OnThemeClicked) }
+        )
+    }
+
+
+//    if (settingsState.isThemeClicked) {
+//        AlertDialog(
+//            onDismissRequest = { onEvent(SettingsEvent.OnThemeClicked) },
+//            title = { Text("Select Theme") },
+//            text = {
+//                Column {
+//                    // RadioButton for System Default
+//                    Row(verticalAlignment = Alignment.CenterVertically) {
+//                        RadioButton(
+//                            selected = settingsState.selectedTheme == AppTheme.SYSTEM_DEFAULT,
+//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.SYSTEM_DEFAULT)) }
+//                        )
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Text("System Default")
+//                    }
+//
+//                    // RadioButton for Light theme
+//                    Row(verticalAlignment = Alignment.CenterVertically) {
+//                        RadioButton(
+//                            selected = settingsState.selectedTheme == AppTheme.LIGHT,
+//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.LIGHT)) }
+//                        )
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Text("Light")
+//                    }
+//
+//                    // RadioButton for Dark theme
+//                    Row(verticalAlignment = Alignment.CenterVertically) {
+//                        RadioButton(
+//                            selected = settingsState.selectedTheme == AppTheme.DARK,
+//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.DARK)) }
+//                        )
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Text("Dark")
+//                    }
+//                }
+//            },
+//            confirmButton = {
+//                TextButton(onClick = { onEvent(SettingsEvent.OnThemeClicked) }) {
+//                    Text("Cancel")
+//                }
+//            }
+//        )
+//    }
 
     Scaffold(
         topBar = {
@@ -72,7 +158,6 @@ fun Settings(
                 Text("Loading...", modifier = Modifier.padding(16.dp))
             } else {
                 ActionButton(
-                    //modifier = modifier.padding(innerPadding),
                     onClick = {
                         onBlockUserClicked()
                     },
@@ -82,75 +167,88 @@ fun Settings(
                 )
 
                 ActionButton(
-                    //modifier = modifier.padding(innerPadding),
                     onClick = {
-                        onEvent(SettingsEvent.OnLogout)
+                        onEvent(SettingsEvent.OnLogoutClicked)
                     },
                     text = "Log Out",
                     icon = Icons.Default.Logout
                 )
 
                 ActionButton(
-                    //modifier = modifier.padding(innerPadding),
                     onClick = {
-                        onEvent(SettingsEvent.OnDeleteAccount)
+                        onEvent(SettingsEvent.OnDeleteAccountClicked)
                     },
                     text = "Delete Account",
                     icon = Icons.Default.Delete
+                )
+
+                ActionButton(
+                    onClick = {
+                        onEvent(SettingsEvent.OnThemeClicked)
+                    },
+                    text = "Theme",
+                    icon = painterResource(id = R.drawable.theme)
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActionButton(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    onClick: () -> Unit = {},
-    text: String = "Click Me",
-    count: Int? = null
+fun ThemeSelectorBottomSheet(
+    selectedTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        backgroundColor = MaterialTheme.colorScheme.surfaceBright,
-        shape = MaterialTheme.shapes.medium,
-        elevation = 4.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        ModalBottomSheet(
+            onDismissRequest = { onDismiss() },
+            containerColor = MaterialTheme.colorScheme.surface,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = text,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
+                ThemeOption(
+                    text = "System Default",
+                    isSelected = selectedTheme == AppTheme.SYSTEM_DEFAULT,
+                    onClick = { onThemeSelected(AppTheme.SYSTEM_DEFAULT) }
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
-                    color = MaterialTheme.colorScheme.onSurface
+
+                ThemeOption(
+                    text = "Light",
+                    isSelected = selectedTheme == AppTheme.LIGHT,
+                    onClick = { onThemeSelected(AppTheme.LIGHT) }
                 )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                count?.let { Text(text = "$count" ,color = MaterialTheme.colorScheme.primary) }
-                Icon(
-                    imageVector = Icons.Default.ArrowForwardIos,
-                    contentDescription = "Forward Arrow",
-                    tint = MaterialTheme.colorScheme.onSurface
+
+                ThemeOption(
+                    text = "Dark",
+                    isSelected = selectedTheme == AppTheme.DARK,
+                    onClick = { onThemeSelected(AppTheme.DARK) }
                 )
+
+                Spacer(modifier = Modifier.padding(16.dp))
             }
         }
+
+}
+
+@Composable
+fun ThemeOption(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = null
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = text, style =MaterialTheme.typography.bodyLarge)
     }
 }

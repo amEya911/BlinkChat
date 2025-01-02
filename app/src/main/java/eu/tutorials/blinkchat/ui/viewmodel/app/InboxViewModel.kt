@@ -1,12 +1,8 @@
 package eu.tutorials.blinkchat.ui.viewmodel.app
 
-import android.Manifest
-import android.app.Activity
 import android.app.Application
-import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.util.Log
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,9 +18,7 @@ import eu.tutorials.blinkchat.data.model.RecentChatContact
 import eu.tutorials.blinkchat.data.state.app.InboxState
 import eu.tutorials.blinkchat.util.HashUtil
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +42,7 @@ class InboxViewModel @Inject constructor(
 
     init {
         loadCurrentUser()
+        loadRecentChats()
     }
 
     fun onEvent(event: InboxEvent) {
@@ -90,12 +85,9 @@ class InboxViewModel @Inject constructor(
 
             InboxEvent.ResetEnterChatRoom -> {
                 _inboxState.value = _inboxState.value.copy(
-                    isEnterChatRoom = false
+                    isEnterChatRoom = false,
+                    searchQuery = null
                 )
-            }
-
-            InboxEvent.LoadRecentChats -> {
-                loadRecentChats()
             }
 
             InboxEvent.OnScheduleAMeetClick -> {
@@ -375,6 +367,7 @@ class InboxViewModel @Inject constructor(
 
     private fun loadContacts() {
         viewModelScope.launch {
+            _inboxState.value = _inboxState.value.copy(isLoadingContacts = true)
             try {
                 val contactsList = mutableListOf<LocalContact>()
                 val cursor = appContext.contentResolver.query(
@@ -445,12 +438,13 @@ class InboxViewModel @Inject constructor(
                 }
 
                 withContext(Dispatchers.Main) {
-                    _inboxState.value = _inboxState.value.copy(contacts = contactList)
+                    _inboxState.value = _inboxState.value.copy(contacts = contactList, isLoadingContacts = false)
                 }
 
                 loadRecentChats()
             } catch (e: Exception) {
                 Log.e("noooo", "Error loading contacts", e)
+                _inboxState.value = _inboxState.value.copy(snackbarMessage = "Error loading contacts")
             }
         }
     }
@@ -481,6 +475,7 @@ class InboxViewModel @Inject constructor(
                         initiatorUser = initiatorUser,
                         recipientUser = recipientUser,
                         recipientUserExists = exists,
+                        notifyOtherUser = true,
                         context = appContext,
                         isGuest = false
                     ) { chatRoomId ->

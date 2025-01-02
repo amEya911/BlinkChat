@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
+import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.NotificationRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import javax.inject.Inject
@@ -13,6 +14,7 @@ class PushNotificationService: FirebaseMessagingService() {
 
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var notificationRepository: NotificationRepository
+    @Inject lateinit var localRepository: LocalRepository
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -30,6 +32,8 @@ class PushNotificationService: FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
+
+        Log.d("NotificationSender1", "message received: ${message.notification?.body}")
 
         // Respond to received messages
     }

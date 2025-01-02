@@ -51,32 +51,12 @@ class MeetRepository @Inject constructor(
                 time,
                 onResult
             )
-            notifyOtherUser(currentUserContact.id, otherUserContact.id, date, time)
-        }
-    }
-
-    private fun notifyOtherUser(
-        currentUserId: String,
-        otherUserId: String,
-        date: String,
-        time: String
-    ) {
-        notificationRepository.getFcmTokens(otherUserId) { tokens ->
-            Log.d("NotificationRepo", "token: $tokens")
-            // Launch a coroutine for sending notifications
-            CoroutineScope(Dispatchers.IO).launch {
-                tokens.forEach { token ->
-                    try {
-                        notificationRepository.sendNotification(
-                            to = token,
-                            title = "New Schedule Created",
-                            body = "User $currentUserId has scheduled a meeting on $date at $time."
-                        )
-                    } catch (e: Exception) {
-                        Log.e("NotificationRepo", "Failed to send notification: ${e.message}")
-                    }
-                }
-            }
+            notificationRepository.notifyOtherUser(
+                currentUserId = currentUserContact.id,
+                otherUserId = otherUserContact.id,
+                title = "New Schedule Created",
+                body = "User ${currentUserContact.id} has scheduled a meeting on $date at $time."
+            )
         }
     }
 
@@ -246,6 +226,12 @@ class MeetRepository @Inject constructor(
         }
         rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime, handleResult)
         rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, handleResult)
+        notificationRepository.notifyOtherUser(
+            currentUserId = currentUserId,
+            otherUserId = otherUserId,
+            title = "Meet Rescheduled",
+            body = "User $currentUserId has Rescheduled a meeting."
+        )
     }
 
     private fun rescheduleMeetForUser(
@@ -305,7 +291,6 @@ class MeetRepository @Inject constructor(
         var success = true
         var errorMessage: String? = null
 
-        // Function to handle the result of rescheduling for each user
         val handleResult: (Boolean, String?) -> Unit = { result, message ->
             completed++
             if (!result) {
@@ -313,17 +298,22 @@ class MeetRepository @Inject constructor(
                 errorMessage = message ?: "Unknown error"
             }
 
-            // If both operations are completed, update the final result
             if (completed == 2) {
                 if (success) {
-                    onResult(true, null) // Both users succeeded
+                    onResult(true, null)
                 } else {
-                    onResult(false, errorMessage) // At least one failed
+                    onResult(false, errorMessage)
                 }
             }
         }
         deleteMeetForUser(meetingId, currentUserId, handleResult)
         deleteMeetForUser(meetingId, otherUserId, handleResult)
+        notificationRepository.notifyOtherUser(
+            currentUserId = currentUserId,
+            otherUserId = otherUserId,
+            title = "Meet Deleted",
+            body = "User $currentUserId has deleted a meeting."
+        )
     }
 
     private fun deleteMeetForUser(

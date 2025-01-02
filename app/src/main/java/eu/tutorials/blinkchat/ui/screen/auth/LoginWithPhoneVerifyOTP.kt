@@ -21,6 +21,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -83,35 +85,35 @@ fun LoginWithPhoneVerifyOTP(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.weight(0.5f))
-//            TextField(
-//                value = loginState.verificationCode,
-//                onValueChange = {
-//                    viewModel.onEvent(
-//                        LoginWithPhoneEvent.EnterVerificationCode(it)
-//                    )
-//                },
-//                label = { Text("Verification Code") },
-//                placeholder = { Text("Enter code") },
-//                singleLine = true,
-//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//                modifier = Modifier
-//                    .padding(16.dp)
-//                    .fillMaxWidth(0.8f),
-//                colors = TextFieldDefaults.colors().copy(
-//                    focusedContainerColor = Color(0xFFF6FEDB),
-//                    unfocusedContainerColor = Color(0xFFF6FEDB),
-//                    focusedTextColor = Color.Gray,
-//                    unfocusedTextColor = Color.Gray,
-//                    focusedPlaceholderColor = Color.Gray,
-//                    unfocusedPlaceholderColor = Color.Gray,
-//                    focusedIndicatorColor = Color.Transparent,
-//                    unfocusedIndicatorColor = Color.Transparent
-//                )
-//            )
+            TextField(
+                value = loginState.verificationCode,
+                onValueChange = {
+                    viewModel.onEvent(
+                        LoginWithPhoneEvent.EnterVerificationCode(it)
+                    )
+                },
+                label = { Text("Verification Code") },
+                placeholder = { Text("Enter code") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(0.8f),
+                colors = TextFieldDefaults.colors().copy(
+                    focusedContainerColor = Color(0xFFF6FEDB),
+                    unfocusedContainerColor = Color(0xFFF6FEDB),
+                    focusedTextColor = Color.Gray,
+                    unfocusedTextColor = Color.Gray,
+                    focusedPlaceholderColor = Color.Gray,
+                    unfocusedPlaceholderColor = Color.Gray,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
 
-            OTPVerificationBox(otpLength = 6) { otp ->
-                viewModel.onEvent(LoginWithPhoneEvent.EnterVerificationCode(otp))
-            }
+//            OTPVerificationBox(otpLength = 6) { otp ->
+//                viewModel.onEvent(LoginWithPhoneEvent.EnterVerificationCode(otp))
+//            }
 
             Spacer(modifier = Modifier.height(24.dp))
             Button(

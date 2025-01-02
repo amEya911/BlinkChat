@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
@@ -18,10 +19,11 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val localRepository: LocalRepository
+    private val localRepository: LocalRepository,
+    private val themePreferences: ThemePreferences
 ): ViewModel() {
 
-    private val _settingsState = MutableStateFlow(SettingsState())
+    private val _settingsState = MutableStateFlow(SettingsState(selectedTheme = themePreferences.loadTheme()))
     val settingsState: StateFlow<SettingsState> = _settingsState
 
     fun onEvent(event: SettingsEvent) {
@@ -35,6 +37,38 @@ class SettingsViewModel @Inject constructor(
 
             SettingsEvent.OnDeleteAccount -> {
                 deleteAccount()
+            }
+
+            SettingsEvent.OnDeleteAccountClicked -> {
+                _settingsState.value = _settingsState.value.copy(
+                    isDeleteAccountClicked = true
+                )
+            }
+            SettingsEvent.OnLogoutClicked -> {
+                _settingsState.value = _settingsState.value.copy(
+                    isLogoutClicked = true
+                )
+            }
+            SettingsEvent.OnDeleteAccountDismissed -> {
+                _settingsState.value = _settingsState.value.copy(
+                    isDeleteAccountClicked = false
+                )
+            }
+            SettingsEvent.OnLogoutDismissed -> {
+                _settingsState.value = _settingsState.value.copy(
+                    isLogoutClicked = false
+                )
+            }
+
+            SettingsEvent.OnThemeClicked -> {
+                _settingsState.value = _settingsState.value.copy(isThemeClicked = !_settingsState.value.isThemeClicked)
+            }
+            is SettingsEvent.OnThemeChanged -> {
+                themePreferences.saveTheme(event.theme)
+                _settingsState.value = _settingsState.value.copy(
+                    selectedTheme = event.theme,
+                    isThemeClicked = false
+                )
             }
         }
     }
