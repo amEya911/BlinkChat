@@ -22,4 +22,8 @@ class LocalRepository @Inject constructor(
     suspend fun deleteContacts(contacts: List<LocalContact>) {
         appDatabase.contactDao().deleteContacts(contacts)
     }
+
+    suspend fun getContactById(id: String): LocalContact? {
+        return appDatabase.contactDao().getContactById(id)
+    }
 }

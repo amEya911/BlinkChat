@@ -25,7 +25,7 @@ class MeetingsViewModel @Inject constructor(
     private val meetRepository: MeetRepository,
     private val userRepository: UserRepository,
     private val localRepository: LocalRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _meetingsSate = MutableStateFlow(MeetingsState())
     val meetingsState: StateFlow<MeetingsState> = _meetingsSate
@@ -36,10 +36,7 @@ class MeetingsViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun onEvent(event: MeetingsEvent) {
-        when(event) {
-            MeetingsEvent.OnLoadMeetings -> {
-                loadMeetings()
-            }
+        when (event) {
 
             is MeetingsEvent.OnMeetingClicked -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
@@ -47,6 +44,7 @@ class MeetingsViewModel @Inject constructor(
                     selectedMeeting = event.meeting
                 )
             }
+
             MeetingsEvent.OnMeetingDismissed -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
                     isRescheduleClicked = false,
@@ -66,6 +64,7 @@ class MeetingsViewModel @Inject constructor(
                     isRescheduleClicked = true
                 )
             }
+
             MeetingsEvent.OnRescheduleDismissed -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
                     isRescheduleClicked = false
@@ -143,22 +142,30 @@ class MeetingsViewModel @Inject constructor(
     private fun rescheduleMeet(meeting: Meeting, newDate: String, newTime: String) {
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
-            meetRepository.rescheduleMeet(
-                meetingId = meeting.meetingId,
-                currentUserId = currentUserId,
-                otherUserId= meeting.otherUserContact.id,
-                newDate = newDate,
-                newTime = newTime
-            ) { result, message ->
-                if (result) {
-                    _meetingsSate.value = _meetingsSate.value.copy(
-                        snackbarMessage = "Meet successfully rescheduled"
-                    )
-                } else {
-                    _meetingsSate.value = _meetingsSate.value.copy(
-                        snackbarMessage = "Error rescheduling meet: $message"
-                    )
+            userRepository.fetchBlockedAndMutedData(
+                meeting.otherUserContact.id,
+                currentUserId
+            ) { blocked, muted ->
+                meetRepository.rescheduleMeet(
+                    meetingId = meeting.meetingId,
+                    currentUserId = currentUserId,
+                    otherUserId = meeting.otherUserContact.id,
+                    newDate = newDate,
+                    newTime = newTime,
+                    isUserMuted = muted,
+                    isBlocked = blocked
+                ) { result, message ->
+                    if (result) {
+                        _meetingsSate.value = _meetingsSate.value.copy(
+                            snackbarMessage = "Meet successfully rescheduled"
+                        )
+                    } else {
+                        _meetingsSate.value = _meetingsSate.value.copy(
+                            snackbarMessage = "Error rescheduling meet: $message"
+                        )
+                    }
                 }
+
             }
         } else {
             Log.e("scheduleMeet", "currentUserId not loaded")
@@ -168,20 +175,28 @@ class MeetingsViewModel @Inject constructor(
     private fun deleteMeet(meeting: Meeting) {
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
-            meetRepository.deleteMeet(
-                meetingId = meeting.meetingId,
-                currentUserId = currentUserId,
-                otherUserId = meeting.otherUserContact.id
-            ) { result, message ->
-                if (result) {
-                    _meetingsSate.value = _meetingsSate.value.copy(
-                        snackbarMessage = "Meet successfully deleted"
-                    )
-                } else {
-                    _meetingsSate.value = _meetingsSate.value.copy(
-                        snackbarMessage = "Error deleting meet: $message"
-                    )
+            userRepository.fetchBlockedAndMutedData(
+                meeting.otherUserContact.id,
+                currentUserId
+            ) { blocked, muted ->
+                meetRepository.deleteMeet(
+                    meetingId = meeting.meetingId,
+                    currentUserId = currentUserId,
+                    otherUserId = meeting.otherUserContact.id,
+                    isUserMuted = muted,
+                    isBlocked = blocked
+                ) { result, message ->
+                    if (result) {
+                        _meetingsSate.value = _meetingsSate.value.copy(
+                            snackbarMessage = "Meet successfully deleted"
+                        )
+                    } else {
+                        _meetingsSate.value = _meetingsSate.value.copy(
+                            snackbarMessage = "Error deleting meet: $message"
+                        )
+                    }
                 }
+
             }
         } else {
             Log.e("scheduleMeet", "currentUserId not loaded")

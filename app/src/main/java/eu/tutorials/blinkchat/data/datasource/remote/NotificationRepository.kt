@@ -53,7 +53,7 @@ class NotificationRepository @Inject constructor(
     }
 
 
-    fun getFcmTokens(userId: String, onResult: (List<String>) -> Unit) {
+    private fun getFcmTokens(userId: String, onResult: (List<String>) -> Unit) {
         firestore.collection("users").document(userId)
             .get()
             .addOnSuccessListener { document ->
@@ -75,18 +75,21 @@ class NotificationRepository @Inject constructor(
         currentUserId: String,
         otherUserId: String,
         title: String,
-        body: String
+        body: String,
+        type: String,
+        deepLink: String
     ) {
         getFcmTokens(otherUserId) { tokens ->
             Log.d("NotificationSender1", "Tokens for user $otherUserId: $tokens")
-            // Start a coroutine to send notifications
             CoroutineScope(Dispatchers.IO).launch {
                 tokens.forEach { token ->
                     try {
                         sendNotification(
                             to = token,
                             title = title,
-                            body = body
+                            body = body,
+                            type = type,
+                            deepLink = deepLink
                         )
                     } catch (e: Exception) {
                         Log.e("NotificationSender1", "Failed to send notification: ${e.message}")
@@ -96,13 +99,14 @@ class NotificationRepository @Inject constructor(
         }
     }
 
-    suspend fun sendNotification(to: String, title: String, body: String) {
+    private fun sendNotification(to: String, title: String, body: String, type: String, deepLink: String) {
         try {
-            // Directly call sendNotification with the necessary parameters
             NotificationSender.sendNotification(
                 targetToken = to,
                 title = title,
-                body = body
+                body = body,
+                data = mapOf("type" to type),
+                deepLink = deepLink
             )
         } catch (e: HttpException) {
             Log.e("NotificationSender1", "HTTP Exception: ${e.message}")
@@ -110,5 +114,4 @@ class NotificationRepository @Inject constructor(
             Log.e("NotificationSender1", "IO Exception: ${e.message}")
         }
     }
-
 }

@@ -15,12 +15,14 @@ import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.RecentChatContact
+import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.InboxState
 import eu.tutorials.blinkchat.util.HashUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -56,11 +58,8 @@ class InboxViewModel @Inject constructor(
                     isContactClicked = true,
                     selectedContact = event.contact
                 )
-                checkIfUserIsBlocked(event.contact.id) { isBlocked ->
-                    _inboxState.value = _inboxState.value.copy(
-                        isSelectedContactBlocked = isBlocked
-                    )
-                }
+
+                fetchBlockedAndMutedData(event.contact.id)
             }
 
             InboxEvent.OnContactDismissed -> {
@@ -136,6 +135,19 @@ class InboxViewModel @Inject constructor(
                 )
             }
 
+            is InboxEvent.OnMuteUser -> {
+                muteUser(event.otherUserId)
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
+            is InboxEvent.OnUnmuteUser -> {
+                unmuteUser(event.otherUserId)
+                _inboxState.value = _inboxState.value.copy(
+                    isContactClicked = false
+                )
+            }
+
             InboxEvent.OnDismissPermissionDialog -> {
                 _visiblePermissionDialogQueue.value = null
             }
@@ -185,26 +197,30 @@ class InboxViewModel @Inject constructor(
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
             recentChatRepository.listenToRecentChats(currentUserId) { recentChatUserIds ->
-                val allContacts = _inboxState.value.contacts
-                Log.d("saala", "allContacts: ${_inboxState.value.contacts}")
-
-                val matchedRecentContacts = recentChatUserIds.mapNotNull { (userId, recentChatId) ->
-                    val contact = allContacts.find { it.id == userId }
-                    if (contact != null) {
-                        RecentChatContact(recentChatId = recentChatId, contact = contact)
+                val matchedRecentContacts = recentChatUserIds.map { (contact, recentChatId) ->
+                    val matchedContact = runBlocking {
+                        localRepository.getContactById(contact.id)
+                    }
+                    if (matchedContact != null) {
+                        RecentChatContact(recentChatId = recentChatId, contact = matchedContact.toContact())
                     } else {
-                        null
+                        RecentChatContact(
+                            recentChatId = recentChatId,
+                            contact = Contact(
+                                id = contact.id,
+                                displayName = contact.phoneNumber,
+                                phoneNumber = contact.phoneNumber,
+                                photoThumbnailUri = contact.photoThumbnailUri,
+                                photoUri = contact.photoUri
+                            )
+                        )
                     }
                 }
-
-                Log.d("saala", "matchedRecentContacts: $matchedRecentContacts")
 
                 _inboxState.value = _inboxState.value.copy(
                     recentContacts = matchedRecentContacts
                 )
             }
-
-            Log.d("saala", "recentContacts: ${_inboxState.value.recentContacts}")
 
             recentChatRepository.listenForPresence(currentUserId) { activeUserNames ->
                 _inboxState.value = _inboxState.value.copy(
@@ -227,6 +243,97 @@ class InboxViewModel @Inject constructor(
             recentChatId = recentChatId
         )
     }
+
+    private fun muteUser(otherUserId: String?) {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        if (currentUserId == null) {
+            _inboxState.value = _inboxState.value.copy(
+                snackbarMessage = "Failed to mute user: Invalid user data."
+            )
+            Log.e("MuteUser", "Current user details not loaded.")
+            return
+        }
+        if (otherUserId == null) {
+            _inboxState.value = _inboxState.value.copy(
+                snackbarMessage = "Failed to mute user: Invalid user data."
+            )
+            Log.e("MuteUser", "No contact Selected")
+            return
+        }
+        userRepository.muteUser(currentUserId, otherUserId) { result, message ->
+            if (result) {
+                _inboxState.value = _inboxState.value.copy(
+                    snackbarMessage = "Successfully muted user."
+                )
+            } else {
+                _inboxState.value = _inboxState.value.copy(
+                    snackbarMessage = "Failed to mute user: $message"
+                )
+            }
+        }
+    }
+
+    private fun fetchBlockedAndMutedData(otherUserId: String?) {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        if (currentUserId == null) {
+            Log.e("MuteUser", "Current user details not loaded.")
+            return
+        }
+        if (otherUserId == null) {
+            Log.e("MuteUser", "No contact Selected")
+            return
+        }
+
+        _inboxState.value.currentUserContact?.id?.let {
+            userRepository.fetchBlockedAndMutedData(
+                currentUserId = it,
+                otherUserId = otherUserId,
+            ) { isBlocked, isMuted ->
+                _inboxState.value = _inboxState.value.copy(
+                    isSelectedContactBlocked = isBlocked,
+                    isSelectedContactMuted = isMuted
+                )
+            }
+        }
+    }
+
+    private fun unmuteUser(otherUserId: String?) {
+        val currentUserId = _inboxState.value.currentUserContact?.id
+        if (currentUserId == null) {
+            Log.e("MuteUser", "Current user details not loaded.")
+            return
+        }
+        if (otherUserId == null) {
+            Log.e("MuteUser", "No contact Selected")
+            return
+        }
+        userRepository.unmuteUser(currentUserId, otherUserId) { result, message ->
+            if (result) {
+                _inboxState.value = _inboxState.value.copy(
+                    snackbarMessage = "Successfully unmuted user."
+                )
+            } else {
+                _inboxState.value = _inboxState.value.copy(
+                    snackbarMessage = "Failed to unmute user: $message"
+                )
+            }
+        }
+    }
+
+//    private fun checkIfUserIsMuted(
+//        otherUserId: String,
+//        onResult: (Boolean) -> Unit
+//    ) {
+//        val currentUserId = _inboxState.value.currentUserContact?.id
+//        if (currentUserId == null) {
+//            Log.e("MuteUser", "Current user details not loaded.")
+//            onResult(false)
+//            return
+//        }
+//        userRepository.checkIfUserIsMuted(currentUserId, otherUserId) { result ->
+//            onResult(result)
+//        }
+//    }
 
     private fun blockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id
@@ -257,20 +364,20 @@ class InboxViewModel @Inject constructor(
         }
     }
 
-    private fun checkIfUserIsBlocked(
-        otherUserId: String,
-        onResult: (Boolean) -> Unit
-    ) {
-        val currentUserId = _inboxState.value.currentUserContact?.id
-        if (currentUserId == null) {
-            Log.e("BlockUser", "Current user details not loaded.")
-            onResult(false)
-            return
-        }
-        userRepository.checkIfUserIsBlocked(currentUserId, otherUserId) { result ->
-            onResult(result)
-        }
-    }
+//    private fun checkIfUserIsBlocked(
+//        otherUserId: String,
+//        onResult: (Boolean) -> Unit
+//    ) {
+//        val currentUserId = _inboxState.value.currentUserContact?.id
+//        if (currentUserId == null) {
+//            Log.e("BlockUser", "Current user details not loaded.")
+//            onResult(false)
+//            return
+//        }
+//        userRepository.checkIfUserIsBlocked(currentUserId, otherUserId) { result ->
+//            onResult(result)
+//        }
+//    }
 
     private fun unblockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id
@@ -323,7 +430,7 @@ class InboxViewModel @Inject constructor(
             Log.e("ScheduledMeets", "Date or Time not selected")
             return
         }
-        userRepository.checkIfUserIsBlocked(otherUserContact.id, currentUserContact.id) { blocked ->
+        userRepository.fetchBlockedAndMutedData(otherUserContact.id, currentUserContact.id) { blocked, muted ->
             if (blocked) {
                 _inboxState.value = _inboxState.value.copy(
                     snackbarMessage = "Error Scheduling Meet"
@@ -335,7 +442,8 @@ class InboxViewModel @Inject constructor(
                         otherUserContact = otherUserContact,
                         ifOtherUserExists = exists,
                         date = date,
-                        time = time
+                        time = time,
+                        isUserMuted = muted
                     ) { result, message ->
                         if (result) {
                             _inboxState.value = _inboxState.value.copy(
@@ -464,8 +572,8 @@ class InboxViewModel @Inject constructor(
             return
         }
 
-        userRepository.checkIfUserIsBlocked(recipientUser.id, initiatorUser.id) { result ->
-            if (result) {
+        userRepository.fetchBlockedAndMutedData(recipientUser.id, initiatorUser.id) { blocked, muted ->
+            if (blocked) {
                 _inboxState.value = _inboxState.value.copy(
                     snackbarMessage = "Error Creating room"
                 )
@@ -475,7 +583,7 @@ class InboxViewModel @Inject constructor(
                         initiatorUser = initiatorUser,
                         recipientUser = recipientUser,
                         recipientUserExists = exists,
-                        notifyOtherUser = true,
+                        notifyOtherUser = !muted,
                         context = appContext,
                         isGuest = false
                     ) { chatRoomId ->

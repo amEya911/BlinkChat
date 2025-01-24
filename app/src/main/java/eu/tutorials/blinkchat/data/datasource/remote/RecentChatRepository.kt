@@ -4,29 +4,50 @@ import android.util.Log
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
-import eu.tutorials.blinkchat.data.model.RecentChatContact
+import eu.tutorials.blinkchat.util.Crypto
 import java.util.UUID
 import javax.inject.Inject
 
 class RecentChatRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
+    private val secretKey = Crypto.stringToKey("YourSharedKeyString")
+
     fun updateRecentChats(userId: String, otherUser: Contact, chatRoomId: String) {
         val recentChatId = UUID.randomUUID().toString()
         val recentChatEntry = mapOf(
             "recentChatId" to recentChatId,
-            "userId" to otherUser.id,
+            "userContact" to otherUser,
             "chatRoomId" to chatRoomId,
             "lastUpdated" to System.currentTimeMillis()
         )
+
+        val encryptedRecentChatEntry = recentChatEntry.mapValues { (key, value) ->
+            when (key) {
+                "recentChatId", "chatRoomId" -> value
+                "userContact" -> Crypto.encryptContact(value as Contact, secretKey)
+                else -> if (value is String) Crypto.encrypt(value, secretKey) else value
+            }
+        }
 
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     val recentChats =
                         document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
-                    val updatedChats = recentChats.filter { it["userId"] != otherUser.id }
-                    val newRecentChats = updatedChats + recentChatEntry
+                    val updatedChats = recentChats.filter {  chat ->
+                        val encryptedUserContactMap = chat["userContact"] as? String
+                        val userContact = encryptedUserContactMap?.let {
+                            try {
+                                Crypto.decryptContact(it, secretKey) // Returns a Contact directly
+                            } catch (e: Exception) {
+                                Log.e("listenToRecentChats", "Failed to decrypt contact", e)
+                                null
+                            }
+                        }
+                        userContact?.id != otherUser.id
+                    }
+                    val newRecentChats = updatedChats + encryptedRecentChatEntry
 
                     firestore.collection("users").document(userId)
                         .update("recentChats", newRecentChats)
@@ -38,7 +59,7 @@ class RecentChatRepository @Inject constructor(
                         }
                 } else {
                     firestore.collection("users").document(userId)
-                        .set(mapOf("recentChats" to listOf(recentChatEntry)))
+                        .set(mapOf("recentChats" to listOf(encryptedRecentChatEntry)))
                         .addOnSuccessListener {
                             Log.d("ChatRoom", "Recent chats created for user: $userId")
                         }
@@ -52,7 +73,7 @@ class RecentChatRepository @Inject constructor(
             }
     }
 
-    fun listenToRecentChats(currentUserId: String, onResult: (List<Pair<String, String>>) -> Unit) {
+    fun listenToRecentChats(currentUserId: String, onResult: (List<Pair<Contact, String>>) -> Unit) {
         firestore.collection("users").document(currentUserId)
             .addSnapshotListener { document, exception ->
                 if (exception != null) {
@@ -66,18 +87,29 @@ class RecentChatRepository @Inject constructor(
                 }
 
                 if (document != null && document.exists()) {
-                    val recentChats = document["recentChats"] as? List<Map<String, Any>> ?: emptyList()
+                    val recentChats =
+                        document["recentChats"] as? List<Map<String, Any>> ?: emptyList()
 
-                    val userIds = recentChats.mapNotNull { chat ->
-                        val userId = chat["userId"] as? String
+                    val contactList = recentChats.mapNotNull { chat ->
+                        val encryptedUserContactMap = chat["userContact"] as? String
                         val recentChatId = chat["recentChatId"] as? String
-                        if (userId != null && recentChatId != null) {
-                            userId to recentChatId
+
+                        val userContact = encryptedUserContactMap?.let {
+                            try {
+                                Crypto.decryptContact(it, secretKey) // Returns a Contact directly
+                            } catch (e: Exception) {
+                                Log.e("listenToRecentChats", "Failed to decrypt contact", e)
+                                null
+                            }
+                        }
+
+                        if (userContact != null && recentChatId != null) {
+                            userContact to recentChatId
                         } else {
                             null
                         }
                     }
-                    onResult(userIds)
+                    onResult(contactList)
                 } else {
                     Log.w(
                         "listenToRecentChats",
@@ -86,8 +118,7 @@ class RecentChatRepository @Inject constructor(
                     onResult(emptyList())
                 }
             }
-    }
-
+        }
 
     fun listenForPresence(currentUserId: String, callback: (List<String?>) -> Unit) {
         firestore.collection("users").document(currentUserId)

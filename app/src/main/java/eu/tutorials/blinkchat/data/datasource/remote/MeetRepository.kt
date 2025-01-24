@@ -5,9 +5,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Meeting
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import eu.tutorials.blinkchat.util.Crypto
+import eu.tutorials.blinkchat.util.NotificationType
 import java.util.UUID
 import javax.inject.Inject
 
@@ -15,12 +14,15 @@ class MeetRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val notificationRepository: NotificationRepository
 ) {
+    private val secretKey = Crypto.stringToKey("YourSharedKeyString")
+
     fun addSchedule(
         currentUserContact: Contact,
         otherUserContact: Contact,
         ifOtherUserExists: Boolean,
         date: String,
         time: String,
+        isUserMuted: Boolean,
         onResult: (Boolean, String?) -> Unit
     ) {
         val meetingId = UUID.randomUUID().toString()
@@ -51,12 +53,16 @@ class MeetRepository @Inject constructor(
                 time,
                 onResult
             )
-            notificationRepository.notifyOtherUser(
-                currentUserId = currentUserContact.id,
-                otherUserId = otherUserContact.id,
-                title = "New Schedule Created",
-                body = "User ${currentUserContact.id} has scheduled a meeting on $date at $time."
-            )
+            if (!isUserMuted) {
+                notificationRepository.notifyOtherUser(
+                    currentUserId = currentUserContact.id,
+                    otherUserId = otherUserContact.id,
+                    title = "New Schedule Created",
+                    body = currentUserContact.id,
+                    type = NotificationType.ScheduleMeet.type,
+                    deepLink = "https://vanishtest.netlify.app"
+                )
+            }
         }
     }
 
@@ -68,49 +74,61 @@ class MeetRepository @Inject constructor(
         time: String,
         onResult: (Boolean, String?) -> Unit
     ) {
-        firestore.collection("users").document(userId).get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val scheduledMeets =
-                        document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
-                    val newScheduledMeets = scheduledMeets + scheduledMeetEntry
-
-                    firestore.collection("users").document(userId)
-                        .update("scheduledMeets", newScheduledMeets)
-                        .addOnSuccessListener {
-                            Log.d(
-                                "ScheduledMeets",
-                                "ScheduledMeet successfully added for $otherUserDisplayName " +
-                                        "on $date " +
-                                        "at $time"
-                            )
-                            onResult(true, null)
-                        }.addOnFailureListener { e ->
-                            onResult(false, e.localizedMessage)
-                            Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
-                        }
-                } else {
-                    firestore.collection("users").document(userId)
-                        .set(mapOf("scheduledMeets" to listOf(scheduledMeetEntry)))
-                        .addOnSuccessListener {
-                            Log.d(
-                                "ScheduledMeets",
-                                "ScheduledMeet successfully added for $otherUserDisplayName " +
-                                        "on $date " +
-                                        "at $time"
-                            )
-                            onResult(true, null)
-                        }.addOnFailureListener { e ->
-                            onResult(false, e.localizedMessage)
-                            Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
-                        }
+        try {
+            val encryptedMeetEntry = scheduledMeetEntry.mapValues { (key, value) ->
+                when (key) {
+                    "meetingId" -> value
+                    "createdBy", "createdWith" -> Crypto.encryptContact(value as Contact, secretKey)
+                    else -> if (value is String) Crypto.encrypt(value, secretKey) else value
                 }
-            }.addOnFailureListener { e ->
-                onResult(false, e.localizedMessage)
-                Log.e("ScheduledMeets", "Failed to retrieve user document: $userId", e)
             }
-    }
 
+            firestore.collection("users").document(userId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val scheduledMeets =
+                            document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
+                        val newScheduledMeets = scheduledMeets + encryptedMeetEntry
+
+                        firestore.collection("users").document(userId)
+                            .update("scheduledMeets", newScheduledMeets)
+                            .addOnSuccessListener {
+                                Log.d(
+                                    "ScheduledMeets",
+                                    "ScheduledMeet successfully added for $otherUserDisplayName " +
+                                            "on $date " +
+                                            "at $time"
+                                )
+                                onResult(true, null)
+                            }.addOnFailureListener { e ->
+                                onResult(false, e.localizedMessage)
+                                Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
+                            }
+                    } else {
+                        firestore.collection("users").document(userId)
+                            .set(mapOf("scheduledMeets" to listOf(encryptedMeetEntry)))
+                            .addOnSuccessListener {
+                                Log.d(
+                                    "ScheduledMeets",
+                                    "ScheduledMeet successfully added for $otherUserDisplayName " +
+                                            "on $date " +
+                                            "at $time"
+                                )
+                                onResult(true, null)
+                            }.addOnFailureListener { e ->
+                                onResult(false, e.localizedMessage)
+                                Log.e("ScheduledMeets", "Failed to add Scheduled Meet for $userId")
+                            }
+                    }
+                }.addOnFailureListener { e ->
+                    onResult(false, e.localizedMessage)
+                    Log.e("ScheduledMeets", "Failed to retrieve user document: $userId", e)
+                }
+        } catch (e: Exception) {
+            onResult(false, e.message)
+            Log.e("ScheduledMeets", "Encryption failed", e)
+        }
+    }
 
     fun listenForMeetings(
         currentUserId: String,
@@ -132,54 +150,48 @@ class MeetRepository @Inject constructor(
                     val meets = document["scheduledMeets"] as? List<Map<String, Any>> ?: emptyList()
 
                     val meetingDetails = meets.mapNotNull { meet ->
-                        val meetingId = meet["meetingId"] as? String
-                        val createdByMap = meet["createdBy"] as? Map<String, Any>
-                        val createdWithMap = meet["createdWith"] as? Map<String, Any>
-                        val date = meet["date"] as? String ?: ""
-                        val time = meet["time"] as? String ?: ""
-                        val createdAt = meet["createdAt"] as? Long ?: 0L
+                        try {
+                            val meetingId = meet["meetingId"] as? String
+                            val createdByEncrypted = meet["createdBy"] as? String
+                            val createdWithEncrypted = meet["createdWith"] as? String
+                            val date = Crypto.decrypt(meet["date"] as? String ?: "", secretKey)
+                            val time = Crypto.decrypt(meet["time"] as? String ?: "", secretKey)
+                            val createdAt = meet["createdAt"] as? Long ?: 0L
 
-                        val createdBy = createdByMap?.let { map ->
-                            Contact(
-                                id = map["id"] as? String ?: "",
-                                displayName = map["displayName"] as? String ?: "",
-                                phoneNumber = map["phoneNumber"] as? String ?: "",
-                                photoThumbnailUri = map["photoThumbnailUri"] as? String,
-                                photoUri = map["photoUri"] as? String
+                            val createdBy = createdByEncrypted?.let {
+                                Crypto.decryptContact(it, secretKey)
+                            }
+
+                            val createdWith = createdWithEncrypted?.let {
+                                Crypto.decryptContact(it, secretKey)
+                            }
+
+                            Log.d(
+                                "ScheduledMeets",
+                                "Decrypted createdBy: $createdBy" +
+                                        " Decrypted createdWith: $createdWith" +
+                                        " Decrypted date: $date" +
+                                        " Decrypted time: $time"
                             )
-                        }
 
-                        val createdWith = createdWithMap?.let { map ->
-                            Contact(
-                                id = map["id"] as? String ?: "",
-                                displayName = map["displayName"] as? String ?: "",
-                                phoneNumber = map["phoneNumber"] as? String ?: "",
-                                photoThumbnailUri = map["photoThumbnailUri"] as? String,
-                                photoUri = map["photoUri"] as? String
-                            )
-                        }
-
-                        Log.d(
-                            "ScheduledMeets",
-                            "createdBy: $createdBy" +
-                                    "createdWith: $createdWith" +
-                                    "date: $date" +
-                                    "time: $time"
-                        )
-                        if (meetingId != null) {
-                            if (createdBy?.id != currentUserId) {
-                                createdBy?.let {
-                                    Meeting(meetingId, it, it, date, time, createdAt)
-                                }
-                            } else if (createdWith?.id != currentUserId) {
-                                createdWith?.let {
-                                    Meeting(meetingId, createdBy, it, date, time, createdAt)
+                            if (meetingId != null) {
+                                if (createdBy?.id != currentUserId) {
+                                    createdBy?.let {
+                                        Meeting(meetingId, it, it, date, time, createdAt)
+                                    }
+                                } else if (createdWith?.id != currentUserId) {
+                                    createdWith?.let {
+                                        Meeting(meetingId, createdBy, it, date, time, createdAt)
+                                    }
+                                } else {
+                                    null
                                 }
                             } else {
+                                Log.e("ScheduledMeets", "Decrypted meetingId is empty")
                                 null
                             }
-                        } else {
-                            Log.e("ScheduledMeets", "meetingId is null")
+                        } catch (e: Exception) {
+                            Log.e("ScheduledMeets", "Decryption failed", e)
                             null
                         }
                     }
@@ -201,6 +213,8 @@ class MeetRepository @Inject constructor(
         otherUserId: String,
         newDate: String,
         newTime: String,
+        isUserMuted: Boolean,
+        isBlocked: Boolean,
         onResult: (Boolean, String?) -> Unit
     ) {
         var completed = 0
@@ -225,13 +239,19 @@ class MeetRepository @Inject constructor(
             }
         }
         rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime, handleResult)
-        rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, handleResult)
-        notificationRepository.notifyOtherUser(
-            currentUserId = currentUserId,
-            otherUserId = otherUserId,
-            title = "Meet Rescheduled",
-            body = "User $currentUserId has Rescheduled a meeting."
-        )
+        if (!isBlocked) {
+            rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, handleResult)
+        }
+        if (!isUserMuted) {
+            notificationRepository.notifyOtherUser(
+                currentUserId = currentUserId,
+                otherUserId = otherUserId,
+                title = "Meet Rescheduled",
+                body = currentUserId,
+                type = NotificationType.RescheduleMeet.type,
+                deepLink = "https://vanishtest.netlify.app"
+            )
+        }
     }
 
     private fun rescheduleMeetForUser(
@@ -241,6 +261,9 @@ class MeetRepository @Inject constructor(
         newTime: String,
         onResult: (Boolean, String?) -> Unit
     ) {
+        val encryptedNewDate = Crypto.encrypt(newDate, secretKey)
+        val encryptedNewTime = Crypto.encrypt(newTime, secretKey)
+
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
@@ -250,8 +273,8 @@ class MeetRepository @Inject constructor(
                     val updatedMeets = scheduledMeets.map { meet ->
                         if (meet["meetingId"] == meetingId) {
                             meet.toMutableMap().apply {
-                                this["date"] = newDate
-                                this["time"] = newTime
+                                this["date"] = encryptedNewDate
+                                this["time"] = encryptedNewTime
                                 this["createdAt"] = System.currentTimeMillis()
                             }
                         } else {
@@ -285,6 +308,8 @@ class MeetRepository @Inject constructor(
         meetingId: String,
         currentUserId: String,
         otherUserId: String,
+        isUserMuted: Boolean,
+        isBlocked: Boolean,
         onResult: (Boolean, String?) -> Unit
     ) {
         var completed = 0
@@ -307,13 +332,19 @@ class MeetRepository @Inject constructor(
             }
         }
         deleteMeetForUser(meetingId, currentUserId, handleResult)
-        deleteMeetForUser(meetingId, otherUserId, handleResult)
-        notificationRepository.notifyOtherUser(
-            currentUserId = currentUserId,
-            otherUserId = otherUserId,
-            title = "Meet Deleted",
-            body = "User $currentUserId has deleted a meeting."
-        )
+        if (!isBlocked) {
+            deleteMeetForUser(meetingId, otherUserId, handleResult)
+        }
+        if (!isUserMuted) {
+            notificationRepository.notifyOtherUser(
+                currentUserId = currentUserId,
+                otherUserId = otherUserId,
+                title = "Meet Deleted",
+                body = currentUserId,
+                type = NotificationType.DeleteMeet.type,
+                deepLink = "https://vanishtest.netlify.app"
+            )
+        }
     }
 
     private fun deleteMeetForUser(
@@ -357,5 +388,4 @@ class MeetRepository @Inject constructor(
                 Log.e("ScheduledMeets", "Error retrieving user document: $userId", e)
             }
     }
-
 }

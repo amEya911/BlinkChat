@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.auth
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,21 +20,34 @@ import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 import eu.tutorials.blinkchat.data.event.auth.LoginWithPhoneEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import eu.tutorials.blinkchat.data.state.auth.LoginWithPhoneState
 
 @Composable
 fun LoginWithPhoneVerifyPhone(
-    viewModel: LoginWithPhoneViewModel = hiltViewModel(),
-    onVerifyLoginSuccessful: (String, String) -> Unit
+    onVerifyLoginSuccessful: (String, String) -> Unit,
+    viewModel: LoginWithPhoneViewModel,
+    loginState: LoginWithPhoneState
 ) {
-    val loginState = viewModel.loginWithPhoneState.collectAsState().value
     val context = LocalContext.current
     val activity = context as? Activity
+    val systemUiController = rememberSystemUiController()
+    val snackbarHostState = remember { SnackbarHostState() }
+    systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.background)
 
     LaunchedEffect(key1 = loginState.showVerificationField) {
         if (loginState.showVerificationField && !loginState.isLoggedIn) {
             loginState.verificationId?.let { verificationId ->
+                viewModel.onEvent(LoginWithPhoneEvent.OnResetVerificationState)
                 onVerifyLoginSuccessful(verificationId, loginState.mobileNumber)
             }
+        }
+    }
+
+    LaunchedEffect(loginState.snackbarMessage) {
+        loginState.snackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.onEvent(LoginWithPhoneEvent.OnClearSnackbarMessage)
         }
     }
 
@@ -64,9 +78,7 @@ fun LoginWithPhoneVerifyPhone(
                 value = loginState.mobileNumber,
                 onValueChange = {
                     viewModel.onEvent(
-                        LoginWithPhoneEvent.EnterMobileNumber(
-                            it
-                        )
+                        LoginWithPhoneEvent.EnterMobileNumber(it)
                     )
                 },
                 placeholder = {
@@ -96,34 +108,54 @@ fun LoginWithPhoneVerifyPhone(
                     unfocusedIndicatorColor = Color.Transparent
                 )
             )
+            if (loginState.verificationError != null) {
+                Text(
+                    text = loginState.verificationError,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
             Button(
                 onClick = {
-                    if (activity != null) {
-                        viewModel.onEvent(
-                            LoginWithPhoneEvent.SendVerificationCode(
-                                activity
+                    viewModel.onEvent(LoginWithPhoneEvent.OnClearError)
+                    if (loginState.timerSeconds > 0 && loginState.mobileNumber == viewModel.timerMobileNumber) {
+                        viewModel.onEvent(LoginWithPhoneEvent.ShowSnackbar("Wait for timer to finish: ${loginState.timerSeconds}"))
+                    } else {
+                        if (activity != null) {
+                            viewModel.onEvent(
+                                LoginWithPhoneEvent.SendVerificationCode(
+                                    activity
+                                )
                             )
-                        )
+                        }
                     }
                 },
                 modifier = Modifier
                     .width(300.dp)
                     .height(45.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text(
                     text = "Get OTP"
                 )
             }
 
-            if (loginState.verificationError != null) {
-                Text(
-                    text = loginState.verificationError,
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
             Spacer(modifier = Modifier.weight(1f))
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    bottom = WindowInsets.systemBars
+                        .asPaddingValues()
+                        .calculateBottomPadding()
+                )
+        )
     }
 }

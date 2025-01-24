@@ -17,6 +17,7 @@ class ThemePreferences(context: Context) {
         sharedPreferences.edit()
             .putString(KEY_SELECTED_THEME, theme.name)
             .apply()
+
     }
 
     fun loadTheme(): AppTheme {

@@ -6,6 +6,10 @@ data class LoginWithPhoneState(
     val showVerificationField: Boolean = false,
     val verificationId: String? = null,
     val verificationError: String? = null,
-    val isLoggedIn: Boolean = false
+    val isLoggedIn: Boolean = false,
+    val timerSeconds: Int = 60,
+    val isTimerRunning: Boolean = false,
+    val isTimerPaused: Boolean = false,
+    val snackbarMessage: String? = null
 )
 

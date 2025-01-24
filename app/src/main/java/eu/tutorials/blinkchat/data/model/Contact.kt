@@ -8,7 +8,9 @@ data class Contact(
     val phoneNumber: String,
     val photoThumbnailUri: String?,
     val photoUri: String?
-)
+) {
+    companion object
+}
 
 fun LocalContact.toContact(): Contact {
     return Contact(

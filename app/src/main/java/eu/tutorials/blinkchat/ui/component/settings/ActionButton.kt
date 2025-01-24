@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -30,10 +32,15 @@ fun ActionButton(
     text: String = "Click Me",
     count: Int? = null
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
         backgroundColor = MaterialTheme.colorScheme.surfaceBright,
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp
@@ -56,6 +63,7 @@ fun ActionButton(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
+
                     is Painter -> {
                         Icon(
                             painter = icon,
@@ -75,7 +83,7 @@ fun ActionButton(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                count?.let { Text(text = "$count" ,color = MaterialTheme.colorScheme.primary) }
+                count?.let { Text(text = "$count", color = MaterialTheme.colorScheme.primary) }
                 Icon(
                     imageVector = Icons.Default.ArrowForwardIos,
                     contentDescription = "Forward Arrow",

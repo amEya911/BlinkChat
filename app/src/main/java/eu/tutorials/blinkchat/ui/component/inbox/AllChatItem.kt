@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,11 +33,14 @@ fun AllChatItem(
     contact: Contact,
     onEvent: (InboxEvent) -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
             .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onEvent(InboxEvent.OnContactClicked(contact))
             }
             .background(MaterialTheme.colorScheme.surface),

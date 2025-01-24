@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -116,7 +118,9 @@ fun InboxContactPress(
                             }
                         },
                         onBlockUser = { onEvent(InboxEvent.OnBlockUser(state.selectedContact.id)) },
-                        onUnblockUser = { onEvent(InboxEvent.OnUnblockUser(state.selectedContact.id))}
+                        onUnblockUser = { onEvent(InboxEvent.OnUnblockUser(state.selectedContact.id))},
+                        onMuteUser = { onEvent(InboxEvent.OnMuteUser(state.selectedContact.id)) },
+                        onUnmuteUser = { onEvent(InboxEvent.OnUnmuteUser(state.selectedContact.id))}
                     )
                 }
             }
@@ -133,7 +137,9 @@ fun ContactPressMenu(
     onScheduleAMeet: () -> Unit,
     onDeleteRecentChat: () -> Unit,
     onBlockUser: () -> Unit,
-    onUnblockUser: () -> Unit
+    onUnblockUser: () -> Unit,
+    onMuteUser: () -> Unit,
+    onUnmuteUser: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -174,6 +180,15 @@ fun ContactPressMenu(
                     text = "Delete Recent Chat",
                     icon = Icons.Default.Delete,
                     onClick = onDeleteRecentChat
+                )
+                MenuDivider()
+            }
+
+            if (!inboxState.isSelectedContactBlocked) {
+                MenuItem(
+                    text = if (!inboxState.isSelectedContactMuted) "Mute ${inboxState.selectedContact?.displayName}" else "Unmute ${inboxState.selectedContact?.displayName}",
+                    icon = if (!inboxState.isSelectedContactMuted) Icons.Default.NotificationsOff else Icons.Default.Notifications,
+                    onClick = if (!inboxState.isSelectedContactMuted) onMuteUser else onUnmuteUser
                 )
                 MenuDivider()
             }

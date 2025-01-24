@@ -2,9 +2,11 @@ package eu.tutorials.blinkchat.data.datasource.remote
 
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.util.Crypto
 import eu.tutorials.blinkchat.util.HashUtil
 import javax.inject.Inject
 
@@ -12,7 +14,15 @@ class UserRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val notificationRepository: NotificationRepository
 ) {
+    private val secretKey = Crypto.stringToKey("YourSharedKeyString")
+
     fun addUserDetails(contact: Contact) {
+        val encryptedContact = contact.copy(
+            displayName = Crypto.encrypt(contact.displayName, secretKey),
+            phoneNumber = Crypto.encrypt(contact.phoneNumber, secretKey),
+            photoThumbnailUri = contact.photoThumbnailUri?.let { Crypto.encrypt(it, secretKey) },
+            photoUri = contact.photoUri?.let { Crypto.encrypt(it, secretKey) }
+        )
         firestore.collection("users").document(contact.id)
             .get()
             .addOnSuccessListener { document ->
@@ -25,7 +35,7 @@ class UserRepository @Inject constructor(
                     }
                 } else {
                     firestore.collection("users").document(contact.id)
-                        .set(contact)
+                        .set(encryptedContact)
                         .addOnSuccessListener {
                             Log.d("UserRepository", "User details added for ${contact.displayName}")
                             notificationRepository.getFCMToken { token ->
@@ -59,10 +69,12 @@ class UserRepository @Inject constructor(
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     val id = document.id
-                    val displayName = document.getString("displayName") ?: "Unknown"
-                    val phoneNumber = document.getString("phoneNumber") ?: "Unknown Number"
+                    val displayName = Crypto.decrypt(document.getString("displayName") ?: "Unknown", secretKey)
+                    val phoneNumber = Crypto.decrypt(document.getString("phoneNumber") ?: "Unknown Number", secretKey)
                     val photoThumbnailUri = document.getString("photoThumbnailUri")
+                        ?.let { Crypto.decrypt(it, secretKey) }
                     val photoUri = document.getString("photoUri")
+                        ?.let { Crypto.decrypt(it, secretKey) }
 
                     val contact = Contact(
                         id = id,
@@ -124,60 +136,57 @@ class UserRepository @Inject constructor(
         firestore.collection("users").document(currentUserId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val userIds =
-                        document.get("blockedUserIds") as? List<Map<String, Any>> ?: emptyList()
-                    val newUserIds = userIds + otherUserId
+                    val blockedUserIds = document.get("blockedUserIds") as? List<String> ?: emptyList()
+                    val newBlockedUserIds = blockedUserIds + otherUserId
 
-                    firestore.collection("users").document(currentUserId)
-                        .update("blockedUserIds", newUserIds)
-                        .addOnSuccessListener {
-                            onResult(true, null)
-                            Log.d("BlockUser", "Successfully blocked $otherUserId")
-                        }.addOnFailureListener { e->
-                            onResult(false, e.localizedMessage)
-                            Log.d("BlockUser", "Failed to block $otherUserId")
+                    // Fetch scheduled meetings to identify and delete meetings with the blocked user
+                    val scheduledMeets = document.get("scheduledMeets") as? List<Map<String, Any>> ?: emptyList()
+                    val meetingsToDelete = scheduledMeets.filter { meet ->
+                        val createdWith = (meet["createdWith"] as? Map<String, Any>)?.get("id") == otherUserId
+                        val createdBy = (meet["createdBy"] as? Map<String, Any>)?.get("id") == otherUserId
+                        createdWith || createdBy
+                    }
+
+                    // Update blocked users and delete meetings in a batch
+                    firestore.runBatch { batch ->
+                        val userDocRef = firestore.collection("users").document(currentUserId)
+
+                        // Update blocked users list
+                        batch.update(userDocRef, "blockedUserIds", newBlockedUserIds)
+
+                        // Remove meetings involving the blocked user
+                        for (meeting in meetingsToDelete) {
+                            batch.update(userDocRef, "scheduledMeets", FieldValue.arrayRemove(meeting))
+
+                            // Also remove the meeting from the blocked user's document
+                            val otherUserDocRef = firestore.collection("users").document(otherUserId)
+                            batch.update(otherUserDocRef, "scheduledMeets", FieldValue.arrayRemove(meeting))
                         }
+                    }.addOnSuccessListener {
+                        onResult(true, null)
+                        Log.d("BlockUser", "Successfully blocked $otherUserId and deleted related meetings.")
+                    }.addOnFailureListener { e ->
+                        onResult(false, e.localizedMessage)
+                        Log.e("BlockUser", "Failed to block $otherUserId or delete meetings: ${e.message}")
+                    }
                 } else {
+                    // If user document doesn't exist, initialize it with the blocked user
                     firestore.collection("users").document(currentUserId)
                         .set(mapOf("blockedUserIds" to listOf(otherUserId)))
                         .addOnSuccessListener {
                             onResult(true, null)
-                            Log.d("BlockUser", "Successfully blocked $otherUserId")
-                        }.addOnFailureListener { e->
+                            Log.d("BlockUser", "Successfully blocked $otherUserId (user document created).")
+                        }.addOnFailureListener { e ->
                             onResult(false, e.localizedMessage)
-                            Log.d("BlockUser", "Failed to block $otherUserId")
+                            Log.e("BlockUser", "Failed to block $otherUserId: ${e.message}")
                         }
                 }
-
             }.addOnFailureListener { e ->
                 onResult(false, e.localizedMessage)
                 Log.e("BlockUser", "Failed to retrieve user document: $currentUserId", e)
             }
     }
 
-    fun checkIfUserIsBlocked(
-        currentUserId: String,
-        otherUserId: String,
-        onResult: (Boolean) -> Unit
-    ) {
-        firestore.collection("users").document(currentUserId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                if (snapshot != null && snapshot.exists()) {
-                    val blockedUserIds = snapshot.get("blockedUserIds") as? List<String>
-                    Log.d("Cringe", "blockedUserIds: $blockedUserIds")
-                    val isBlocked = blockedUserIds?.contains(otherUserId) == true
-                    Log.d("Cringe", "isBlocked: $isBlocked")
-                    onResult(isBlocked)
-                } else {
-                    onResult(false)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("BlockUser", "Error fetching blocked user data", e)
-                onResult(false)
-            }
-    }
 
     fun getAllBlockedUsers(currentUserId: String, onResult: (List<String>) -> Unit) {
         firestore.collection("users").document(currentUserId)
@@ -205,7 +214,6 @@ class UserRepository @Inject constructor(
         firestore.collection("users").document(currentUserId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    // Get the current blockedUserIds (ensure it's a list of Strings)
                     val userIds = document.get("blockedUserIds") as? List<String> ?: emptyList()
                     if (userIds.contains(otherUserId)) {
                         val newUserIds = userIds.filterNot { it == otherUserId }
@@ -235,21 +243,125 @@ class UserRepository @Inject constructor(
             }
     }
 
+    fun muteUser(
+        currentUserId: String,
+        otherUserId: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        firestore.collection("users").document(currentUserId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val userIds =
+                        document.get("mutedUserIds") as? List<Map<String, Any>> ?: emptyList()
+                    val newUserIds = userIds + otherUserId
+
+                    firestore.collection("users").document(currentUserId)
+                        .update("mutedUserIds", newUserIds)
+                        .addOnSuccessListener {
+                            onResult(true, null)
+                            Log.d("MuteUser", "Successfully muted $otherUserId")
+                        }.addOnFailureListener { e ->
+                            onResult(false, e.localizedMessage)
+                            Log.d("MuteUser", "Failed to mute $otherUserId")
+                        }
+                } else {
+                    firestore.collection("users").document(currentUserId)
+                        .set(mapOf("mutedUserIds" to listOf(otherUserId)))
+                        .addOnSuccessListener {
+                            onResult(true, null)
+                            Log.d("MuteUser", "Successfully muted $otherUserId")
+                        }.addOnFailureListener { e ->
+                            onResult(false, e.localizedMessage)
+                            Log.d("MuteUser", "Failed to mute $otherUserId")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
+                Log.e("MuteUser", "Error retrieving user document: $currentUserId", e)
+            }
+    }
+
+    fun unmuteUser(
+        currentUserId: String,
+        otherUserId: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        firestore.collection("users").document(currentUserId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val userIds = document.get("mutedUserIds") as? List<String> ?: emptyList()
+                    if (userIds.contains(otherUserId)) {
+                        val newUserIds = userIds.filterNot { it == otherUserId }
+
+                        firestore.collection("users").document(currentUserId)
+                            .update("mutedUserIds", newUserIds)
+                            .addOnSuccessListener {
+                                onResult(true, null)
+                                Log.d("MuteUser", "Successfully unmuted $otherUserId")
+                            }
+                            .addOnFailureListener { e ->
+                                onResult(false, e.localizedMessage)
+                                Log.e("MuteUser", "Failed to unmute $otherUserId: ${e.message}")
+                            }
+                    } else {
+                        onResult(false, "User is not muted")
+                        Log.e("MuteUser", "User $otherUserId is not muted")
+                    }
+                } else {
+                    onResult(false, "User not found")
+                    Log.e("MuteUser", "User document not found for ID: $currentUserId")
+                }
+            }
+            .addOnFailureListener { e ->
+                onResult(false, e.localizedMessage)
+                Log.e("BlockUser", "Error retrieving user document: $currentUserId", e)
+            }
+    }
+
+    fun fetchBlockedAndMutedData(
+        currentUserId: String,
+        otherUserId: String,
+        onResult: (isBlocked: Boolean, isMuted: Boolean) -> Unit
+    ) {
+        firestore.collection("users").document(currentUserId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot != null && snapshot.exists()) {
+                    val blockedUserIds = snapshot.get("blockedUserIds") as? List<String>
+                    val mutedUserIds = snapshot.get("mutedUserIds") as? List<String>
+                    val isBlocked = blockedUserIds?.contains(otherUserId) == true
+                    val isMuted = mutedUserIds?.contains(otherUserId) == true
+                    onResult(isBlocked, isMuted)
+                } else {
+                    onResult(false, false)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("FetchUserData", "Error fetching user data", e)
+                onResult(false, false)
+            }
+    }
+
     fun logout() {
         val currentUserId = currentUserId() ?: return
 
         notificationRepository.getFCMToken { token ->
             Log.d("FCM-Token", "token: $token")
             token?.let {
-                notificationRepository.removeFcmToken(currentUserId, it).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.d("FCM-Token", "FCM token removed successfully.")
-                    } else {
-                        Log.e("FCM-Token", "Failed to remove FCM token: ${task.exception?.message}")
+                notificationRepository.removeFcmToken(currentUserId, it)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.d("FCM-Token", "FCM token removed successfully.")
+                        } else {
+                            Log.e(
+                                "FCM-Token",
+                                "Failed to remove FCM token: ${task.exception?.message}"
+                            )
+                        }
+                        FirebaseAuth.getInstance().signOut()
+                        Log.d("FCM-Token", "User logged out.")
                     }
-                    FirebaseAuth.getInstance().signOut()
-                    Log.d("FCM-Token", "User logged out.")
-                }
             } ?: run {
                 Log.d("FCM-Token", "FCM Token is null. Logging out user.")
                 FirebaseAuth.getInstance().signOut()
@@ -296,8 +408,53 @@ class UserRepository @Inject constructor(
                 onResult(false)
             }
     }
-
 }
+
+//fun checkIfUserIsBlocked(
+//    currentUserId: String,
+//    otherUserId: String,
+//    onResult: (Boolean) -> Unit
+//) {
+//    firestore.collection("users").document(currentUserId)
+//        .get()
+//        .addOnSuccessListener { snapshot ->
+//            if (snapshot != null && snapshot.exists()) {
+//                val blockedUserIds = snapshot.get("blockedUserIds") as? List<String>
+//                Log.d("Cringe", "blockedUserIds: $blockedUserIds")
+//                val isBlocked = blockedUserIds?.contains(otherUserId) == true
+//                Log.d("Cringe", "isBlocked: $isBlocked")
+//                onResult(isBlocked)
+//            } else {
+//                onResult(false)
+//            }
+//        }
+//        .addOnFailureListener { e ->
+//            Log.e("BlockUser", "Error fetching blocked user data", e)
+//            onResult(false)
+//        }
+//}
+
+//fun checkIfUserIsMuted(
+//    currentUserId: String,
+//    otherUserId: String,
+//    onResult: (Boolean) -> Unit
+//) {
+//    firestore.collection("users").document(currentUserId)
+//        .get()
+//        .addOnSuccessListener { snapshot ->
+//            if (snapshot != null && snapshot.exists()) {
+//                val mutedUserIds = snapshot.get("mutedUserIds") as? List<String>
+//                val isMuted = mutedUserIds?.contains(otherUserId) == true
+//                onResult(isMuted)
+//            } else {
+//                onResult(false)
+//            }
+//        }
+//        .addOnFailureListener { e ->
+//            Log.e("MuteUser", "Error fetching Muted user data", e)
+//            onResult(false)
+//        }
+//}
 
 
 

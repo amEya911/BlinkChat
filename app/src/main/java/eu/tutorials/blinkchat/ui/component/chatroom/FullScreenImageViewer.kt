@@ -82,11 +82,3 @@ fun FullscreenImageViewer(
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun Cry(modifier: Modifier = Modifier) {
-    FullscreenImageViewer(
-        imageUrl = "https://vanish-bucket-app.s3.amazonaws.com/images/8453ce5e-6c5a-418b-a917-8c7fceb82c4e.jpg"
-    ) { }
-}

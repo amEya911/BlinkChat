@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
+import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,11 +14,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,10 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.app.AppTheme
+import eu.tutorials.blinkchat.data.event.app.NotificationsType
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.state.app.SettingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
@@ -44,6 +47,8 @@ fun Settings(
     onBlockUserClicked: () -> Unit,
     navigateToLoginScreen: () -> Unit
 ) {
+    val activity = LocalContext.current as? Activity
+
     LaunchedEffect(key1 = settingsState.blockedUsers) {
         onEvent(SettingsEvent.OnLoadBlockedUsers)
     }
@@ -55,87 +60,11 @@ fun Settings(
         }
     }
 
-    if (settingsState.isLogoutClicked) {
-        AlertDialogSetting(
-            text = "Are you sure you want to LOGOUT?",
-            onConfirm = {
-                onEvent(SettingsEvent.OnLogoutDismissed)
-                onEvent(SettingsEvent.OnLogout)
-            },
-            onDismiss = {
-                onEvent(SettingsEvent.OnLogoutDismissed)
-            }
-        )
-    }
-
-    if (settingsState.isDeleteAccountClicked) {
-        AlertDialogSetting(
-            text = "Are you sure you want to DELETE account?",
-            onConfirm = {
-                onEvent(SettingsEvent.OnDeleteAccountDismissed)
-                onEvent(SettingsEvent.OnDeleteAccount)
-            },
-            onDismiss = {
-                onEvent(SettingsEvent.OnDeleteAccountDismissed)
-            }
-        )
-    }
-
-    if (settingsState.isThemeClicked) {
-        ThemeSelectorBottomSheet(
-            selectedTheme = settingsState.selectedTheme,
-            onThemeSelected = { theme ->
-                onEvent(SettingsEvent.OnThemeChanged(theme))
-            },
-            onDismiss = { onEvent(SettingsEvent.OnThemeClicked) }
-        )
-    }
-
-
-//    if (settingsState.isThemeClicked) {
-//        AlertDialog(
-//            onDismissRequest = { onEvent(SettingsEvent.OnThemeClicked) },
-//            title = { Text("Select Theme") },
-//            text = {
-//                Column {
-//                    // RadioButton for System Default
-//                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        RadioButton(
-//                            selected = settingsState.selectedTheme == AppTheme.SYSTEM_DEFAULT,
-//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.SYSTEM_DEFAULT)) }
-//                        )
-//                        Spacer(modifier = Modifier.width(8.dp))
-//                        Text("System Default")
-//                    }
-//
-//                    // RadioButton for Light theme
-//                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        RadioButton(
-//                            selected = settingsState.selectedTheme == AppTheme.LIGHT,
-//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.LIGHT)) }
-//                        )
-//                        Spacer(modifier = Modifier.width(8.dp))
-//                        Text("Light")
-//                    }
-//
-//                    // RadioButton for Dark theme
-//                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        RadioButton(
-//                            selected = settingsState.selectedTheme == AppTheme.DARK,
-//                            onClick = { onEvent(SettingsEvent.OnThemeChanged(AppTheme.DARK)) }
-//                        )
-//                        Spacer(modifier = Modifier.width(8.dp))
-//                        Text("Dark")
-//                    }
-//                }
-//            },
-//            confirmButton = {
-//                TextButton(onClick = { onEvent(SettingsEvent.OnThemeClicked) }) {
-//                    Text("Cancel")
-//                }
-//            }
-//        )
-//    }
+    HandleDialogEvents(
+        settingsState = settingsState,
+        onEvent = onEvent,
+        activity = activity
+    )
 
     Scaffold(
         topBar = {
@@ -168,6 +97,22 @@ fun Settings(
 
                 ActionButton(
                     onClick = {
+                        onEvent(SettingsEvent.OnThemeClicked)
+                    },
+                    text = "Theme",
+                    icon = painterResource(id = R.drawable.theme)
+                )
+
+                ActionButton(
+                    onClick = {
+                        onEvent(SettingsEvent.OnNotificationsClicked)
+                    },
+                    text = "Notifications",
+                    icon = Icons.Default.Notifications
+                )
+
+                ActionButton(
+                    onClick = {
                         onEvent(SettingsEvent.OnLogoutClicked)
                     },
                     text = "Log Out",
@@ -181,18 +126,101 @@ fun Settings(
                     text = "Delete Account",
                     icon = Icons.Default.Delete
                 )
-
-                ActionButton(
-                    onClick = {
-                        onEvent(SettingsEvent.OnThemeClicked)
-                    },
-                    text = "Theme",
-                    icon = painterResource(id = R.drawable.theme)
-                )
             }
         }
     }
 }
+
+@Composable
+fun HandleDialogEvents(
+    settingsState: SettingsState,
+    onEvent: (SettingsEvent) -> Unit,
+    activity: Activity?
+) {
+    if (settingsState.isLogoutClicked) {
+        AlertDialogSetting(
+            text = "Are you sure you want to LOGOUT?",
+            onConfirm = {
+                onEvent(SettingsEvent.OnLogoutClicked)
+                onEvent(SettingsEvent.OnLogout)
+            },
+            onDismiss = {
+                onEvent(SettingsEvent.OnLogoutClicked)
+            }
+        )
+    }
+
+    if (settingsState.isDeleteAccountClicked) {
+        AlertDialogSetting(
+            text = "Are you sure you want to DELETE account?",
+            onConfirm = {
+                onEvent(SettingsEvent.OnDeleteAccountClicked)
+                onEvent(SettingsEvent.OnDeleteAccount)
+            },
+            onDismiss = {
+                onEvent(SettingsEvent.OnDeleteAccountClicked)
+            }
+        )
+    }
+
+    if (settingsState.isThemeClicked) {
+        ThemeSelectorBottomSheet(
+            selectedTheme = settingsState.selectedTheme,
+            onThemeSelected = { theme ->
+                activity?.let { onEvent(SettingsEvent.OnThemeChanged(theme, it)) }
+            },
+            onDismiss = { onEvent(SettingsEvent.OnThemeClicked) }
+        )
+    }
+
+    if (settingsState.isNotificationsClicked) {
+        NotificationTypeDialog(
+            selectedType = settingsState.selectedNotificationsType,
+            onTypeSelected = { type -> onEvent(SettingsEvent.OnNotificationsTypeChanged(type)) },
+            onDismiss = { onEvent(SettingsEvent.OnNotificationsClicked) }
+        )
+    }
+}
+
+@Composable
+fun NotificationTypeDialog(
+    selectedType: NotificationsType,
+    onTypeSelected: (NotificationsType) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("Select Notification Type") },
+        text = {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedType == NotificationsType.PUBLIC,
+                        onClick = { onTypeSelected(NotificationsType.PUBLIC) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Public")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedType == NotificationsType.PRIVATE,
+                        onClick = { onTypeSelected(NotificationsType.PRIVATE) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Private")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

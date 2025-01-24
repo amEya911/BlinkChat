@@ -17,6 +17,8 @@ sealed class InboxEvent {
     data class OnDeleteRecentChat(val recentChatContact: RecentChatContact): InboxEvent()
     data class OnBlockUser(val otherUserId: String): InboxEvent()
     data class OnUnblockUser(val otherUserId: String): InboxEvent()
+    data class OnMuteUser(val otherUserId: String): InboxEvent()
+    data class OnUnmuteUser(val otherUserId: String): InboxEvent()
     data object OnDismissPermissionDialog: InboxEvent()
     data class OnPermissionResult(val permission: String, val isGranted: Boolean): InboxEvent()
     data object OnSnackbarDisplayed : InboxEvent()

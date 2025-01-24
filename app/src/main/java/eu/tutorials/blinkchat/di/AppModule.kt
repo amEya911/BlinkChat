@@ -11,7 +11,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import eu.tutorials.blinkchat.data.datasource.local.contact.AppDatabase
 import eu.tutorials.blinkchat.data.datasource.local.contact.LocalContactDao
+import eu.tutorials.blinkchat.data.datasource.local.notification.AppLifecycleObserver
 import eu.tutorials.blinkchat.data.datasource.local.notification.FcmApi
+import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.NotificationsTypePreferences
 import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
 import eu.tutorials.blinkchat.data.datasource.remote.AppRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
@@ -40,9 +42,20 @@ object AppModule {
     }
 
     @Provides
+    fun provideAppLifecycleObserver(): AppLifecycleObserver {
+        return AppLifecycleObserver()
+    }
+
+    @Provides
     @Singleton
     fun provideThemePreferences(@ApplicationContext context: Context): ThemePreferences {
         return ThemePreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationsTypePreferences(@ApplicationContext context: Context): NotificationsTypePreferences {
+        return NotificationsTypePreferences(context)
     }
 
     @Provides

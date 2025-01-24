@@ -5,6 +5,8 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,24 +15,33 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.google.firebase.auth.FirebaseAuth
 import eu.tutorials.blinkchat.ui.screen.app.ChatRoom
+import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RootNavGraph() {
+
     val navController = rememberNavController()
     val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
         Graph.APP
     } else {
         Graph.AUTH
     }
+    val viewModel: LoginWithPhoneViewModel = hiltViewModel()
+    val loginState = viewModel.loginWithPhoneState.collectAsState().value
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        authNavGraph(navController)
+        authNavGraph(
+            navController,
+            viewModel, loginState
+        )
         composable(Graph.APP) {
-            AppNavGraph(navController)
+            AppNavGraph(
+                navController
+            )
         }
         composable(
             route = "${AppScreen.ChatRoom.route}/{chatRoomId}?id={userId}",

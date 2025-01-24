@@ -19,6 +19,7 @@ data class InboxState(
     val scheduleDate: String? = null,
     val scheduleTime: String? = null,
     val isSelectedContactBlocked: Boolean = false,
+    val isSelectedContactMuted: Boolean = false,
     val snackbarMessage: String? = null,
     val isLoadingContacts: Boolean = false
 )

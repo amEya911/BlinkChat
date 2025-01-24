@@ -20,5 +20,9 @@ interface LocalContactDao {
 
     @Delete
     suspend fun deleteContacts(contacts: List<LocalContact>)
+
+    @Query("SELECT * FROM local_contact WHERE id = :id")
+    suspend fun getContactById(id: String): LocalContact?
+
 }
 

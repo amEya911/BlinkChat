@@ -1,5 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.auth
 
+import android.app.Activity
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,9 +23,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -39,6 +43,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,18 +54,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.data.event.auth.LoginWithPhoneEvent
+import eu.tutorials.blinkchat.data.state.auth.LoginWithPhoneState
 import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 
 @Composable
 fun LoginWithPhoneVerifyOTP(
     verificationId: String?,
     mobileNumber: String?,
-    viewModel: LoginWithPhoneViewModel = hiltViewModel(),
-    onOTPLoginSuccessful: () -> Unit
+    onOTPLoginSuccessful: () -> Unit,
+    onBackClicked: () -> Unit,
+    viewModel: LoginWithPhoneViewModel,
+    loginState: LoginWithPhoneState
 ) {
-    val loginState = viewModel.loginWithPhoneState.collectAsState().value
     val displayMobileNumber = mobileNumber ?: loginState.mobileNumber
+    val systemUiController = rememberSystemUiController()
+    val activity = LocalContext.current as? Activity
+    systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.background)
+
+    LaunchedEffect(true) {
+        viewModel.onEvent(LoginWithPhoneEvent.OnStartTimer)
+    }
 
     Box(
         modifier = Modifier
@@ -84,61 +99,79 @@ fun LoginWithPhoneVerifyOTP(
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            TextButton(
+                onClick = {
+                    viewModel.onEvent(LoginWithPhoneEvent.OnResetVerificationState)
+                    onBackClicked()
+                }
+            ) {
+                Text(text = "Wrong Number?")
+            }
             Spacer(modifier = Modifier.weight(0.5f))
-            TextField(
-                value = loginState.verificationCode,
-                onValueChange = {
-                    viewModel.onEvent(
-                        LoginWithPhoneEvent.EnterVerificationCode(it)
-                    )
-                },
-                label = { Text("Verification Code") },
-                placeholder = { Text("Enter code") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(0.8f),
-                colors = TextFieldDefaults.colors().copy(
-                    focusedContainerColor = Color(0xFFF6FEDB),
-                    unfocusedContainerColor = Color(0xFFF6FEDB),
-                    focusedTextColor = Color.Gray,
-                    unfocusedTextColor = Color.Gray,
-                    focusedPlaceholderColor = Color.Gray,
-                    unfocusedPlaceholderColor = Color.Gray,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+
+            OTPVerificationBox(otpLength = 6) { otp ->
+                Log.d("OTPTextField", "Entered OTP: $otp")
+                viewModel.onEvent(LoginWithPhoneEvent.EnterVerificationCode(otp))
+            }
+
+            if (loginState.verificationError != null) {
+                Text(
+                    text = loginState.verificationError,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
-            )
-
-//            OTPVerificationBox(otpLength = 6) { otp ->
-//                viewModel.onEvent(LoginWithPhoneEvent.EnterVerificationCode(otp))
-//            }
-
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = {
-                    if (verificationId != null) {
+                    viewModel.onEvent(LoginWithPhoneEvent.OnClearError)
+                    val enteredOTP = loginState.verificationCode
+                    if (verificationId != null && enteredOTP.length == 6) {
                         viewModel.onEvent(LoginWithPhoneEvent.VerifyCode(verificationId))
+                    } else {
+                        viewModel.onEvent(LoginWithPhoneEvent.OnShowError("Please enter the complete OTP"))
                     }
                 },
                 modifier = Modifier
                     .width(300.dp)
                     .height(45.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
-            ) {
-                Text(
-                    text = "Verify Code"
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
+            ) {
+                Text(text = "Verify Code")
+            }
+            if (loginState.isTimerRunning) {
+                Text(
+                    text = "Resend Code in ${loginState.timerSeconds}s",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(12.dp)
+                )
+            } else {
+                TextButton(
+                    onClick = {
+                        activity?.let {
+                            viewModel.onEvent(
+                                LoginWithPhoneEvent.OnResendVerificationCode(
+                                    activity = activity,
+                                    mobileNumber = mobileNumber ?: loginState.mobileNumber
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Text(
+                        text = "Resend Verification Code",
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
 
             if (loginState.isLoggedIn) {
                 onOTPLoginSuccessful()
                 viewModel.onEvent(LoginWithPhoneEvent.OnDismiss)
-            } else {
-                loginState.verificationError?.let {
-                    Text(text = it, color = Color.Red, modifier = Modifier.padding(16.dp))
-                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -171,7 +204,9 @@ fun OTPTextField(
         modifier = modifier
             .border(
                 width = 1.dp,
-                color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = 0.4f
+                )
             )
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
@@ -244,31 +279,64 @@ fun OTPVerificationBox(
                 modifier = Modifier
                     .padding(4.dp)
                     .width(40.dp)
-                    .height(50.dp)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .height(50.dp),
                 number = otpDigits[index],
                 focusRequester = focusRequesters[index],
                 onFocusChanged = { isFocused ->
+                    Log.d("OTPTextField", "Field $index focused: $isFocused")
                     if (isFocused && otpDigits[index] == null) {
                         otpDigits[index] = null
                     }
                 },
                 onNumberChanged = { newDigit ->
                     otpDigits[index] = newDigit
+                    Log.d("OTPTextField", "Field $index updated: $newDigit")
                     if (newDigit != null && index < otpLength - 1) {
                         focusRequesters[index + 1].requestFocus()
                     }
+                    val currentOTP = otpDigits.joinToString("") { it?.toString() ?: "" }
+                    Log.d("OTPTextField", "Current OTP: $currentOTP")
                     if (otpDigits.all { it != null }) {
-                        onOTPComplete(otpDigits.joinToString(separator = "") { it.toString() })
+                        onOTPComplete(currentOTP)
                     }
                 },
                 onKeyBoardBack = {
-                    if (index > 0) {
-                        otpDigits[index - 1] = null
+                    if (index > 0 && otpDigits[index] == null) {
                         focusRequesters[index - 1].requestFocus()
+                        Log.d("OTPTextField", "Backspace pressed at field $index")
+                    } else {
+                        otpDigits[index] = null
                     }
                 }
             )
         }
     }
 }
+
+//            TextField(
+//                value = loginState.verificationCode,
+//                onValueChange = {
+//                    viewModel.onEvent(
+//                        LoginWithPhoneEvent.EnterVerificationCode(it)
+//                    )
+//                },
+//                label = { Text("Verification Code") },
+//                placeholder = { Text("Enter code") },
+//                singleLine = true,
+//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                modifier = Modifier
+//                    .padding(16.dp)
+//                    .fillMaxWidth(0.8f)
+//                    .height(60.dp)
+//                    .clip(RoundedCornerShape(30.dp)),
+//                colors = TextFieldDefaults.colors(
+//                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+//                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+//                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+//                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+//                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+//                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+//                    focusedIndicatorColor = Color.Transparent,
+//                    unfocusedIndicatorColor = Color.Transparent
+//                )
+//            )

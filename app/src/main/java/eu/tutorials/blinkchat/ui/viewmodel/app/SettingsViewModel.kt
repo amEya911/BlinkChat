@@ -1,13 +1,17 @@
 package eu.tutorials.blinkchat.ui.viewmodel.app
 
+import android.app.Activity
 import android.util.Log
+import androidx.core.app.ActivityCompat.recreate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.NotificationsTypePreferences
 import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
+import eu.tutorials.blinkchat.data.event.app.AppTheme
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.SettingsState
@@ -20,10 +24,14 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val localRepository: LocalRepository,
-    private val themePreferences: ThemePreferences
+    private val themePreferences: ThemePreferences,
+    private val notificationsTypePreferences: NotificationsTypePreferences
 ): ViewModel() {
 
-    private val _settingsState = MutableStateFlow(SettingsState(selectedTheme = themePreferences.loadTheme()))
+    private val _settingsState = MutableStateFlow(SettingsState(
+        selectedTheme = themePreferences.loadTheme(),
+        selectedNotificationsType = notificationsTypePreferences.loadNotificationsType()
+    ))
     val settingsState: StateFlow<SettingsState> = _settingsState
 
     fun onEvent(event: SettingsEvent) {
@@ -41,36 +49,43 @@ class SettingsViewModel @Inject constructor(
 
             SettingsEvent.OnDeleteAccountClicked -> {
                 _settingsState.value = _settingsState.value.copy(
-                    isDeleteAccountClicked = true
+                    isDeleteAccountClicked =! _settingsState.value.isDeleteAccountClicked
                 )
             }
             SettingsEvent.OnLogoutClicked -> {
                 _settingsState.value = _settingsState.value.copy(
-                    isLogoutClicked = true
-                )
-            }
-            SettingsEvent.OnDeleteAccountDismissed -> {
-                _settingsState.value = _settingsState.value.copy(
-                    isDeleteAccountClicked = false
-                )
-            }
-            SettingsEvent.OnLogoutDismissed -> {
-                _settingsState.value = _settingsState.value.copy(
-                    isLogoutClicked = false
+                    isLogoutClicked =! _settingsState.value.isLogoutClicked
                 )
             }
 
             SettingsEvent.OnThemeClicked -> {
-                _settingsState.value = _settingsState.value.copy(isThemeClicked = !_settingsState.value.isThemeClicked)
+                _settingsState.value = _settingsState.value.copy(isThemeClicked =! _settingsState.value.isThemeClicked)
             }
             is SettingsEvent.OnThemeChanged -> {
                 themePreferences.saveTheme(event.theme)
+                onThemeChanged(event.activity)
                 _settingsState.value = _settingsState.value.copy(
                     selectedTheme = event.theme,
                     isThemeClicked = false
                 )
             }
+
+            SettingsEvent.OnNotificationsClicked -> {
+                _settingsState.value = _settingsState.value.copy(isNotificationsClicked =! _settingsState.value.isNotificationsClicked)
+            }
+
+            is SettingsEvent.OnNotificationsTypeChanged -> {
+                _settingsState.value = _settingsState.value.copy(
+                    selectedNotificationsType = event.notificationType,
+                    isNotificationsClicked = false
+                )
+                notificationsTypePreferences.saveNotificationsType(event.notificationType)
+            }
         }
+    }
+
+    private fun onThemeChanged(activity: Activity) {
+        recreate(activity)
     }
 
     private fun loadBlockedUsers() {

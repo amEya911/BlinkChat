@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,11 +43,14 @@ fun MeetingItem(
     meetingsState: MeetingsState,
     onEvent: (MeetingsEvent) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
             .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onEvent(MeetingsEvent.OnMeetingClicked(meeting))
             },
         verticalAlignment = Alignment.CenterVertically
@@ -89,7 +95,7 @@ fun MeetingItem(
     }
 
     HorizontalDivider(
-        color = Color.White.copy(alpha = 0.4f)
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
     )
 }
 

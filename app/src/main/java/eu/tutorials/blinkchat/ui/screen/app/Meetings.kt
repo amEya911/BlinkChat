@@ -1,6 +1,5 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -19,8 +18,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,8 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
+import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.app.MeetingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.CustomTextField
@@ -105,7 +102,11 @@ fun Meetings(
                     if (updatedOtherUserContact != null) {
                         meeting.copy(otherUserContact = updatedOtherUserContact)
                     } else {
-                        meeting
+                        meeting.copy(
+                            otherUserContact = meeting.otherUserContact.copy(
+                             displayName = meeting.otherUserContact.phoneNumber
+                            )
+                        )
                     }
                 }
 

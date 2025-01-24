@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.data.state.app
 
 import eu.tutorials.blinkchat.data.event.app.AppTheme
+import eu.tutorials.blinkchat.data.event.app.NotificationsType
 import eu.tutorials.blinkchat.data.model.Contact
 
 
@@ -13,5 +14,7 @@ data class SettingsState(
     val isLogoutClicked: Boolean = false,
     val isDeleteAccountClicked: Boolean = false,
     val isThemeClicked: Boolean = false,
-    val selectedTheme: AppTheme = AppTheme.SYSTEM_DEFAULT
+    val isNotificationsClicked: Boolean = false,
+    val selectedTheme: AppTheme = AppTheme.SYSTEM_DEFAULT,
+    val selectedNotificationsType: NotificationsType = NotificationsType.PUBLIC
 )

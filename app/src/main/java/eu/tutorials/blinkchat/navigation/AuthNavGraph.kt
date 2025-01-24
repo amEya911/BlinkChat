@@ -1,15 +1,23 @@
 package eu.tutorials.blinkchat.navigation
 
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import eu.tutorials.blinkchat.data.state.auth.LoginWithPhoneState
 import eu.tutorials.blinkchat.ui.screen.auth.LoginOptions
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyOTP
 import eu.tutorials.blinkchat.ui.screen.auth.LoginWithPhoneVerifyPhone
 import eu.tutorials.blinkchat.ui.screen.auth.Guest
+import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 
-fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.authNavGraph(
+    navController: NavHostController,
+    viewModel: LoginWithPhoneViewModel,
+    loginState: LoginWithPhoneState
+) {
+
     navigation(
         startDestination = AuthScreen.LoginOptions.route,
         route = Graph.AUTH
@@ -29,7 +37,8 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
             LoginWithPhoneVerifyPhone(
                 onVerifyLoginSuccessful = { verificationId, mobileNumber ->
                     navController.navigate("${AuthScreen.LoginWithPhoneVerifyOTP.route}/$verificationId/$mobileNumber")
-                }
+                },
+                viewModel, loginState
             )
         }
 
@@ -44,7 +53,11 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                     navController.navigate(Graph.APP) {
                         popUpTo(Graph.AUTH) { inclusive = true }
                     }
-                }
+                },
+                onBackClicked = {
+                    navController.popBackStack()
+                },
+                viewModel, loginState
             )
         }
 

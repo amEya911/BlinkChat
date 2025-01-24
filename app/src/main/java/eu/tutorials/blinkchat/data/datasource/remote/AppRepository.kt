@@ -20,6 +20,7 @@ import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Image
 import eu.tutorials.blinkchat.data.model.Message
 import eu.tutorials.blinkchat.util.IdentityPoolId
+import eu.tutorials.blinkchat.util.NotificationType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -91,7 +92,9 @@ class AppRepository @Inject constructor(
                         currentUserId = initiatorUser.id,
                         otherUserId = recipientUser.id,
                         title = "New room created",
-                        body = "${initiatorUser.id} has created a new chat room with you"
+                        body = initiatorUser.id,
+                        type = NotificationType.CreateRoom.type,
+                        deepLink = "https://vanishtest.netlify.app/$callback"
                     )
                 }
             }
@@ -257,7 +260,7 @@ class AppRepository @Inject constructor(
         )
 
         if (isDeleteImage) {
-            updates["$messageField.imageUrls"] = emptyList<String>() // Clear images if needed
+            updates["$messageField.imageUrls"] = emptyList<String>()
         }
 
         firestore.collection("chatRooms").document(chatRoomId)
@@ -281,8 +284,8 @@ class AppRepository @Inject constructor(
         val s3Client = AmazonS3Client(
             CognitoCachingCredentialsProvider(
                 context,
-                IdentityPoolId.IDENTITY_POOL_ID, // Replace with your Cognito Identity Pool ID
-                Regions.AP_SOUTH_1 // Replace with your AWS Region
+                IdentityPoolId.IDENTITY_POOL_ID,
+                Regions.AP_SOUTH_1
             )
         )
 
