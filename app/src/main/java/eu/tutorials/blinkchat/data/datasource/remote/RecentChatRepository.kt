@@ -11,12 +11,14 @@ import javax.inject.Inject
 class RecentChatRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
-    private val secretKey = Crypto.stringToKey("YourSharedKeyString")
 
     fun updateRecentChats(userId: String, otherUser: Contact, chatRoomId: String) {
         val recentChatId = UUID.randomUUID().toString()
+        val secretKey = Crypto.generateKey()
+
         val recentChatEntry = mapOf(
             "recentChatId" to recentChatId,
+            "secretKey" to Crypto.keyToString(secretKey),
             "userContact" to otherUser,
             "chatRoomId" to chatRoomId,
             "lastUpdated" to System.currentTimeMillis()
@@ -24,7 +26,7 @@ class RecentChatRepository @Inject constructor(
 
         val encryptedRecentChatEntry = recentChatEntry.mapValues { (key, value) ->
             when (key) {
-                "recentChatId", "chatRoomId" -> value
+                "recentChatId", "chatRoomId", "secretKey" -> value
                 "userContact" -> Crypto.encryptContact(value as Contact, secretKey)
                 else -> if (value is String) Crypto.encrypt(value, secretKey) else value
             }
@@ -37,9 +39,13 @@ class RecentChatRepository @Inject constructor(
                         document.get("recentChats") as? List<Map<String, Any>> ?: emptyList()
                     val updatedChats = recentChats.filter {  chat ->
                         val encryptedUserContactMap = chat["userContact"] as? String
+                        val chatSecretKey = chat["secretKey"] as? String
                         val userContact = encryptedUserContactMap?.let {
                             try {
-                                Crypto.decryptContact(it, secretKey) // Returns a Contact directly
+                                val secretKeyModified = chatSecretKey?.let { Crypto.stringToKey(it) }
+                                secretKeyModified?.let { key ->
+                                    Crypto.decryptContact(it, key)
+                                }
                             } catch (e: Exception) {
                                 Log.e("listenToRecentChats", "Failed to decrypt contact", e)
                                 null
@@ -93,10 +99,16 @@ class RecentChatRepository @Inject constructor(
                     val contactList = recentChats.mapNotNull { chat ->
                         val encryptedUserContactMap = chat["userContact"] as? String
                         val recentChatId = chat["recentChatId"] as? String
+                        val secretKeyString = chat["secretKey"] as? String
+                        if (secretKeyString.isNullOrEmpty()) {
+                            Log.e("listenToRecentChats", "Secret key is missing or empty for recentChatId: $recentChatId")
+                            return@mapNotNull null
+                        }
+                        val secretKey = Crypto.stringToKey(secretKeyString)
 
                         val userContact = encryptedUserContactMap?.let {
                             try {
-                                Crypto.decryptContact(it, secretKey) // Returns a Contact directly
+                                Crypto.decryptContact(it, secretKey)
                             } catch (e: Exception) {
                                 Log.e("listenToRecentChats", "Failed to decrypt contact", e)
                                 null
@@ -163,16 +175,24 @@ class RecentChatRepository @Inject constructor(
                         return@addSnapshotListener
                     }
                     if (chatRoomSnapshot != null && chatRoomSnapshot.exists()) {
+                        val secretKey = (chatRoomSnapshot.get("secretKey") as String).let {
+                            Crypto.stringToKey(it)
+                        }
+                        val encryptedInitiatorUser =
+                            chatRoomSnapshot.get("initiatorUser") as? String
+                        val encryptedRecipientUser =
+                            chatRoomSnapshot.get("recipientUser") as? String
+
                         val initiatorUser =
-                            chatRoomSnapshot.get("initiatorUser") as? Map<String, Any>
+                            encryptedInitiatorUser?.let { Crypto.decryptContact(it, secretKey) }
                         val recipientUser =
-                            chatRoomSnapshot.get("recipientUser") as? Map<String, Any>
+                            encryptedRecipientUser?.let { Crypto.decryptContact(it, secretKey) }
                         val activeUsers =
                             chatRoomSnapshot.get("activeUsers") as? Map<String, Boolean>
 
                         if (initiatorUser != null && recipientUser != null && activeUsers != null) {
-                            val initiatorUserId = initiatorUser["id"] as? String
-                            val recipientUserId = recipientUser["id"] as? String
+                            val initiatorUserId = initiatorUser.id as? String
+                            val recipientUserId = recipientUser.id as? String
 
                             if (initiatorUserId != null && recipientUserId != null) {
                                 val isCurrentUserInitiator = currentUserId == initiatorUserId

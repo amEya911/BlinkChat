@@ -81,10 +81,6 @@ fun ChatBottomBar(
         }
     )
 
-//    val permissionsNotGranted = permissionsToRequest.filter { permission ->
-//        ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED
-//    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -92,6 +88,13 @@ fun ChatBottomBar(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(onClick = { onRoomLinkClicked() }) {
+            Icon(
+                imageVector = Icons.Default.CopyAll,
+                contentDescription = "Copy",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
         if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
             Box(
                 modifier = Modifier
@@ -106,13 +109,6 @@ fun ChatBottomBar(
                 )
             }
         } else {
-            IconButton(onClick = { onRoomLinkClicked() }) {
-                Icon(
-                    imageVector = Icons.Default.CopyAll,
-                    contentDescription = "Copy",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {
                 if (permissionsNotGranted.isNotEmpty()) {

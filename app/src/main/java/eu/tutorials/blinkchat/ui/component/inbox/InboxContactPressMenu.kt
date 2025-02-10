@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.app.InboxState
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 
 @Composable
 fun InboxContactPress(
@@ -56,6 +57,7 @@ fun InboxContactPress(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isContactPressed = state.selectedContact != null
+    val isOnline = rememberInternetConnectionState()
 
     AnimatedVisibility(
         visible = isContactPressed,
@@ -97,8 +99,13 @@ fun InboxContactPress(
                         inboxState = state,
                         isRecentChat = !state.isAllContactsClicked,
                         onEnterClick = {
-                            onEvent(InboxEvent.OnEnterChatRoom)
-                            onEvent(InboxEvent.OnContactDismissed)
+                            if (isOnline){
+                                onEvent(InboxEvent.OnEnterChatRoom)
+                                onEvent(InboxEvent.OnContactDismissed)
+                            } else {
+                                onEvent(InboxEvent.OnNoInternetConnection)
+                                onEvent(InboxEvent.OnContactDismissed)
+                            }
                         },
                         onCancelClick = { onEvent(InboxEvent.OnContactDismissed) },
                         onScheduleAMeet = {

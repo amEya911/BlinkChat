@@ -207,7 +207,7 @@ fun TimePicker(selectedDate: String, onTimeSelected: (String?) -> Unit) {
                             "Cannot pick a time before the current time.",
                             Toast.LENGTH_SHORT
                         ).show()
-                        showTimePickerDialog() // Reopen the dialog
+                        showTimePickerDialog()
                         return@TimePickerDialog
                     }
                 }

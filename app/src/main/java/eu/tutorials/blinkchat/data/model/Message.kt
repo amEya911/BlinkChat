@@ -2,7 +2,7 @@ package eu.tutorials.blinkchat.data.model
 
 data class Message(
     val messageText: String = "",
-    val readMessage: String? = null,
+    val readMessage: String = "",
     val imageUrls: List<Image>? = null
 )
 

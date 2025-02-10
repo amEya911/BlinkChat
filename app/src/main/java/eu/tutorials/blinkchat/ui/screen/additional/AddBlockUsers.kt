@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.data.event.additional.AddBlockUsersEvent
@@ -32,6 +33,7 @@ import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.BlockUnblockConfirmation
 import eu.tutorials.blinkchat.ui.component.CustomTextField
 import eu.tutorials.blinkchat.ui.component.UserItem
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +48,7 @@ fun AddBlockUsers(
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = true) {
@@ -80,7 +83,8 @@ fun AddBlockUsers(
             AppBar(
                 title = "Block Users",
                 navigationIcon = Icons.Default.ArrowBackIosNew,
-                onNavigationIconClicked = onBackClicked
+                onNavigationIconClicked = onBackClicked,
+                isOnline = rememberInternetConnectionState()
             )
         },
         modifier = Modifier

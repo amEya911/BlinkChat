@@ -69,15 +69,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUsersRepository(
-        firestore: FirebaseFirestore,
-        notificationRepository: NotificationRepository
-    ): UserRepository {
-        return UserRepository(firestore, notificationRepository)
-    }
-
-    @Provides
-    @Singleton
     fun provideFireStore(): FirebaseFirestore {
         return FirebaseFirestore.getInstance()
     }
@@ -95,6 +86,16 @@ object AppModule {
         notificationRepository: NotificationRepository
     ): AppRepository {
         return AppRepository(firestore, recentChatRepository, notificationRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUsersRepository(
+        firestore: FirebaseFirestore,
+        notificationRepository: NotificationRepository,
+        appRepository: AppRepository
+    ): UserRepository {
+        return UserRepository(firestore, notificationRepository, appRepository)
     }
 
     @Provides

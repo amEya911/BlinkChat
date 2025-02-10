@@ -66,6 +66,7 @@ class PushNotificationService: FirebaseMessagingService() {
         Log.d("NotificationSender1", "Modified message received: $modifiedBody")
 
         val deepLink = message.data["deep_link"] ?: "https://vanishtest.netlify.app"
+        Log.d("ameyak", "deeplink: $deepLink")
 
         if (appLifecycleObserver.isAppInForeground) {
             sendNotification(body, deepLink)
@@ -95,6 +96,7 @@ class PushNotificationService: FirebaseMessagingService() {
             .setContentText(messageBody)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
             .build()
 
         notificationManager.notify(0, notification)

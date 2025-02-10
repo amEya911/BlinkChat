@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.data.event.additional.ScheduleAMeetEvent
@@ -26,6 +27,7 @@ import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.CustomTextField
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.UserItem
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 
 @Composable
 fun ScheduleAMeet(
@@ -47,7 +49,8 @@ fun ScheduleAMeet(
             AppBar(
                 title = "Schedule A Meet",
                 navigationIcon = Icons.Default.ArrowBackIosNew,
-                onNavigationIconClicked = onBackClicked
+                onNavigationIconClicked = onBackClicked,
+                isOnline = rememberInternetConnectionState()
             )
         },
         modifier = Modifier

@@ -37,7 +37,6 @@ class MeetingsViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.O)
     fun onEvent(event: MeetingsEvent) {
         when (event) {
-
             is MeetingsEvent.OnMeetingClicked -> {
                 _meetingsSate.value = _meetingsSate.value.copy(
                     isMeetingClicked = true,
@@ -75,7 +74,7 @@ class MeetingsViewModel @Inject constructor(
                 _meetingsSate.value = _meetingsSate.value.copy(
                     isMeetingClicked = false
                 )
-                deleteMeet(meeting = event.meeting)
+                deleteMeet(meeting = event.meeting, false)
             }
 
             MeetingsEvent.OnSortByCreatedAt -> {
@@ -106,6 +105,10 @@ class MeetingsViewModel @Inject constructor(
                 _meetingsSate.value = _meetingsSate.value.copy(
                     snackbarMessage = null
                 )
+            }
+
+            is MeetingsEvent.OnDeleteMeeting -> {
+                deleteMeet(event.meeting, true)
             }
         }
     }
@@ -148,6 +151,7 @@ class MeetingsViewModel @Inject constructor(
             ) { blocked, muted ->
                 meetRepository.rescheduleMeet(
                     meetingId = meeting.meetingId,
+                    secretKey = meeting.secretKey,
                     currentUserId = currentUserId,
                     otherUserId = meeting.otherUserContact.id,
                     newDate = newDate,
@@ -172,7 +176,7 @@ class MeetingsViewModel @Inject constructor(
         }
     }
 
-    private fun deleteMeet(meeting: Meeting) {
+    private fun deleteMeet(meeting: Meeting, isExpired: Boolean) {
         val currentUserId = userRepository.currentUserId()
         if (currentUserId != null) {
             userRepository.fetchBlockedAndMutedData(
@@ -183,17 +187,19 @@ class MeetingsViewModel @Inject constructor(
                     meetingId = meeting.meetingId,
                     currentUserId = currentUserId,
                     otherUserId = meeting.otherUserContact.id,
-                    isUserMuted = muted,
+                    isUserMuted = muted || isExpired,
                     isBlocked = blocked
                 ) { result, message ->
-                    if (result) {
-                        _meetingsSate.value = _meetingsSate.value.copy(
-                            snackbarMessage = "Meet successfully deleted"
-                        )
-                    } else {
-                        _meetingsSate.value = _meetingsSate.value.copy(
-                            snackbarMessage = "Error deleting meet: $message"
-                        )
+                    if (!isExpired) {
+                        if (result) {
+                            _meetingsSate.value = _meetingsSate.value.copy(
+                                snackbarMessage = "Meet successfully deleted"
+                            )
+                        } else {
+                            _meetingsSate.value = _meetingsSate.value.copy(
+                                snackbarMessage = "Error deleting meet: $message"
+                            )
+                        }
                     }
                 }
 

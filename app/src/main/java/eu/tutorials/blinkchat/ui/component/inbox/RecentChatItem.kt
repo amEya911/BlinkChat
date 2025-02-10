@@ -77,16 +77,16 @@ fun RecentChatItem(
             color = if (inboxState.usersInChatRoom.contains(contact.id))
                 MaterialTheme.colorScheme.error
             else
-                MaterialTheme.colorScheme.onSurface
+                MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
         )
 
-        if (inboxState.isSelectedContactMuted) {
+        if (inboxState.mutedUsers.contains(contact.id)) {
             Image(
-                imageVector = Icons.Default.NotificationsOff, // Replace with the actual muted icon
-                contentDescription = "Muted Icon",
-                modifier = Modifier
-                    .size(20.dp)
-                    .padding(start = 8.dp)
+                imageVector = Icons.Default.NotificationsOff,
+                contentDescription = "Muted",
+                modifier = Modifier.size(20.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Gray)
             )
         }
     }

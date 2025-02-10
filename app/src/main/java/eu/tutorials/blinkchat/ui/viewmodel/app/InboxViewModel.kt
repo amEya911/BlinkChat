@@ -163,6 +163,12 @@ class InboxViewModel @Inject constructor(
                     snackbarMessage = null
                 )
             }
+
+            InboxEvent.OnNoInternetConnection -> {
+                _inboxState.value = _inboxState.value.copy(
+                    snackbarMessage = "Cannot create room, no internet connection"
+                )
+            }
         }
     }
 
@@ -225,6 +231,12 @@ class InboxViewModel @Inject constructor(
             recentChatRepository.listenForPresence(currentUserId) { activeUserNames ->
                 _inboxState.value = _inboxState.value.copy(
                     usersInChatRoom = activeUserNames.filterNotNull()
+                )
+            }
+
+            userRepository.listenForMutedUsers(currentUserId) { mutedUsers ->
+                _inboxState.value = _inboxState.value.copy(
+                    mutedUsers = mutedUsers
                 )
             }
         } else {
@@ -320,20 +332,7 @@ class InboxViewModel @Inject constructor(
         }
     }
 
-//    private fun checkIfUserIsMuted(
-//        otherUserId: String,
-//        onResult: (Boolean) -> Unit
-//    ) {
-//        val currentUserId = _inboxState.value.currentUserContact?.id
-//        if (currentUserId == null) {
-//            Log.e("MuteUser", "Current user details not loaded.")
-//            onResult(false)
-//            return
-//        }
-//        userRepository.checkIfUserIsMuted(currentUserId, otherUserId) { result ->
-//            onResult(result)
-//        }
-//    }
+
 
     private fun blockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id
@@ -363,21 +362,6 @@ class InboxViewModel @Inject constructor(
             }
         }
     }
-
-//    private fun checkIfUserIsBlocked(
-//        otherUserId: String,
-//        onResult: (Boolean) -> Unit
-//    ) {
-//        val currentUserId = _inboxState.value.currentUserContact?.id
-//        if (currentUserId == null) {
-//            Log.e("BlockUser", "Current user details not loaded.")
-//            onResult(false)
-//            return
-//        }
-//        userRepository.checkIfUserIsBlocked(currentUserId, otherUserId) { result ->
-//            onResult(result)
-//        }
-//    }
 
     private fun unblockUser(otherUserId: String?) {
         val currentUserId = _inboxState.value.currentUserContact?.id

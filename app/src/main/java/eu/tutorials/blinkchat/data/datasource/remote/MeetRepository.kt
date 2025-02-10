@@ -5,17 +5,17 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Meeting
+import eu.tutorials.blinkchat.navigation.AppScreen
 import eu.tutorials.blinkchat.util.Crypto
 import eu.tutorials.blinkchat.util.NotificationType
 import java.util.UUID
+import javax.crypto.SecretKey
 import javax.inject.Inject
 
 class MeetRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val notificationRepository: NotificationRepository
 ) {
-    private val secretKey = Crypto.stringToKey("YourSharedKeyString")
-
     fun addSchedule(
         currentUserContact: Contact,
         otherUserContact: Contact,
@@ -26,14 +26,19 @@ class MeetRepository @Inject constructor(
         onResult: (Boolean, String?) -> Unit
     ) {
         val meetingId = UUID.randomUUID().toString()
+        val secretKey = Crypto.generateKey()
+
         val scheduledMeetEntry = mapOf(
             "meetingId" to meetingId,
+            "secretKey" to Crypto.keyToString(secretKey),
             "createdBy" to currentUserContact,
             "createdWith" to otherUserContact,
             "date" to date,
             "time" to time,
             "createdAt" to System.currentTimeMillis()
         )
+
+        Log.d("kyare", "date: $date, time: $time")
 
         addScheduleToUser(
             currentUserContact.id,
@@ -60,7 +65,7 @@ class MeetRepository @Inject constructor(
                     title = "New Schedule Created",
                     body = currentUserContact.id,
                     type = NotificationType.ScheduleMeet.type,
-                    deepLink = "https://vanishtest.netlify.app"
+                    deepLink = "https://vanishtest.netlify.app/${AppScreen.Meetings.route}/enter"
                 )
             }
         }
@@ -75,9 +80,11 @@ class MeetRepository @Inject constructor(
         onResult: (Boolean, String?) -> Unit
     ) {
         try {
+            val secretKey = Crypto.stringToKey(scheduledMeetEntry["secretKey"] as String)
+
             val encryptedMeetEntry = scheduledMeetEntry.mapValues { (key, value) ->
                 when (key) {
-                    "meetingId" -> value
+                    "meetingId", "secretKey" -> value
                     "createdBy", "createdWith" -> Crypto.encryptContact(value as Contact, secretKey)
                     else -> if (value is String) Crypto.encrypt(value, secretKey) else value
                 }
@@ -152,6 +159,12 @@ class MeetRepository @Inject constructor(
                     val meetingDetails = meets.mapNotNull { meet ->
                         try {
                             val meetingId = meet["meetingId"] as? String
+                            val secretKeyString = meet["secretKey"] as? String
+                            if (secretKeyString.isNullOrEmpty()) {
+                                Log.e("ScheduledMeets", "Secret key is missing or empty for meetingId: $meetingId")
+                                return@mapNotNull null
+                            }
+                            val secretKey = Crypto.stringToKey(secretKeyString)
                             val createdByEncrypted = meet["createdBy"] as? String
                             val createdWithEncrypted = meet["createdWith"] as? String
                             val date = Crypto.decrypt(meet["date"] as? String ?: "", secretKey)
@@ -177,11 +190,11 @@ class MeetRepository @Inject constructor(
                             if (meetingId != null) {
                                 if (createdBy?.id != currentUserId) {
                                     createdBy?.let {
-                                        Meeting(meetingId, it, it, date, time, createdAt)
+                                        Meeting(meetingId, secretKey, it, it, date, time, createdAt)
                                     }
                                 } else if (createdWith?.id != currentUserId) {
                                     createdWith?.let {
-                                        Meeting(meetingId, createdBy, it, date, time, createdAt)
+                                        Meeting(meetingId, secretKey, createdBy, it, date, time, createdAt)
                                     }
                                 } else {
                                     null
@@ -209,6 +222,7 @@ class MeetRepository @Inject constructor(
 
     fun rescheduleMeet(
         meetingId: String,
+        secretKey: SecretKey,
         currentUserId: String,
         otherUserId: String,
         newDate: String,
@@ -238,9 +252,9 @@ class MeetRepository @Inject constructor(
                 }
             }
         }
-        rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime, handleResult)
+        rescheduleMeetForUser(meetingId, currentUserId, newDate, newTime, secretKey, handleResult)
         if (!isBlocked) {
-            rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, handleResult)
+            rescheduleMeetForUser(meetingId, otherUserId, newDate, newTime, secretKey, handleResult)
         }
         if (!isUserMuted) {
             notificationRepository.notifyOtherUser(
@@ -249,7 +263,7 @@ class MeetRepository @Inject constructor(
                 title = "Meet Rescheduled",
                 body = currentUserId,
                 type = NotificationType.RescheduleMeet.type,
-                deepLink = "https://vanishtest.netlify.app"
+                deepLink = "https://vanishtest.netlify.app/${AppScreen.Meetings.route}/enter"
             )
         }
     }
@@ -259,6 +273,7 @@ class MeetRepository @Inject constructor(
         userId: String,
         newDate: String,
         newTime: String,
+        secretKey: SecretKey,
         onResult: (Boolean, String?) -> Unit
     ) {
         val encryptedNewDate = Crypto.encrypt(newDate, secretKey)
@@ -342,7 +357,7 @@ class MeetRepository @Inject constructor(
                 title = "Meet Deleted",
                 body = currentUserId,
                 type = NotificationType.DeleteMeet.type,
-                deepLink = "https://vanishtest.netlify.app"
+                deepLink = "https://vanishtest.netlify.app/${AppScreen.Meetings.route}/enter"
             )
         }
     }

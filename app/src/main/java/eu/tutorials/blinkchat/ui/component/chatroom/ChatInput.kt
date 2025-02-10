@@ -47,7 +47,6 @@ fun ChatInput(
     onViewImage: (Uri) -> Unit,
     onDismissImage: () -> Unit
 ) {
-    Log.d("Anish", "hi: ${chatRoomState.currentUserMessage.imageUrls}")
     if (!chatRoomState.isOtherUserInChatRoom || !chatRoomState.isCurrentUserInChatRoom) {
         Box(
             modifier = modifier,
@@ -71,23 +70,18 @@ fun ChatInput(
                 ) {
                     items(imageUrls) { image ->
 
-                        Log.d("Anish", "image: $image")
-
                         val imageUrl = image.url
                         val isOpened = image.opened
 
                         val uri = try {
-                            Uri.parse(imageUrl)  // Try to parse the String URL into Uri
+                            Uri.parse(imageUrl)
                         } catch (e: Exception) {
-                            null  // Handle invalid URLs gracefully
+                            null
                         }
-
-                        Log.d("Anish", "uri: $uri")
 
                         if (uri != null) {
                             Button(
                                 onClick = {
-                                    // Handle the event when the image is clicked
                                     onViewImage(Uri.parse(imageUrl))
                                 },
                                 modifier = Modifier.padding(4.dp)

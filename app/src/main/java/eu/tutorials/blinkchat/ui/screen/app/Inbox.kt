@@ -40,6 +40,7 @@ import eu.tutorials.blinkchat.ui.component.inbox.InboxContactPress
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.inbox.AllChatItem
 import eu.tutorials.blinkchat.ui.component.inbox.RecentChatItem
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import eu.tutorials.blinkchat.ui.viewmodel.app.InboxViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -140,7 +141,8 @@ fun Inbox(
                 AppBar(
                     title = "Chats",
                     onIconClick = { onEvent(InboxEvent.OnAllContactsIconClicked) },
-                    iconResId = Icons.Default.AccountCircle
+                    iconResId = Icons.Default.AccountCircle,
+                    isOnline = rememberInternetConnectionState()
                 )
             }
         },
@@ -223,7 +225,7 @@ fun Inbox(
                                     )
                                 }
                                 items(contacts) { contact ->
-                                    AllChatItem(contact = contact, onEvent = onEvent)
+                                    AllChatItem(contact = contact, onEvent = onEvent, inboxState = inboxState)
                                 }
                             }
                         }

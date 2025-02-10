@@ -79,8 +79,8 @@ fun UserItem(
             Button(
                 onClick = { onClick(user.id) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary, // Button background from theme
-                    contentColor = MaterialTheme.colorScheme.onPrimary // Button text color from theme
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(text = buttonName)

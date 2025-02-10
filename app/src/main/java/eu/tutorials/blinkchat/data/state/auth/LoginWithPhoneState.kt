@@ -10,6 +10,8 @@ data class LoginWithPhoneState(
     val timerSeconds: Int = 60,
     val isTimerRunning: Boolean = false,
     val isTimerPaused: Boolean = false,
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+    val lastRequestTime: Long? = null,
+    val lastRequestedMobileNumber: String? = null
 )
 

@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -19,7 +20,7 @@ import eu.tutorials.blinkchat.ui.viewmodel.auth.LoginWithPhoneViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RootNavGraph() {
+fun RootNavGraph(isFromDeepLink: Boolean) {
 
     val navController = rememberNavController()
     val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
@@ -29,6 +30,17 @@ fun RootNavGraph() {
     }
     val viewModel: LoginWithPhoneViewModel = hiltViewModel()
     val loginState = viewModel.loginWithPhoneState.collectAsState().value
+
+    LaunchedEffect(Unit) {
+        if (isFromDeepLink) {
+            val currentEntry = navController.currentBackStackEntry
+            if (currentEntry == null || currentEntry.destination.route != startDestination) {
+                navController.navigate(startDestination) {
+                    popUpTo(Graph.AUTH) { inclusive = true }
+                }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -40,7 +52,8 @@ fun RootNavGraph() {
         )
         composable(Graph.APP) {
             AppNavGraph(
-                navController
+                navController,
+                isFromDeepLink
             )
         }
         composable(

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,11 +29,13 @@ import coil.compose.AsyncImage
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
+import eu.tutorials.blinkchat.data.state.app.InboxState
 
 @Composable
 fun AllChatItem(
     contact: Contact,
     onEvent: (InboxEvent) -> Unit,
+    inboxState: InboxState
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -70,7 +74,18 @@ fun AllChatItem(
             text = contact.displayName,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
         )
+
+
+        if (inboxState.mutedUsers.contains(contact.id)) {
+            Image(
+                imageVector = Icons.Default.NotificationsOff,
+                contentDescription = "Muted",
+                modifier = Modifier.size(20.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Gray)
+            )
+        }
     }
 }

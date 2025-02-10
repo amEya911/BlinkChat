@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.navigation
 
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -28,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navDeepLink
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
@@ -41,10 +44,16 @@ import eu.tutorials.blinkchat.ui.viewmodel.app.InboxViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.app.MeetingsViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.additional.ScheduleAMeetViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.app.SettingsViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavGraph(navHostController: NavHostController) {
+fun AppNavGraph(
+    navHostController: NavHostController,
+    isFromDeepLink: Boolean
+) {
+    Log.d("jatins", "isFromDeepLink: $isFromDeepLink")
     val navController = rememberNavController()
     val currentRoute = currentRoute(navController)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -52,8 +61,6 @@ fun AppNavGraph(navHostController: NavHostController) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.background)
     systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.secondaryContainer)
-
-    Log.d("AppNavGraph", "current root: $currentRoute")
 
     val inboxViewModel: InboxViewModel = hiltViewModel()
     val inboxState = inboxViewModel.inboxState.collectAsState().value
@@ -113,10 +120,12 @@ fun AppNavGraph(navHostController: NavHostController) {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = AppScreen.Chats.route,
+            startDestination = if (isFromDeepLink) AppScreen.Meetings.route else AppScreen.Chats.route,
             route = Graph.APP
         ) {
-            composable(AppScreen.Meetings.route) {
+            composable(
+                AppScreen.Meetings.route
+            ) {
                 Meetings(
                     modifier = Modifier.padding(paddingValues),
                     meetingsState = meetingsState,

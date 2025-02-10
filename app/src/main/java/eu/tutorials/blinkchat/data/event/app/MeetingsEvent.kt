@@ -13,4 +13,5 @@ sealed class MeetingsEvent {
     data object OnSortByTime: MeetingsEvent()
     data class OnSearchUsers(val searchQuery: String): MeetingsEvent()
     data object OnSnackbarDisplayed : MeetingsEvent()
+    data class OnDeleteMeeting(val meeting: Meeting): MeetingsEvent()
 }

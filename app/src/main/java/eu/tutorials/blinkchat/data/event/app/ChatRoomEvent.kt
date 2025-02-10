@@ -6,12 +6,12 @@ import android.net.Uri
 import androidx.lifecycle.LifecycleOwner
 
 sealed class ChatRoomEvent {
-    data class OnLoadChatRoomDetails(val id: String?, val chatRoomId: String) : ChatRoomEvent()
+    data class OnLoadChatRoomDetails(val context: Context, val id: String?, val chatRoomId: String) : ChatRoomEvent()
     data class OnSetupAppLifecycleObserver(val lifecycleOwner: LifecycleOwner) : ChatRoomEvent()
     data class OnMessageTyping(val message: String, val isDeleteImage: Boolean) : ChatRoomEvent()
-    data object DeleteMessages : ChatRoomEvent()
+    data class DeleteMessages(val context: Context) : ChatRoomEvent()
     data object OnOtherUserMessageReceived: ChatRoomEvent()
-    data class OnCopyRoomLinkClicked(val chatRoomId: String, val context: Context): ChatRoomEvent()
+    data class OnCopyRoomLinkClicked(val isGuest: Boolean, val chatRoomId: String, val context: Context): ChatRoomEvent()
     data class OnLaunchCamera(val context: Context, val activity: Activity) : ChatRoomEvent()
     data class OnCaptureImage(val updatedPhoto: Uri?): ChatRoomEvent()
     data object OnRetakePhoto: ChatRoomEvent()

@@ -135,7 +135,6 @@ class SettingsViewModel @Inject constructor(
                 userRepository.deleteAccount { success ->
                     if (success) {
                         Log.d("SettingsViewModel", "User account deleted successfully.")
-                        // Notify the UI about the successful deletion
                         _settingsState.value = _settingsState.value.copy(
                             isLoading = false,
                             isAccountDeleted = true

@@ -45,6 +45,12 @@ fun MeetingItem(
 ) {
     val haptic = LocalHapticFeedback.current
 
+    val isMeetingExpired = remember(meeting.date, meeting.time) { hasMeetingExpired(meeting.date, meeting.time) }
+
+    if (isMeetingExpired) {
+        onEvent(MeetingsEvent.OnDeleteMeeting(meeting))
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -113,5 +119,29 @@ fun formatMeetingDate(date: String): String {
         }
     } else {
         date
+    }
+}
+
+fun hasMeetingExpired(date: String, time: String): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        try {
+            val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            val parsedDate = LocalDate.parse(date, dateFormatter)
+            val now = LocalDate.now()
+
+            val timeParts = time.split(":").map { it.toInt() }
+            val meetingHour = timeParts[0]
+            val meetingMinute = timeParts.getOrElse(1) { 0 }
+
+            val currentHour = java.time.LocalTime.now().hour
+            val currentMinute = java.time.LocalTime.now().minute
+
+            parsedDate.isBefore(now) || (parsedDate.isEqual(now) && (meetingHour < currentHour || (meetingHour == currentHour && meetingMinute < currentMinute)))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    } else {
+        false
     }
 }

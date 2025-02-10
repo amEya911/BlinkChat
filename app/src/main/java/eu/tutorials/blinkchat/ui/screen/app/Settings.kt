@@ -36,6 +36,7 @@ import eu.tutorials.blinkchat.data.event.app.NotificationsType
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.state.app.SettingsState
 import eu.tutorials.blinkchat.ui.component.AppBar
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import eu.tutorials.blinkchat.ui.component.settings.ActionButton
 import eu.tutorials.blinkchat.ui.component.settings.AlertDialogSetting
 
@@ -70,7 +71,8 @@ fun Settings(
         topBar = {
             AppBar(
                 title = "Settings",
-                onIconClick = {}
+                onIconClick = {},
+                isOnline = rememberInternetConnectionState()
             )
         },
         containerColor = MaterialTheme.colorScheme.background

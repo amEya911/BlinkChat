@@ -33,12 +33,11 @@ class LoginWithPhoneViewModel @Inject constructor(
     private val _loginWithPhoneState = MutableStateFlow(LoginWithPhoneState())
     val loginWithPhoneState: StateFlow<LoginWithPhoneState> = _loginWithPhoneState
 
-    var timerMobileNumber by mutableStateOf<String?>(null)
-        private set
-
-
-    private var verificationId: String? = null
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    companion object {
+        private const val TIMEOUT_DURATION = 60L
+    }
 
     fun onEvent(event: LoginWithPhoneEvent) {
         when (event) {
@@ -56,7 +55,9 @@ class LoginWithPhoneViewModel @Inject constructor(
 
             is LoginWithPhoneEvent.SendVerificationCode -> {
                 if (isValidMobileNumber(_loginWithPhoneState.value.mobileNumber)) {
-                    timerMobileNumber = _loginWithPhoneState.value.mobileNumber
+                    _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                        lastRequestedMobileNumber = _loginWithPhoneState.value.mobileNumber,
+                    )
                     sendVerificationCode(_loginWithPhoneState.value.mobileNumber, event.activity)
                 } else {
                     _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
@@ -93,7 +94,6 @@ class LoginWithPhoneViewModel @Inject constructor(
             }
 
             LoginWithPhoneEvent.OnResetVerificationState -> {
-                timerMobileNumber = _loginWithPhoneState.value.mobileNumber
                 _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                     verificationCode = "",
                     showVerificationField = false,
@@ -138,19 +138,38 @@ class LoginWithPhoneViewModel @Inject constructor(
     }
 
     private fun startTimer() {
+        val lastRequestTime = _loginWithPhoneState.value.lastRequestTime ?: return
+        val currentTime = System.currentTimeMillis()
+        val timeElapsed = (currentTime - lastRequestTime) / 1000
+        var remainingTime = (Companion.TIMEOUT_DURATION - timeElapsed).toInt()
+
+        if (remainingTime <= 0) {
+            _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                isTimerRunning = false,
+                timerSeconds = 0
+            )
+            return
+        }
+
         _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
-            isTimerRunning = true
+            isTimerRunning = true,
+            timerSeconds = remainingTime
         )
+
         viewModelScope.launch {
-            while (_loginWithPhoneState.value.timerSeconds > 0) {
+            while (remainingTime > 0) {
                 delay(1000L)
-                val newTime = _loginWithPhoneState.value.timerSeconds - 1
-                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(timerSeconds = newTime)
-                Log.d("Timer1", "hi: ${_loginWithPhoneState.value.timerSeconds}")
+                remainingTime--
+
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(timerSeconds = remainingTime)
+
+                if (remainingTime <= 0) {
+                    _loginWithPhoneState.value = _loginWithPhoneState.value.copy(isTimerRunning = false)
+                }
             }
-            _loginWithPhoneState.value = _loginWithPhoneState.value.copy(isTimerRunning = false)
         }
     }
+
 
     private fun verifyVerificationCode(code: String, verificationId: String) {
         val credential = PhoneAuthProvider.getCredential(verificationId, code)
@@ -158,9 +177,22 @@ class LoginWithPhoneViewModel @Inject constructor(
     }
 
     private fun sendVerificationCode(mobileNumber: String, activity: Activity) {
+        val currentTime = System.currentTimeMillis()
+        val lastRequestTime = _loginWithPhoneState.value.lastRequestTime ?: 0
+        val timeElapsed = (currentTime - lastRequestTime) / 1000
+
+        if (timeElapsed < Companion.TIMEOUT_DURATION) {
+            val remainingTime = Companion.TIMEOUT_DURATION - timeElapsed
+            _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                verificationError = "Please wait $remainingTime seconds before requesting a new code.",
+                timerSeconds = remainingTime.toInt()
+            )
+            return
+        }
+
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber("+91$mobileNumber")
-            .setTimeout(58L, TimeUnit.SECONDS)
+            .setTimeout(Companion.TIMEOUT_DURATION, TimeUnit.SECONDS)
             .setActivity(activity)
             .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
@@ -178,21 +210,23 @@ class LoginWithPhoneViewModel @Inject constructor(
                     verificationId: String,
                     token: PhoneAuthProvider.ForceResendingToken
                 ) {
-                    Log.d(
-                        "LoginWithPhoneViewModel",
-                        "Code sent successfully, verificationId: $verificationId"
-                    )
+                    Log.d("LoginWithPhoneViewModel", "Code sent successfully, verificationId: $verificationId")
 
                     _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                         verificationError = null,
                         showVerificationField = true,
                         verificationId = verificationId,
-                        mobileNumber = _loginWithPhoneState.value.mobileNumber,
+                        mobileNumber = mobileNumber,
+                        lastRequestTime = currentTime,
+                        timerSeconds = Companion.TIMEOUT_DURATION.toInt(),
+                        isTimerRunning = true
                     )
-                    this@LoginWithPhoneViewModel.verificationId = verificationId
+
+                    startTimer()
                 }
             })
             .build()
+
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
 

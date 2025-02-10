@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.data.event.additional.BlockedUsersEvent
@@ -45,6 +46,7 @@ import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.BlockUnblockConfirmation
 import eu.tutorials.blinkchat.ui.component.CustomTextField
 import eu.tutorials.blinkchat.ui.component.UserItem
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +62,7 @@ fun BlockedUsers(
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = true) {
@@ -95,7 +98,8 @@ fun BlockedUsers(
                 iconResId = Icons.Default.Add,
                 onIconClick = { onAddBlockUsers() },
                 navigationIcon = Icons.Default.ArrowBackIosNew,
-                onNavigationIconClicked = onBackClicked
+                onNavigationIconClicked = onBackClicked,
+                isOnline = rememberInternetConnectionState()
             )
         },
         modifier = Modifier
@@ -134,8 +138,6 @@ fun BlockedUsers(
                             onClick = {
                                 keyboardController?.hide()
                                 onEvent(BlockedUsersEvent.OnContactClicked(user))
-                                //onUnblockClicked(user.id)
-                                //onEvent(BlockedUsersEvent.OnReset)
                             }
                         )
                         Spacer(modifier = Modifier.height(12.dp))

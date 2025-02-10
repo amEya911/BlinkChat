@@ -16,12 +16,22 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import eu.tutorials.blinkchat.data.datasource.local.sharedpreference.ThemePreferences
 import eu.tutorials.blinkchat.data.event.app.AppTheme
+import eu.tutorials.blinkchat.navigation.AppScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // ATTENTION: This was auto-generated to handle app links.
+        val appLinkIntent: Intent = intent
+        val appLinkAction: String? = appLinkIntent.action
+        val appLinkData: Uri? = appLinkIntent.data
+        val deepLinkPath = appLinkData?.path
+
+        val isFromDeepLink = deepLinkPath == "/${AppScreen.Meetings.route}/enter"
+        Log.d("jatins", "deepLinkPath: $deepLinkPath")
+
         setContent {
             val themePreferences = ThemePreferences(applicationContext)
             val savedTheme = themePreferences.loadTheme()
@@ -30,24 +40,19 @@ class MainActivity : ComponentActivity() {
                 AppTheme.LIGHT -> false
                 AppTheme.DARK -> true
             }
-
-            Log.d("Theme12", darkTheme.toString())
             BlinkChatTheme(darkTheme = darkTheme) {
-                App()
+                App(isFromDeepLink)
             }
         }
 
-        // ATTENTION: This was auto-generated to handle app links.
-        val appLinkIntent: Intent = intent
-        val appLinkAction: String? = appLinkIntent.action
-        val appLinkData: Uri? = appLinkIntent.data
+
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun App() {
-    RootNavGraph()
+fun App(isFromDeepLink: Boolean) {
+    RootNavGraph(isFromDeepLink)
 }
 
 

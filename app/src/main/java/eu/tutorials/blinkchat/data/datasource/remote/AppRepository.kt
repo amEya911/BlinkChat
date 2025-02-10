@@ -1,33 +1,32 @@
 package eu.tutorials.blinkchat.data.datasource.remote
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3Client
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Image
 import eu.tutorials.blinkchat.data.model.Message
+import eu.tutorials.blinkchat.util.Crypto
 import eu.tutorials.blinkchat.util.IdentityPoolId
 import eu.tutorials.blinkchat.util.NotificationType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.UUID
+import javax.crypto.SecretKey
 import javax.inject.Inject
 
 class AppRepository @Inject constructor(
@@ -35,15 +34,6 @@ class AppRepository @Inject constructor(
     private val recentChatRepository: RecentChatRepository,
     private val notificationRepository: NotificationRepository
 ) {
-
-    private fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-    }
-
     fun createChatRoom(
         initiatorUser: Contact,
         recipientUser: Contact,
@@ -53,16 +43,6 @@ class AppRepository @Inject constructor(
         notifyOtherUser: Boolean,
         callback: (String?) -> Unit
     ) {
-        if (!isNetworkAvailable(context)) {
-            Toast.makeText(
-                context,
-                "No internet connection. Room creation failed.",
-                Toast.LENGTH_LONG
-            ).show()
-            callback(null)
-            return
-        }
-
         checkChatRoomExists(initiatorUser, recipientUser) { existingChatRoomId ->
             if (existingChatRoomId != null) {
                 recentChatRepository.updateRecentChats(
@@ -84,18 +64,23 @@ class AppRepository @Inject constructor(
                     recipientUser,
                     context,
                     isGuest,
-                    recipientUserExists,
-                    callback
-                )
-                if (notifyOtherUser) {
-                    notificationRepository.notifyOtherUser(
-                        currentUserId = initiatorUser.id,
-                        otherUserId = recipientUser.id,
-                        title = "New room created",
-                        body = initiatorUser.id,
-                        type = NotificationType.CreateRoom.type,
-                        deepLink = "https://vanishtest.netlify.app/$callback"
-                    )
+                    recipientUserExists
+                ) { newChatRoomId ->
+                    if (newChatRoomId != null) {
+                        callback(newChatRoomId)
+
+                        if (notifyOtherUser) {
+                            Log.d("Notif1", "callback: $newChatRoomId")
+                            notificationRepository.notifyOtherUser(
+                                currentUserId = initiatorUser.id,
+                                otherUserId = recipientUser.id,
+                                title = "New room created",
+                                body = initiatorUser.id,
+                                type = NotificationType.CreateRoom.type,
+                                deepLink = "https://vanishtest.netlify.app/$newChatRoomId"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -106,9 +91,10 @@ class AppRepository @Inject constructor(
         recipientUser: Contact,
         callback: (String?) -> Unit
     ) {
+        val roomIdentifier = generateRoomIdentifier(initiatorUser.id, recipientUser.id)
+
         firestore.collection("chatRooms")
-            .whereEqualTo("initiatorUser.id", initiatorUser.id)
-            .whereEqualTo("recipientUser.id", recipientUser.id)
+            .whereEqualTo("roomIdentifier", roomIdentifier)
             .get()
             .addOnSuccessListener { querySnapshot ->
                 if (!querySnapshot.isEmpty) {
@@ -118,8 +104,7 @@ class AppRepository @Inject constructor(
                 }
 
                 firestore.collection("chatRooms")
-                    .whereEqualTo("initiatorUser.id", recipientUser.id)
-                    .whereEqualTo("recipientUser.id", initiatorUser.id)
+                    .whereEqualTo("roomIdentifier", roomIdentifier)
                     .get()
                     .addOnSuccessListener { reverseQuerySnapshot ->
                         if (!reverseQuerySnapshot.isEmpty) {
@@ -153,10 +138,16 @@ class AppRepository @Inject constructor(
         callback: (String?) -> Unit
     ) {
         val chatRoomId = UUID.randomUUID().toString()
+        val secretKey = Crypto.generateKey()
+
+        val roomIdentifier = generateRoomIdentifier(initiatorUser.id, recipientUser.id)
+
         val chatRoomData = mapOf(
             "chatRoomId" to chatRoomId,
-            "initiatorUser" to initiatorUser,
-            "recipientUser" to recipientUser,
+            "roomIdentifier" to roomIdentifier,
+            "secretKey" to Crypto.keyToString(secretKey),
+            "initiatorUser" to Crypto.encryptContact(initiatorUser, secretKey),
+            "recipientUser" to Crypto.encryptContact(recipientUser, secretKey),
             "initiatorMessage" to Message(),
             "recipientMessage" to Message(),
             "createdAt" to System.currentTimeMillis(),
@@ -194,16 +185,36 @@ class AppRepository @Inject constructor(
             }
     }
 
+    private fun generateRoomIdentifier(userId1: String, userId2: String): String {
+        val sortedIds = listOf(userId1, userId2).sorted()
+        return sortedIds.joinToString("_").hashSHA256()
+    }
+
+    private fun String.hashSHA256(): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest(this.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+
     suspend fun getChatRoomDetails(
         chatRoomId: String,
         currentId: String
-    ): Result<Pair<Pair<Contact?, Contact?>, Pair<String, String>>> {
+    ): Result<Triple<Pair<Contact?, Contact?>, Pair<String, String>, SecretKey>> {
         return try {
             firestore.collection("chatRooms").document(chatRoomId).get().await().let { snapshot ->
                 if (!snapshot.exists()) return Result.failure(Exception("Chat room not found"))
 
-                val initiatorUser = (snapshot.get("initiatorUser") as? Map<*, *>)?.toContact()
-                val recipientUser = (snapshot.get("recipientUser") as? Map<*, *>)?.toContact()
+                val secretKeyString = snapshot.getString("secretKey") ?: return Result.failure(
+                    Exception("Secret key not found")
+                )
+                val secretKey = Crypto.stringToKey(secretKeyString)
+
+                val encryptedInitiator = snapshot.get("initiatorUser") as? String
+                val encryptedRecipient = snapshot.get("recipientUser") as? String
+
+                val initiatorUser = encryptedInitiator?.let { Crypto.decryptContact(it, secretKey) }
+                val recipientUser = encryptedRecipient?.let { Crypto.decryptContact(it, secretKey) }
 
                 val initiatorId =
                     initiatorUser?.id ?: throw Exception("Initiator user ID is missing")
@@ -212,16 +223,18 @@ class AppRepository @Inject constructor(
 
                 when (currentId) {
                     initiatorId -> Result.success(
-                        Pair(
+                        Triple(
                             Pair(initiatorUser, recipientUser),
-                            Pair(initiatorId, recipientId)
+                            Pair(initiatorId, recipientId),
+                            secretKey
                         )
                     )
 
                     recipientId -> Result.success(
-                        Pair(
+                        Triple(
                             Pair(recipientUser, initiatorUser),
-                            Pair(initiatorId, recipientId)
+                            Pair(initiatorId, recipientId),
+                            secretKey
                         )
                     )
 
@@ -233,16 +246,9 @@ class AppRepository @Inject constructor(
         }
     }
 
-    private fun Map<*, *>.toContact(): Contact = Contact(
-        id = this["id"] as? String ?: "",
-        displayName = this["displayName"] as? String ?: "",
-        phoneNumber = this["phoneNumber"] as? String ?: "",
-        photoUri = this["photoUri"] as? String,
-        photoThumbnailUri = this["photoThumbnailUri"] as? String
-    )
-
     fun updateTypingMessage(
         chatRoomId: String,
+        secretKey: SecretKey,
         messageText: String,
         currentUserId: String,
         initiatorUserId: String,
@@ -255,8 +261,10 @@ class AppRepository @Inject constructor(
             else -> return
         }
 
+        val encryptedMessageText = Crypto.encrypt(messageText, secretKey)
+
         val updates = mutableMapOf<String, Any>(
-            "$messageField.messageText" to messageText
+            "$messageField.messageText" to encryptedMessageText
         )
 
         if (isDeleteImage) {
@@ -272,6 +280,7 @@ class AppRepository @Inject constructor(
 
     fun updateImage(
         chatRoomId: String,
+        secretKey: SecretKey,
         image: Uri,
         currentUserId: String,
         initiatorUserId: String,
@@ -300,7 +309,14 @@ class AppRepository @Inject constructor(
             try {
                 s3Client.putObject(bucketName, s3Key, tempFile)
                 val imageUrl = s3Client.getUrl(bucketName, s3Key).toString()
-                sendImage(chatRoomId, imageUrl, currentUserId, initiatorUserId, recipientUserId)
+                sendImage(
+                    chatRoomId,
+                    secretKey,
+                    imageUrl,
+                    currentUserId,
+                    initiatorUserId,
+                    recipientUserId
+                )
             } catch (e: Exception) {
                 Log.e("AppRepo", "Failed to upload image to S3: ${e.message}", e)
             } finally {
@@ -311,6 +327,7 @@ class AppRepository @Inject constructor(
 
     private fun sendImage(
         chatRoomId: String,
+        secretKey: SecretKey,
         image: String,
         currentUserId: String,
         initiatorUserId: String,
@@ -322,8 +339,10 @@ class AppRepository @Inject constructor(
             else -> return
         }
 
+        val encryptedImage = Crypto.encrypt(image, secretKey)
+
         val imageMap = mapOf(
-            "url" to image,
+            "url" to encryptedImage,
             "opened" to false
         )
 
@@ -336,6 +355,7 @@ class AppRepository @Inject constructor(
 
     fun updateImageStatus(
         chatRoomId: String,
+        secretKey: SecretKey,
         image: String,
         currentUserId: String,
         initiatorUserId: String,
@@ -352,8 +372,10 @@ class AppRepository @Inject constructor(
                 val imageUrls = snapshot.get(messageField) as? List<Map<String, Any>>
 
                 val updatedImageUrls = imageUrls?.map { imageMap ->
-                    if (imageMap["url"] == image) {
-                        // Update the 'opened' status to true for the matching image
+                    val encryptedUrl = imageMap["url"] as? String
+                    val decryptedUrl = encryptedUrl?.let { Crypto.decrypt(it, secretKey) }
+
+                    if (decryptedUrl == image) {
                         imageMap.toMutableMap().apply {
                             this["opened"] = true
                         }
@@ -382,6 +404,7 @@ class AppRepository @Inject constructor(
 
     fun updateReadMessages(
         chatRoomId: String,
+        secretKey: SecretKey,
         messageText: String,
         currentUserId: String,
         initiatorId: String,
@@ -395,8 +418,10 @@ class AppRepository @Inject constructor(
             else -> return
         }
 
+        val encryptedMessageText = Crypto.encrypt(messageText, secretKey)
+
         firestore.collection("chatRooms").document(chatRoomId)
-            .update("$messageField.readMessage", messageText)
+            .update("$messageField.readMessage", encryptedMessageText)
             .addOnFailureListener {
                 Log.e("AppRepo", "Failed to update readMessage: ${it.message}")
             }
@@ -404,6 +429,7 @@ class AppRepository @Inject constructor(
 
     fun listenForMessages(
         chatRoomId: String,
+        secretKey: SecretKey,
         currentUserId: String,
         initiatorId: String,
         recipientId: String
@@ -420,10 +446,16 @@ class AppRepository @Inject constructor(
                     Log.e("AppRepo", "Error listening for messages", e)
                     return@addSnapshotListener
                 }
-                val messageText = snapshot?.getString("$messageField.messageText") ?: ""
+                val encryptedMessageText = snapshot?.getString("$messageField.messageText") ?: ""
+                val messageText =
+                    if (encryptedMessageText.isEmpty()) encryptedMessageText else Crypto.decrypt(
+                        encryptedMessageText,
+                        secretKey
+                    )
                 val imageUrls = snapshot?.get("$messageField.imageUrls") as? List<Map<String, Any>>
                 val images = imageUrls?.mapNotNull { imageMap ->
-                    val url = imageMap["url"] as? String
+                    val encryptedUrl = imageMap["url"] as? String
+                    val url = encryptedUrl?.let { Crypto.decrypt(it, secretKey) }
                     val opened = imageMap["opened"] as? Boolean
                     if (url != null && opened != null) Image(url, opened) else null
                 }
@@ -436,6 +468,7 @@ class AppRepository @Inject constructor(
 
     fun listenForCurrentUserImages(
         chatRoomId: String,
+        secretKey: SecretKey,
         currentUserId: String,
         initiatorId: String,
         recipientId: String
@@ -455,9 +488,10 @@ class AppRepository @Inject constructor(
 
                 val imageUrls = snapshot?.get(messageField) as? List<Map<String, Any>>
                 val images = imageUrls?.mapNotNull { imageMap ->
-                    val url = imageMap["url"] as? String
+                    val encryptedUrl = imageMap["url"] as String
+                    val url = Crypto.decrypt(encryptedUrl, secretKey)
                     val opened = imageMap["opened"] as? Boolean
-                    if (url != null && opened != null) Image(url, opened) else null
+                    if (opened != null) Image(url, opened) else null
                 }
 
                 trySend(images).isSuccess
@@ -468,6 +502,7 @@ class AppRepository @Inject constructor(
 
     fun listenForReadMessages(
         chatRoomId: String,
+        secretKey: SecretKey,
         currentUserId: String,
         initiatorId: String,
         recipientId: String,
@@ -487,19 +522,80 @@ class AppRepository @Inject constructor(
                 }
 
                 snapshot?.getString(messageField)?.let { newMessage ->
-                    onMessageReceived(newMessage)
+                    val decryptedNewMessage =
+                        if (newMessage.isEmpty()) newMessage else Crypto.decrypt(
+                            newMessage,
+                            secretKey
+                        )
+                    onMessageReceived(decryptedNewMessage)
                 }
             }
     }
 
-    fun deleteMessages(chatRoomId: String) {
-        val updates = mapOf(
-            "initiatorMessage" to Message(),
-            "recipientMessage" to Message()
+    fun deleteMessages(
+        chatRoomId: String,
+        context: Context,
+        initiatorImages: List<Image>?,
+        recipientImages: List<Image>?
+    ) {
+        Log.d("AppRepo1", "initiatorImages: $initiatorImages")
+        Log.d("AppRepo1", "recipientImages: $recipientImages")
+
+        val bucketName = "vanish-bucket-app"
+        val s3Client = AmazonS3Client(
+            CognitoCachingCredentialsProvider(
+                context,
+                IdentityPoolId.IDENTITY_POOL_ID,
+                Regions.AP_SOUTH_1
+            )
         )
 
+        val deleteFromS3 = { images: List<Image>? ->
+            images?.forEach { image ->
+                try {
+                    val imageUrl = Uri.parse(image.url)
+                    val pathSegments = imageUrl.pathSegments
+                    val objectKey =
+                        pathSegments.subList(pathSegments.indexOf("images"), pathSegments.size)
+                            .joinToString("/")
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            s3Client.deleteObject(bucketName, objectKey)
+                            Log.d("AppRepo1", "Deleted image from S3: $objectKey")
+                        } catch (e: Exception) {
+                            Log.e("AppRepo1", "Failed to delete image from S3: ${e.message}", e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("AppRepo1", "Failed to parse image URL: ${e.message}", e)
+                }
+            }
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            deleteFromS3(initiatorImages)
+            deleteFromS3(recipientImages)
+
+            val updates = mapOf(
+                "initiatorMessage" to Message(),
+                "recipientMessage" to Message()
+            )
+
+            firestore.collection("chatRooms").document(chatRoomId)
+                .update(updates)
+                .addOnFailureListener { Log.e("AppRepo1", "Failed to delete messages: ${it.message}") }
+        }
+    }
+
+    fun deleteChatRoom(chatRoomId: String) {
         firestore.collection("chatRooms").document(chatRoomId)
-            .update(updates)
-            .addOnFailureListener { Log.e("AppRepo", "Failed to delete messages: ${it.message}") }
+            .delete()
+            .addOnSuccessListener {
+                Log.d("ChatRoom", "Chat room deleted successfully: $chatRoomId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Error deleting chat room", e)
+            }
     }
 }

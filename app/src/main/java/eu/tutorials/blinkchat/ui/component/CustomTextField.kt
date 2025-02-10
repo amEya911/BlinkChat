@@ -21,8 +21,8 @@ fun CustomTextField(
     onValueChange: (String) -> Unit,
     placeholderText: String = "Search",
     singleLine: Boolean = true,
-    textColor: Color = MaterialTheme.colorScheme.onSurface, // Adjusted to use theme color
-    placeholderColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), // Adjusted to use theme color
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    placeholderColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
     containerColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     TextField(

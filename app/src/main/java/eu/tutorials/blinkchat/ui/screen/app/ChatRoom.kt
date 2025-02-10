@@ -44,7 +44,7 @@ fun ChatRoom(
     systemUiController.setSystemBarsColor(color = MaterialTheme.colorScheme.secondaryContainer)
 
     LaunchedEffect(Unit) {
-        chatRoomViewModel.onEvent(ChatRoomEvent.OnLoadChatRoomDetails(id, chatRoomId))
+        chatRoomViewModel.onEvent(ChatRoomEvent.OnLoadChatRoomDetails(context, id, chatRoomId))
         chatRoomViewModel.onEvent(ChatRoomEvent.OnSetupAppLifecycleObserver(lifecycleOwner))
     }
 
@@ -96,6 +96,7 @@ fun ChatRoom(
                         onRoomLinkClicked = {
                             chatRoomViewModel.onEvent(
                                 ChatRoomEvent.OnCopyRoomLinkClicked(
+                                    isGuest = (id != null),
                                     chatRoomId,
                                     context
                                 )
@@ -150,17 +151,17 @@ fun ChatRoom(
                                             val isOpened = image.opened
 
                                             val uri = try {
-                                                Uri.parse(imageUrl)  // Try to parse the String URL into Uri
+                                                Uri.parse(imageUrl)
                                             } catch (e: Exception) {
-                                                null  // Handle invalid URLs gracefully
+                                                null
+                                                //TODO
                                             }
 
                                             if (uri != null) {
                                                 Button(
                                                     onClick = {
-                                                        // Handle the event when the image is clicked
                                                         chatRoomViewModel.onEvent(
-                                                            ChatRoomEvent.OnViewImage(uri)  // Pass the valid Uri
+                                                            ChatRoomEvent.OnViewImage(uri)
                                                         )
                                                         if (!isOpened) {
                                                             chatRoomViewModel.onEvent(ChatRoomEvent.OnImageOpened(imageUrl))

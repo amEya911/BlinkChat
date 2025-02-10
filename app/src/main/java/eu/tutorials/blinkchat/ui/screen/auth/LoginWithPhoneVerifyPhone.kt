@@ -116,18 +116,22 @@ fun LoginWithPhoneVerifyPhone(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
+            if (loginState.isTimerRunning) {
+                Text(
+                    text = "Resend OTP in ${loginState.timerSeconds} sec",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
             Button(
                 onClick = {
                     viewModel.onEvent(LoginWithPhoneEvent.OnClearError)
-                    if (loginState.timerSeconds > 0 && loginState.mobileNumber == viewModel.timerMobileNumber) {
-                        viewModel.onEvent(LoginWithPhoneEvent.ShowSnackbar("Wait for timer to finish: ${loginState.timerSeconds}"))
+                    if (loginState.isTimerRunning && loginState.mobileNumber == loginState.lastRequestedMobileNumber) {
+                        return@Button
                     } else {
-                        if (activity != null) {
-                            viewModel.onEvent(
-                                LoginWithPhoneEvent.SendVerificationCode(
-                                    activity
-                                )
-                            )
+                        activity?.let {
+                            viewModel.onEvent(LoginWithPhoneEvent.SendVerificationCode(it))
                         }
                     }
                 },
@@ -135,13 +139,12 @@ fun LoginWithPhoneVerifyPhone(
                     .width(300.dp)
                     .height(45.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = if (loginState.isTimerRunning) Color.Gray else MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                enabled = !loginState.isTimerRunning
             ) {
-                Text(
-                    text = "Get OTP"
-                )
+                Text(text = if (loginState.isTimerRunning) "Wait (${loginState.timerSeconds}s)" else "Get OTP")
             }
 
             Spacer(modifier = Modifier.weight(1f))

@@ -47,7 +47,7 @@ fun ChatRoomTopBar(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (isOnline) "Online" else "Offline", // Red Dot/ Green Dot
+                    text = if (isOnline) "Online" else "Offline",
                     fontSize = 20.sp,
                     color = if (isOnline) Color.Green else Color.Red,
                     modifier = Modifier.padding(start = 8.dp)

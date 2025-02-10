@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +36,7 @@ import eu.tutorials.blinkchat.ui.component.CustomTextField
 import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingItem
+import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 
 @Composable
 fun Meetings(
@@ -46,6 +48,7 @@ fun Meetings(
     val contentModifier =
         if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -53,7 +56,8 @@ fun Meetings(
                 AppBar(
                     title = "Meetings",
                     onIconClick = { onAddClicked() },
-                    iconResId = Icons.Default.Add
+                    iconResId = Icons.Default.Add,
+                    isOnline = rememberInternetConnectionState()
                 )
             }
         },
