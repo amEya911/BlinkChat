@@ -18,19 +18,26 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,8 +53,10 @@ import coil.compose.rememberImagePainter
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
@@ -88,30 +97,60 @@ fun CameraScreen(
     } else {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            onBack()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Cancel,
+                                contentDescription = "Retake photo"
+                            )
+                        }
+                    }
+                )
+            },
             bottomBar = {
                 BottomAppBar(
                     containerColor = MaterialTheme.colorScheme.background
                 ) {
-                    IconButton(
-                        onClick = { getContent.launch("image/*") }
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PermMedia,
-                            contentDescription = "Access Media"
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(
-                        onClick = { capturePhoto(context, cameraController, onPhotoCaptured) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Camera,
-                            contentDescription = "Capture Photo"
-                        )
+                        IconButton(
+                            onClick = { getContent.launch("image/*") }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PermMedia,
+                                contentDescription = "Access Media"
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IconButton(
+                                onClick = { capturePhoto(context, cameraController, onPhotoCaptured) },
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Camera,
+                                    contentDescription = "Capture Photo",
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
                 }
             }
-        ) { paddingValues ->
+        )
+        { paddingValues ->
             AndroidView(
                 modifier = Modifier
                     .fillMaxSize()
@@ -120,7 +159,7 @@ fun CameraScreen(
                     PreviewView(context).apply {
                         layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                         setBackgroundColor(Color.Black.toArgb())
-                        scaleType = PreviewView.ScaleType.FIT_START
+                        scaleType = PreviewView.ScaleType.FILL_CENTER
                     }.also { previewView ->
                         previewView.controller = cameraController
                         cameraController.bindToLifecycle(lifecycleOwner)
@@ -186,6 +225,7 @@ fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
     return uri
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LastPhotoPreview(
     modifier: Modifier = Modifier,
@@ -194,26 +234,37 @@ private fun LastPhotoPreview(
     onRetakePhoto: () -> Unit
 ) {
     Scaffold(
-        bottomBar = {
-            BottomAppBar {
-                IconButton(onClick = {
-                    onRetakePhoto()
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Camera,
-                        contentDescription = "Retake photo"
-                    )
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = {
+                        onRetakePhoto()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Cancel,
+                            contentDescription = "Retake photo"
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                IconButton(onClick = {
-                    onSendPhoto(lastCapturedPhoto)
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Send,
-                        contentDescription = "Send photo"
-                    )
+            )
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.background
+            ){
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = {
+                        onSendPhoto(lastCapturedPhoto)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Send,
+                            contentDescription = "Send photo"
+                        )
+                    }
                 }
             }
         }
@@ -227,7 +278,7 @@ private fun LastPhotoPreview(
             Image(
                 painter = rememberImagePainter(lastCapturedPhoto),
                 contentDescription = "Last captured photo",
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.FillBounds
             )
         }
     }

@@ -201,7 +201,7 @@ fun ChatRoom(
                                     Text(
                                         text = chatRoomState.otherUserMessage.messageText,
                                         color = MaterialTheme.colorScheme.onBackground,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
                                 }
                             }
@@ -291,9 +291,3 @@ fun ChatRoomError(
         }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun (modifier: Modifier = Modifier) {
-//
-//}

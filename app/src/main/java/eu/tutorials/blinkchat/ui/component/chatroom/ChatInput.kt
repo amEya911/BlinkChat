@@ -106,7 +106,7 @@ fun ChatInput(
                     modifier = Modifier.fillMaxSize(),
                     textStyle = TextStyle(
                         color = Color.Transparent,
-                        fontSize = 16.sp,
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                         fontFamily = FontFamily.Default
                     ),
                     cursorBrush = SolidColor(Color.White)
@@ -117,21 +117,21 @@ fun ChatInput(
                         val currentMessage = chatRoomState.currentUserMessage.messageText
 
                         if (readMessage != null && currentMessage.startsWith(readMessage)) {
-                            withStyle(style = SpanStyle(color = Color.Green)) {
+                            withStyle(style = SpanStyle(color = Color.Green, fontSize = MaterialTheme.typography.headlineSmall.fontSize)) {
                                 append(readMessage)
                             }
                             withStyle(style = SpanStyle(color = Color.Yellow)) {
                                 append(currentMessage.removePrefix(readMessage))
                             }
                         } else {
-                            withStyle(style = SpanStyle(color = Color.Yellow)) {
+                            withStyle(style = SpanStyle(color = Color.Yellow, fontSize = MaterialTheme.typography.headlineSmall.fontSize)) {
                                 append(currentMessage)
                             }
                         }
                     },
                     style = TextStyle(
                         color = Color.Transparent,
-                        fontSize = 16.sp,
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                         fontFamily = FontFamily.Default
                     )
                 )
