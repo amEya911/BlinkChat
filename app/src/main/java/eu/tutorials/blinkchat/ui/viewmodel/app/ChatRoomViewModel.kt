@@ -298,7 +298,6 @@ class ChatRoomViewModel @Inject constructor(
                         }
                     }
                 }
-
             }.onFailure { error ->
                 _chatRoomState.value = ChatRoomState(error = error.message)
             }

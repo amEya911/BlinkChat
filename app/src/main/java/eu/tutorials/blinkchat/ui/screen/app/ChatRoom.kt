@@ -9,13 +9,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -73,7 +78,7 @@ fun ChatRoom(
         chatRoomState.selectedViewImage?.let { selectedImageUri ->
             FullscreenImageViewer(
                 imageUrl = selectedImageUri.toString(),
-                onClose = { chatRoomViewModel.onEvent(ChatRoomEvent.OnDismissViewImage)}
+                onClose = { chatRoomViewModel.onEvent(ChatRoomEvent.OnDismissViewImage) }
             )
         }
     } else {
@@ -91,23 +96,25 @@ fun ChatRoom(
             },
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                activity?.let {
-                    ChatBottomBar(
-                        onRoomLinkClicked = {
-                            chatRoomViewModel.onEvent(
-                                ChatRoomEvent.OnCopyRoomLinkClicked(
-                                    isGuest = (id != null),
-                                    chatRoomId,
-                                    context
+                if (chatRoomState.error == null) {
+                    activity?.let {
+                        ChatBottomBar(
+                            onRoomLinkClicked = {
+                                chatRoomViewModel.onEvent(
+                                    ChatRoomEvent.OnCopyRoomLinkClicked(
+                                        isGuest = (id != null),
+                                        chatRoomId,
+                                        context
+                                    )
                                 )
-                            )
-                        },
-                        onEvent = chatRoomViewModel::onEvent,
-                        chatRoomState,
-                        context,
-                        activity,
-                        chatRoomViewModel
-                    )
+                            },
+                            onEvent = chatRoomViewModel::onEvent,
+                            chatRoomState,
+                            context,
+                            activity,
+                            chatRoomViewModel
+                        )
+                    }
                 }
             },
             modifier = Modifier
@@ -121,103 +128,172 @@ fun ChatRoom(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
-                ) {
-                    LazyColumn(
+                if (chatRoomState.error != null) {
+                    ChatRoomError(
+                        modifier = Modifier.padding(innerPadding),
+                        text = chatRoomState.error
+                    )
+                } else {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(8.dp)
                     ) {
-                        item {
-                            Column {
-                                val imageUrls = chatRoomState.otherUserMessage.imageUrls
-                                Log.d(
-                                    "imageUrls",
-                                    chatRoomState.otherUserMessage.imageUrls.toString()
-                                )
-                                if (!imageUrls.isNullOrEmpty()) {
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Fixed(4),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(max = 300.dp)
-                                    ) {
-                                        items(imageUrls) { image ->
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            item {
+                                Column {
+                                    val imageUrls = chatRoomState.otherUserMessage.imageUrls
+                                    Log.d(
+                                        "imageUrls",
+                                        chatRoomState.otherUserMessage.imageUrls.toString()
+                                    )
+                                    if (!imageUrls.isNullOrEmpty()) {
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Fixed(4),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(max = 300.dp)
+                                        ) {
+                                            items(imageUrls) { image ->
 
-                                            val imageUrl = image.url
-                                            val isOpened = image.opened
+                                                val imageUrl = image.url
+                                                val isOpened = image.opened
 
-                                            val uri = try {
-                                                Uri.parse(imageUrl)
-                                            } catch (e: Exception) {
-                                                null
-                                                //TODO
-                                            }
-
-                                            if (uri != null) {
-                                                Button(
-                                                    onClick = {
-                                                        chatRoomViewModel.onEvent(
-                                                            ChatRoomEvent.OnViewImage(uri)
-                                                        )
-                                                        if (!isOpened) {
-                                                            chatRoomViewModel.onEvent(ChatRoomEvent.OnImageOpened(imageUrl))
-                                                        }
-                                                    },
-                                                    modifier = Modifier.padding(4.dp)
-                                                ) {
-                                                    if (isOpened) {
-                                                        Text(text = "Opened")
-                                                    } else {
-                                                        Text(text = "Photo")
-                                                    }
+                                                val uri = try {
+                                                    Uri.parse(imageUrl)
+                                                } catch (e: Exception) {
+                                                    null
+                                                    //TODO
                                                 }
-                                            } else {
-                                                Text(text = "Invalid image URL")
+
+                                                if (uri != null) {
+                                                    Button(
+                                                        onClick = {
+                                                            chatRoomViewModel.onEvent(
+                                                                ChatRoomEvent.OnViewImage(uri)
+                                                            )
+                                                            if (!isOpened) {
+                                                                chatRoomViewModel.onEvent(
+                                                                    ChatRoomEvent.OnImageOpened(
+                                                                        imageUrl
+                                                                    )
+                                                                )
+                                                            }
+                                                        },
+                                                        modifier = Modifier.padding(4.dp)
+                                                    ) {
+                                                        if (isOpened) {
+                                                            Text(text = "Opened")
+                                                        } else {
+                                                            Text(text = "Photo")
+                                                        }
+                                                    }
+                                                } else {
+                                                    Text(text = "Invalid image URL")
+                                                }
                                             }
                                         }
                                     }
+                                    Text(
+                                        text = chatRoomState.otherUserMessage.messageText,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
-                                Text(
-                                    text = chatRoomState.otherUserMessage.messageText,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
                             }
                         }
-                    }
 
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                    ChatInput(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        chatRoomState = chatRoomState,
-                        onMessageTyping = { newText ->
-                            chatRoomViewModel.onEvent(
-                                ChatRoomEvent.OnMessageTyping(
-                                    newText,
-                                    false
+                        ChatInput(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            chatRoomState = chatRoomState,
+                            onMessageTyping = { newText ->
+                                chatRoomViewModel.onEvent(
+                                    ChatRoomEvent.OnMessageTyping(
+                                        newText,
+                                        false
+                                    )
                                 )
-                            )
-                        },
-                        onViewImage = { uri ->
-                            chatRoomViewModel.onEvent(ChatRoomEvent.OnViewImage(uri))
-                        },
-                        onDismissImage = { chatRoomViewModel.onEvent(ChatRoomEvent.OnDismissViewImage) }
-                    )
+                            },
+                            onViewImage = { uri ->
+                                chatRoomViewModel.onEvent(ChatRoomEvent.OnViewImage(uri))
+                            },
+                            onDismissImage = { chatRoomViewModel.onEvent(ChatRoomEvent.OnDismissViewImage) }
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+@Composable
+fun ChatRoomError(
+    modifier: Modifier = Modifier,
+    text: String
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Gray),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Error Icon",
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Oops! Something went wrong",
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun (modifier: Modifier = Modifier) {
+//
+//}

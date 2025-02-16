@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +46,7 @@ fun Settings(
     modifier: Modifier = Modifier,
     settingsState: SettingsState,
     onEvent: (SettingsEvent) -> Unit,
+    onProfileClicked: () -> Unit,
     onBlockUserClicked: () -> Unit,
     navigateToLoginScreen: () -> Unit
 ) {
@@ -88,6 +90,13 @@ fun Settings(
             if (settingsState.isLoading) {
                 Text("Loading...", modifier = Modifier.padding(16.dp))
             } else {
+                ActionButton(
+                    onClick = {
+                        onProfileClicked()
+                    },
+                    text = "Profile",
+                    icon = Icons.Default.Person
+                )
                 ActionButton(
                     onClick = {
                         onBlockUserClicked()
@@ -223,7 +232,6 @@ fun NotificationTypeDialog(
 }
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelectorBottomSheet(
@@ -231,38 +239,37 @@ fun ThemeSelectorBottomSheet(
     onThemeSelected: (AppTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
-        ModalBottomSheet(
-            onDismissRequest = { onDismiss() },
-            containerColor = MaterialTheme.colorScheme.surface,
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ThemeOption(
-                    text = "System Default",
-                    isSelected = selectedTheme == AppTheme.SYSTEM_DEFAULT,
-                    onClick = { onThemeSelected(AppTheme.SYSTEM_DEFAULT) }
-                )
+            ThemeOption(
+                text = "System Default",
+                isSelected = selectedTheme == AppTheme.SYSTEM_DEFAULT,
+                onClick = { onThemeSelected(AppTheme.SYSTEM_DEFAULT) }
+            )
 
-                ThemeOption(
-                    text = "Light",
-                    isSelected = selectedTheme == AppTheme.LIGHT,
-                    onClick = { onThemeSelected(AppTheme.LIGHT) }
-                )
+            ThemeOption(
+                text = "Light",
+                isSelected = selectedTheme == AppTheme.LIGHT,
+                onClick = { onThemeSelected(AppTheme.LIGHT) }
+            )
 
-                ThemeOption(
-                    text = "Dark",
-                    isSelected = selectedTheme == AppTheme.DARK,
-                    onClick = { onThemeSelected(AppTheme.DARK) }
-                )
+            ThemeOption(
+                text = "Dark",
+                isSelected = selectedTheme == AppTheme.DARK,
+                onClick = { onThemeSelected(AppTheme.DARK) }
+            )
 
-                Spacer(modifier = Modifier.padding(16.dp))
-            }
+            Spacer(modifier = Modifier.padding(16.dp))
         }
-
+    }
 }
 
 @Composable
@@ -279,6 +286,6 @@ fun ThemeOption(text: String, isSelected: Boolean, onClick: () -> Unit) {
             onClick = null
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = text, style =MaterialTheme.typography.bodyLarge)
+        Text(text = text, style = MaterialTheme.typography.bodyLarge)
     }
 }

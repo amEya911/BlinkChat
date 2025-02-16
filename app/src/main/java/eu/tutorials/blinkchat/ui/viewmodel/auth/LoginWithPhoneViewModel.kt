@@ -129,6 +129,23 @@ class LoginWithPhoneViewModel @Inject constructor(
                     snackbarMessage = event.message
                 )
             }
+
+            LoginWithPhoneEvent.ShowDialog -> {
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(showDialog = true)
+            }
+
+            LoginWithPhoneEvent.DismissDialog -> {
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(showDialog = false)
+            }
+
+            is LoginWithPhoneEvent.OnEnterDisplayName -> {
+                userRepository.addDisplayName(
+                    displayName = event.username,
+                    id = _loginWithPhoneState.value.id ?: ""
+                )
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(isLoggedIn = true)
+                Log.d("Local123", "displayName: ${ _loginWithPhoneState.value.isLoggedIn}")
+            }
         }
     }
 
@@ -141,7 +158,7 @@ class LoginWithPhoneViewModel @Inject constructor(
         val lastRequestTime = _loginWithPhoneState.value.lastRequestTime ?: return
         val currentTime = System.currentTimeMillis()
         val timeElapsed = (currentTime - lastRequestTime) / 1000
-        var remainingTime = (Companion.TIMEOUT_DURATION - timeElapsed).toInt()
+        var remainingTime = (TIMEOUT_DURATION - timeElapsed).toInt()
 
         if (remainingTime <= 0) {
             _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
@@ -170,7 +187,6 @@ class LoginWithPhoneViewModel @Inject constructor(
         }
     }
 
-
     private fun verifyVerificationCode(code: String, verificationId: String) {
         val credential = PhoneAuthProvider.getCredential(verificationId, code)
         signInWithPhoneAuthCredential(credential)
@@ -181,8 +197,8 @@ class LoginWithPhoneViewModel @Inject constructor(
         val lastRequestTime = _loginWithPhoneState.value.lastRequestTime ?: 0
         val timeElapsed = (currentTime - lastRequestTime) / 1000
 
-        if (timeElapsed < Companion.TIMEOUT_DURATION) {
-            val remainingTime = Companion.TIMEOUT_DURATION - timeElapsed
+        if (timeElapsed < TIMEOUT_DURATION) {
+            val remainingTime = TIMEOUT_DURATION - timeElapsed
             _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                 verificationError = "Please wait $remainingTime seconds before requesting a new code.",
                 timerSeconds = remainingTime.toInt()
@@ -192,7 +208,7 @@ class LoginWithPhoneViewModel @Inject constructor(
 
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber("+91$mobileNumber")
-            .setTimeout(Companion.TIMEOUT_DURATION, TimeUnit.SECONDS)
+            .setTimeout(TIMEOUT_DURATION, TimeUnit.SECONDS)
             .setActivity(activity)
             .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
@@ -218,7 +234,7 @@ class LoginWithPhoneViewModel @Inject constructor(
                         verificationId = verificationId,
                         mobileNumber = mobileNumber,
                         lastRequestTime = currentTime,
-                        timerSeconds = Companion.TIMEOUT_DURATION.toInt(),
+                        timerSeconds = TIMEOUT_DURATION.toInt(),
                         isTimerRunning = true
                     )
 
@@ -233,10 +249,10 @@ class LoginWithPhoneViewModel @Inject constructor(
     private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
         auth.signInWithCredential(credential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Log.d("LoginWithPhoneViewModel", "Login successful")
-                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
-                    isLoggedIn = true
-                )
+//                Log.d("LoginWithPhoneViewModel", "Login successful")
+//                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+//                    isLoggedIn = true
+//                )
 
                 val user = auth.currentUser
                 user?.let {
@@ -249,12 +265,39 @@ class LoginWithPhoneViewModel @Inject constructor(
                         photoUri = it.photoUrl?.toString()
                     )
                     userRepository.addUserDetails(contact)
+                    addDisplayName(id = hashedId)
                 }
             } else {
                 Log.e("LoginWithPhoneViewModel", "Login failed: ${task.exception?.message}")
                 _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
                     showVerificationField = false,
                     verificationError = "Login failed: ${task.exception?.message}"
+                )
+            }
+        }
+    }
+
+    private fun addDisplayName(id: String) {
+        userRepository.getUserDetails(id) { contact ->
+            val displayName = contact?.displayName
+            Log.d("Local123", "displayName: $displayName")
+
+            if (displayName == null || displayName == "Unknown User") {
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                    id = id,
+                    showDialog = true,
+                    isLoggedIn = false
+                )
+                viewModelScope.launch {
+                    delay(100)
+                    Log.d("Local123", "showDialog: ${_loginWithPhoneState.value.showDialog}")
+                    Log.d("Local123", "isLoggedIn: ${ _loginWithPhoneState.value.isLoggedIn}")
+                }
+                Log.d("Local123", "inside")
+            } else {
+                Log.d("Local123", "Login successful")
+                _loginWithPhoneState.value = _loginWithPhoneState.value.copy(
+                    isLoggedIn = true
                 )
             }
         }

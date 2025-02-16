@@ -1,5 +1,6 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -43,12 +44,16 @@ fun Meetings(
     modifier: Modifier = Modifier,
     meetingsState: MeetingsState,
     onEvent: (MeetingsEvent) -> Unit,
-    onAddClicked: () -> Unit
+    onAddClicked: () -> Unit,
+    onBackPressed: () -> Unit
 ) {
     val contentModifier =
         if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
     val keyboardController = LocalSoftwareKeyboardController.current
-    val context = LocalContext.current
+
+    BackHandler(onBack = {
+        onBackPressed()
+    })
 
     Scaffold(
         topBar = {

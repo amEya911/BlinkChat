@@ -41,9 +41,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.app.InboxState
@@ -73,11 +76,11 @@ fun InboxContactPress(
                         indication = null
                     )
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.2f))
-                )
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.2f))
+//                )
 
                 Column(
                     modifier = Modifier
@@ -165,7 +168,7 @@ fun ContactPressMenu(
             if (!inboxState.isSelectedContactBlocked) {
                 MenuItem(
                     text = "Enter",
-                    icon = Icons.Default.Chat,
+                    iconVector = Icons.Default.Chat,
                     onClick = onEnterClick
                 )
             }
@@ -175,7 +178,7 @@ fun ContactPressMenu(
             if (!inboxState.isSelectedContactBlocked) {
                 MenuItem(
                     text = "Schedule a Meet",
-                    icon = Icons.Default.Schedule,
+                    iconPainter = painterResource(id = R.drawable.schedule),
                     onClick = onScheduleAMeet
                 )
             }
@@ -185,7 +188,7 @@ fun ContactPressMenu(
             if (isRecentChat) {
                 MenuItem(
                     text = "Delete Recent Chat",
-                    icon = Icons.Default.Delete,
+                    iconVector = Icons.Default.Delete,
                     onClick = onDeleteRecentChat
                 )
                 MenuDivider()
@@ -194,7 +197,7 @@ fun ContactPressMenu(
             if (!inboxState.isSelectedContactBlocked) {
                 MenuItem(
                     text = if (!inboxState.isSelectedContactMuted) "Mute ${inboxState.selectedContact?.displayName}" else "Unmute ${inboxState.selectedContact?.displayName}",
-                    icon = if (!inboxState.isSelectedContactMuted) Icons.Default.NotificationsOff else Icons.Default.Notifications,
+                    iconVector = if (!inboxState.isSelectedContactMuted) Icons.Default.NotificationsOff else Icons.Default.Notifications,
                     onClick = if (!inboxState.isSelectedContactMuted) onMuteUser else onUnmuteUser
                 )
                 MenuDivider()
@@ -202,7 +205,7 @@ fun ContactPressMenu(
 
             MenuItem(
                 text = if (!inboxState.isSelectedContactBlocked) "Block ${inboxState.selectedContact?.displayName}" else "Unblock ${inboxState.selectedContact?.displayName}",
-                icon = Icons.Default.Block,
+                iconVector = Icons.Default.Block,
                 onClick = if (!inboxState.isSelectedContactBlocked) onBlockUser else onUnblockUser
             )
 
@@ -210,7 +213,7 @@ fun ContactPressMenu(
 
             MenuItem(
                 text = "Cancel",
-                icon = Icons.Default.Clear,
+                iconVector = Icons.Default.Clear,
                 onClick = onCancelClick
             )
         }
@@ -218,7 +221,7 @@ fun ContactPressMenu(
 }
 
 @Composable
-fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
+fun MenuItem(text: String, iconVector: ImageVector? = null, iconPainter: Painter? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -233,12 +236,12 @@ fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSecondary,
         )
         Spacer(modifier = Modifier.width(24.dp))
-        Icon(
-            imageVector = icon,
-            contentDescription = text,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSecondary
-        )
+        iconVector?.let {
+            Icon(imageVector = it, contentDescription = text, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSecondary)
+        }
+        iconPainter?.let {
+            Icon(painter = it, contentDescription = text, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSecondary)
+        }
     }
 }
 

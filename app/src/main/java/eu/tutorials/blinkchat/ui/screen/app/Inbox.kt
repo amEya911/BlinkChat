@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -141,7 +143,7 @@ fun Inbox(
                 AppBar(
                     title = "Chats",
                     onIconClick = { onEvent(InboxEvent.OnAllContactsIconClicked) },
-                    iconResId = Icons.Default.AccountCircle,
+                    iconResId = if (inboxState.isAllContactsClicked) Icons.Default.Schedule else Icons.Default.AccountCircle,
                     isOnline = rememberInternetConnectionState()
                 )
             }
@@ -239,7 +241,7 @@ fun Inbox(
                                 onEvent = onEvent
                             )
                             HorizontalDivider(
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                             )
                         }
                     }
@@ -250,7 +252,7 @@ fun Inbox(
             keyboardController?.hide()
             InboxContactPress(
                 state = inboxState,
-                onEvent = onEvent
+                onEvent = onEvent,
             ) { contact ->
                 RecentChatItem(
                     inboxState = inboxState,

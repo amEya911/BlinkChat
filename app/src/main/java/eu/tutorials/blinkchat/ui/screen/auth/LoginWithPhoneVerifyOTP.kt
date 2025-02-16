@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+//noinspection UsingMaterialAndMaterial3Libraries
+import androidx.compose.material.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -33,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +57,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import eu.tutorials.blinkchat.data.event.auth.LoginWithPhoneEvent
 import eu.tutorials.blinkchat.data.state.auth.LoginWithPhoneState
@@ -75,6 +78,38 @@ fun LoginWithPhoneVerifyOTP(
 
     LaunchedEffect(true) {
         viewModel.onEvent(LoginWithPhoneEvent.OnStartTimer)
+    }
+
+//    Log.d("Local123", "showDialog: ${loginState.showDialog}")
+//    Log.d("Local123", "isLoggedIn: ${loginState.isLoggedIn}")
+
+    if (loginState.showDialog) {
+        var username by rememberSaveable { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(text = "Enter Username") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = {
+                            username = it
+                        },
+                        label = { Text("Username") },
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.onEvent(LoginWithPhoneEvent.OnEnterDisplayName(username))
+                        viewModel.onEvent(LoginWithPhoneEvent.DismissDialog)
+                    }
+                ) {
+                    Text(text = "Enter")
+                }
+            }
+        )
     }
 
     Box(
@@ -170,7 +205,8 @@ fun LoginWithPhoneVerifyOTP(
             }
 
             if (loginState.isLoggedIn) {
-                onOTPLoginSuccessful()
+                Log.d("Local123", "inside isLoggedIn")
+                //onOTPLoginSuccessful()
                 viewModel.onEvent(LoginWithPhoneEvent.OnDismiss)
             }
 
@@ -340,3 +376,8 @@ fun OTPVerificationBox(
 //                    unfocusedIndicatorColor = Color.Transparent
 //                )
 //            )
+
+@Composable
+fun DisplayNameDialog(modifier: Modifier = Modifier) {
+
+}

@@ -174,6 +174,7 @@ class InboxViewModel @Inject constructor(
 
     private fun loadCurrentUser() {
         val currentUserId = userRepository.currentUserId()
+        Log.d("Nimish", "currentUserId: $currentUserId")
         if (currentUserId != null) {
             userRepository.getUserDetails(currentUserId) { currentUserDetails ->
                 if (currentUserDetails != null) {

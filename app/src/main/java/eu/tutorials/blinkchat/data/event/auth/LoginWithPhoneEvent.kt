@@ -15,5 +15,8 @@ sealed class LoginWithPhoneEvent {
     data object OnResetVerificationState: LoginWithPhoneEvent()
     data class OnResendVerificationCode(val mobileNumber: String, val activity: Activity): LoginWithPhoneEvent()
     data object OnStartTimer: LoginWithPhoneEvent()
+    data class OnEnterDisplayName(val username: String): LoginWithPhoneEvent()
+    data object ShowDialog : LoginWithPhoneEvent()
+    data object DismissDialog : LoginWithPhoneEvent()
 }
 

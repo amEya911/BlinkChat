@@ -50,23 +50,7 @@ fun UserItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (user.photoUri != null) {
-                    AsyncImage(
-                        model = user.photoUri,
-                        contentDescription = "photoUri",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile_image),
-                        contentDescription = "Profile Image",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                    )
-                }
+                UserDisplay(photoUri = user.photoUri)
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(

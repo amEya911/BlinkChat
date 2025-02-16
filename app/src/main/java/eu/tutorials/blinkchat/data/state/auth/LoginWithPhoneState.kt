@@ -12,6 +12,8 @@ data class LoginWithPhoneState(
     val isTimerPaused: Boolean = false,
     val snackbarMessage: String? = null,
     val lastRequestTime: Long? = null,
-    val lastRequestedMobileNumber: String? = null
+    val lastRequestedMobileNumber: String? = null,
+    val showDialog: Boolean = false,
+    val id: String? = null
 )
 

@@ -30,7 +30,6 @@ class MainActivity : ComponentActivity() {
         val deepLinkPath = appLinkData?.path
 
         val isFromDeepLink = deepLinkPath == "/${AppScreen.Meetings.route}/enter"
-        Log.d("jatins", "deepLinkPath: $deepLinkPath")
 
         setContent {
             val themePreferences = ThemePreferences(applicationContext)
@@ -44,8 +43,6 @@ class MainActivity : ComponentActivity() {
                 App(isFromDeepLink)
             }
         }
-
-
     }
 }
 
@@ -54,6 +51,9 @@ class MainActivity : ComponentActivity() {
 fun App(isFromDeepLink: Boolean) {
     RootNavGraph(isFromDeepLink)
 }
+
+// const {onRequest} = require("firebase-functions/v2/https");
+// const logger = require("firebase-functions/logger");
 
 
 

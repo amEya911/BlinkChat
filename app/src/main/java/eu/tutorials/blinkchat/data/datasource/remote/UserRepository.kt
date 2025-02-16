@@ -47,8 +47,20 @@ class UserRepository @Inject constructor(
             }
     }
 
+    fun addDisplayName(id: String, displayName: String) {
+        firestore.collection("users").document(id)
+            .update("displayName", displayName)
+            .addOnSuccessListener {
+                Log.d("UserRepo", "Display name updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("UserRepo", "Error updating display name", e)
+            }
+    }
+
     fun currentUserId(): String? {
         val phoneNumber = FirebaseAuth.getInstance().currentUser?.phoneNumber
+        Log.d("Nimish", "phoneNumber: $phoneNumber")
         return if (phoneNumber != null) {
             HashUtil.hashPhoneNumber(phoneNumber)
         } else {

@@ -24,6 +24,7 @@ import eu.tutorials.blinkchat.data.event.app.NotificationsType
 import eu.tutorials.blinkchat.util.NotificationType
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
+import kotlin.random.Random
 
 @AndroidEntryPoint
 class PushNotificationService: FirebaseMessagingService() {
@@ -99,7 +100,9 @@ class PushNotificationService: FirebaseMessagingService() {
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(0, notification)
+        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt() + Random.nextInt(0, 1000)
+
+        notificationManager.notify(notificationId, notification)
     }
 
     private fun createNotificationChannel() {

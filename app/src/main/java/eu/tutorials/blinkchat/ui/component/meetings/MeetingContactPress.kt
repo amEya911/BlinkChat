@@ -113,7 +113,7 @@ fun MeetingPressMenu(
         ) {
             MenuItem(
                 text = "Reschedule",
-                icon = Icons.Default.Edit,
+                iconVector = Icons.Default.Edit,
                 onClick = onRescheduleMeet
             )
 
@@ -121,13 +121,13 @@ fun MeetingPressMenu(
 
             MenuItem(
                 text = "Call Off",
-                icon = Icons.Default.DeleteForever,
+                iconVector = Icons.Default.DeleteForever,
                 onClick = onCallOffClicked
             )
 
             MenuItem(
                 text = "Cancel",
-                icon = Icons.Default.Clear,
+                iconVector = Icons.Default.Clear,
                 onClick = onCancelClicked
             )
         }

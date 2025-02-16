@@ -1,0 +1,425 @@
+[debug] [2025-02-15T08:41:43.748Z] ----------------------------------------------------------------------
+[debug] [2025-02-15T08:41:43.751Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ameya\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --force
+[debug] [2025-02-15T08:41:43.751Z] CLI Version:   13.30.0
+[debug] [2025-02-15T08:41:43.752Z] Platform:      win32
+[debug] [2025-02-15T08:41:43.752Z] Node Version:  v20.17.0
+[debug] [2025-02-15T08:41:43.752Z] Time:          Sat Feb 15 2025 14:11:43 GMT+0530 (India Standard Time)
+[debug] [2025-02-15T08:41:43.752Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-02-15T08:41:43.947Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-02-15T08:41:43.947Z] > authorizing via signed-in user (ameyakulkarni2023@gmail.com)
+[debug] [2025-02-15T08:41:43.947Z] [iam] checking project blinkchat-a44b2 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-02-15T08:41:43.949Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:43.949Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:43.950Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions [none]
+[debug] [2025-02-15T08:41:43.950Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:41:43.950Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-02-15T08:41:50.179Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions 200
+[debug] [2025-02-15T08:41:50.180Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-02-15T08:41:50.180Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:50.180Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:50.180Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/blinkchat-a44b2/serviceAccounts/blinkchat-a44b2@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-02-15T08:41:50.180Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/blinkchat-a44b2/serviceAccounts/blinkchat-a44b2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-02-15T08:41:53.263Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/blinkchat-a44b2/serviceAccounts/blinkchat-a44b2@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-02-15T08:41:53.264Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/blinkchat-a44b2/serviceAccounts/blinkchat-a44b2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'blinkchat-a44b2'...
+[info] 
+[info] i  deploying functions 
+[info] +  functions: Finished running predeploy script. 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] +  functions: Finished running predeploy script. 
+[debug] [2025-02-15T08:41:54.276Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:54.276Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:54.276Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 [none]
+[debug] [2025-02-15T08:41:55.366Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 200
+[debug] [2025-02-15T08:41:55.366Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 {"projectNumber":"927978769544","projectId":"blinkchat-a44b2","lifecycleState":"ACTIVE","name":"BlinkChat","labels":{"firebase":"enabled"},"createTime":"2024-10-12T06:15:20.105242Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: preparing codebase blinkchat-functions for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2025-02-15T08:41:55.368Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.368Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.368Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.369Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2025-02-15T08:41:55.369Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.369Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-02-15T08:41:55.370Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.370Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:55.370Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudfunctions.googleapis.com [none]
+[debug] [2025-02-15T08:41:55.370Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:41:55.372Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/runtimeconfig.googleapis.com [none]
+[debug] [2025-02-15T08:41:55.372Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:41:55.373Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudbuild.googleapis.com [none]
+[debug] [2025-02-15T08:41:55.373Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudbuild.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:41:55.375Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/artifactregistry.googleapis.com [none]
+[debug] [2025-02-15T08:41:55.375Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/artifactregistry.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:41:56.910Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/artifactregistry.googleapis.com 200
+[debug] [2025-02-15T08:41:56.910Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/artifactregistry.googleapis.com [omitted]
+[info] +  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2025-02-15T08:41:57.936Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/runtimeconfig.googleapis.com 200
+[debug] [2025-02-15T08:41:57.936Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2025-02-15T08:41:57.937Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudfunctions.googleapis.com 200
+[debug] [2025-02-15T08:41:57.937Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudfunctions.googleapis.com [omitted]
+[info] +  functions: required API cloudfunctions.googleapis.com is enabled 
+[debug] [2025-02-15T08:41:57.939Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudbuild.googleapis.com 200
+[debug] [2025-02-15T08:41:57.939Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/cloudbuild.googleapis.com [omitted]
+[info] +  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2025-02-15T08:41:57.939Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:57.939Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:57.940Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/blinkchat-a44b2/adminSdkConfig [none]
+[debug] [2025-02-15T08:41:59.485Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/blinkchat-a44b2/adminSdkConfig 200
+[debug] [2025-02-15T08:41:59.486Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/blinkchat-a44b2/adminSdkConfig {"projectId":"blinkchat-a44b2","databaseURL":"https://blinkchat-a44b2-default-rtdb.firebaseio.com","storageBucket":"blinkchat-a44b2.firebasestorage.app"}
+[debug] [2025-02-15T08:41:59.487Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:59.487Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:41:59.488Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/blinkchat-a44b2/configs [none]
+[debug] [2025-02-15T08:42:00.562Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/blinkchat-a44b2/configs 200
+[debug] [2025-02-15T08:42:00.563Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/blinkchat-a44b2/configs {}
+[debug] [2025-02-15T08:42:00.569Z] Validating nodejs source
+[debug] [2025-02-15T08:42:01.451Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^13.1.0",
+    "firebase-functions": "^6.3.2"
+  },
+  "devDependencies": {
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-02-15T08:42:01.452Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-02-15T08:42:01.453Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-02-15T08:42:01.467Z] Found firebase-functions binary at 'C:\Users\ameya\AndroidStudioProjects\BlinkChat\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8908
+
+[debug] [2025-02-15T08:42:01.918Z] Got response from /__/functions.yaml {"endpoints":{"cleanUpInactiveChatRooms":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.updated","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"chatRooms/{chatRoomId}"},"retry":false},"entryPoint":"cleanUpInactiveChatRooms"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-02-15T08:42:06.980Z] Validating nodejs source
+[debug] [2025-02-15T08:42:07.935Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-02-15T08:42:07.936Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase blinkchat-functions to determine what to deploy 
+[debug] [2025-02-15T08:42:07.936Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-02-15T08:42:07.943Z] Found firebase-functions binary at 'C:\Users\ameya\AndroidStudioProjects\BlinkChat\blinkchat-functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8308
+
+[debug] [2025-02-15T08:42:08.193Z] Got response from /__/functions.yaml {"endpoints":{},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2025-02-15T08:42:13.216Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:13.216Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:13.216Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com [none]
+[debug] [2025-02-15T08:42:13.216Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:23.552Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com 200
+[debug] [2025-02-15T08:42:23.553Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com [omitted]
+[warn] !  extensions: missing required API firebaseextensions.googleapis.com. Enabling now... 
+[debug] [2025-02-15T08:42:23.556Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:23.557Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:23.557Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com:enable [none]
+[debug] [2025-02-15T08:42:23.557Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com:enable x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:25.609Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com:enable 200
+[debug] [2025-02-15T08:42:25.610Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com:enable [omitted]
+[debug] [2025-02-15T08:42:35.620Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:35.620Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:35.621Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com [none]
+[debug] [2025-02-15T08:42:35.621Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:38.144Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com 200
+[debug] [2025-02-15T08:42:38.145Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/firebaseextensions.googleapis.com [omitted]
+[info] +  extensions: required API firebaseextensions.googleapis.com is enabled 
+[debug] [2025-02-15T08:42:38.155Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-02-15T08:42:38.155Z] > authorizing via signed-in user (ameyakulkarni2023@gmail.com)
+[debug] [2025-02-15T08:42:38.156Z] [iam] checking project blinkchat-a44b2 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2025-02-15T08:42:38.158Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:38.158Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:38.158Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions [none]
+[debug] [2025-02-15T08:42:38.159Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:38.159Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-02-15T08:42:40.085Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions 200
+[debug] [2025-02-15T08:42:40.085Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-02-15T08:42:40.086Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:40.087Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:40.089Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/blinkchat-a44b2/instances pageSize=100&pageToken=
+[debug] [2025-02-15T08:42:43.125Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/blinkchat-a44b2/instances 200
+[debug] [2025-02-15T08:42:43.125Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/blinkchat-a44b2/instances {}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged C:\Users\ameya\AndroidStudioProjects\BlinkChat\functions (70.88 KB) for uploading 
+[debug] [2025-02-15T08:42:43.161Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:43.161Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:43.161Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/blinkchat-a44b2/locations/-/functions [none]
+[debug] [2025-02-15T08:42:45.097Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/blinkchat-a44b2/locations/-/functions 200
+[debug] [2025-02-15T08:42:45.097Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/blinkchat-a44b2/locations/-/functions {}
+[debug] [2025-02-15T08:42:45.098Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:45.098Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:45.098Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2025-02-15T08:42:46.197Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/-/functions 200
+[debug] [2025-02-15T08:42:46.197Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/-/functions {}
+[debug] [2025-02-15T08:42:46.200Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:46.200Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:46.201Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/blinkchat-a44b2/databases/(default) [none]
+[debug] [2025-02-15T08:42:47.226Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/blinkchat-a44b2/databases/(default) 200
+[debug] [2025-02-15T08:42:47.226Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/blinkchat-a44b2/databases/(default) {"name":"projects/blinkchat-a44b2/databases/(default)","uid":"bbaaf275-9502-4907-b901-4a53461e874b","createTime":"2024-10-29T16:28:41.560396Z","updateTime":"2024-10-29T16:28:41.560396Z","locationId":"asia-south1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-02-15T07:42:46.971298Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"j","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","etag":"IJb7mLSkxYsDMObVhrWAjIoD"}
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[debug] [2025-02-15T08:42:47.228Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:47.228Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[debug] [2025-02-15T08:42:47.229Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:47.229Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[debug] [2025-02-15T08:42:47.229Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:47.229Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[debug] [2025-02-15T08:42:47.230Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:47.230Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:47.230Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com [none]
+[debug] [2025-02-15T08:42:47.230Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:47.231Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com [none]
+[debug] [2025-02-15T08:42:47.231Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:47.233Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/pubsub.googleapis.com [none]
+[debug] [2025-02-15T08:42:47.233Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/pubsub.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:47.234Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/storage.googleapis.com [none]
+[debug] [2025-02-15T08:42:47.234Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/storage.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:49.803Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/storage.googleapis.com 200
+[debug] [2025-02-15T08:42:49.804Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/storage.googleapis.com [omitted]
+[info] +  functions: required API storage.googleapis.com is enabled 
+[debug] [2025-02-15T08:42:49.810Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com 200
+[debug] [2025-02-15T08:42:49.810Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com [omitted]
+[warn] !  functions: missing required API run.googleapis.com. Enabling now... 
+[debug] [2025-02-15T08:42:49.812Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:49.812Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:49.812Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com:enable [none]
+[debug] [2025-02-15T08:42:49.812Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com:enable x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:49.814Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com 200
+[debug] [2025-02-15T08:42:49.815Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com [omitted]
+[warn] !  functions: missing required API eventarc.googleapis.com. Enabling now... 
+[debug] [2025-02-15T08:42:49.818Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:49.818Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:42:49.818Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com:enable [none]
+[debug] [2025-02-15T08:42:49.819Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com:enable x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:42:49.824Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/pubsub.googleapis.com 200
+[debug] [2025-02-15T08:42:49.824Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/pubsub.googleapis.com [omitted]
+[info] +  functions: required API pubsub.googleapis.com is enabled 
+[debug] [2025-02-15T08:42:50.364Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com:enable 200
+[debug] [2025-02-15T08:42:50.364Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com:enable [omitted]
+[debug] [2025-02-15T08:42:50.830Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com:enable 200
+[debug] [2025-02-15T08:42:50.830Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com:enable [omitted]
+[debug] [2025-02-15T08:43:00.378Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:00.378Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:00.379Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com [none]
+[debug] [2025-02-15T08:43:00.379Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:43:00.843Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:00.844Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:00.844Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com [none]
+[debug] [2025-02-15T08:43:00.844Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com x-goog-quota-user=projects/blinkchat-a44b2
+[debug] [2025-02-15T08:43:06.106Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com 200
+[debug] [2025-02-15T08:43:06.107Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/eventarc.googleapis.com [omitted]
+[info] +  functions: required API eventarc.googleapis.com is enabled 
+[debug] [2025-02-15T08:43:06.118Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com 200
+[debug] [2025-02-15T08:43:06.119Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blinkchat-a44b2/services/run.googleapis.com [omitted]
+[info] +  functions: required API run.googleapis.com is enabled 
+[info] i  functions: generating the service identity for pubsub.googleapis.com... 
+[debug] [2025-02-15T08:43:06.127Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:06.127Z] Checked if tokens are valid: true, expires at: 1739611069830
+[info] i  functions: generating the service identity for eventarc.googleapis.com... 
+[debug] [2025-02-15T08:43:06.128Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:06.128Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:06.129Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[debug] [2025-02-15T08:43:06.130Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[debug] [2025-02-15T08:43:07.225Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/pubsub.googleapis.com:generateServiceIdentity 200
+[debug] [2025-02-15T08:43:07.225Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-927978769544@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"104492524682695561704"}}
+[debug] [2025-02-15T08:43:07.226Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/eventarc.googleapis.com:generateServiceIdentity 200
+[debug] [2025-02-15T08:43:07.226Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/927978769544/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-927978769544@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"101802923053659271488"}}
+[debug] [2025-02-15T08:43:07.227Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:07.227Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:07.227Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:getIamPolicy [none]
+[debug] [2025-02-15T08:43:09.322Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:getIamPolicy 200
+[debug] [2025-02-15T08:43:09.323Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:getIamPolicy {"version":1,"etag":"BwYuKkbi7Rk=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:927978769544@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-927978769544@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-927978769544@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com","serviceAccount:927978769544@cloudservices.gserviceaccount.com","serviceAccount:blinkchat-a44b2@appspot.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:firebase-service-account@firebase-sa-management.iam.gserviceaccount.com","serviceAccount:service-927978769544@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebaseappcheck.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasedatabase.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-927978769544@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:ameyakulkarni2023@gmail.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-927978769544@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]}]}
+[debug] [2025-02-15T08:43:09.323Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:09.323Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:09.323Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:setIamPolicy [none]
+[debug] [2025-02-15T08:43:09.323Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:setIamPolicy {"policy":{"version":1,"etag":"BwYuKkbi7Rk=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:927978769544@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-927978769544@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-927978769544@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com","serviceAccount:927978769544@cloudservices.gserviceaccount.com","serviceAccount:blinkchat-a44b2@appspot.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:firebase-service-account@firebase-sa-management.iam.gserviceaccount.com","serviceAccount:service-927978769544@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebaseappcheck.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasedatabase.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-927978769544@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com","serviceAccount:service-927978769544@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:ameyakulkarni2023@gmail.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-927978769544@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/run.invoker","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2025-02-15T08:43:10.330Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:setIamPolicy 200
+[debug] [2025-02-15T08:43:10.330Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/927978769544:setIamPolicy {"version":1,"etag":"BwYuKkfoK30=","bindings":[{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:927978769544@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.serviceAgent","members":["serviceAccount:service-927978769544@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-927978769544@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com","serviceAccount:927978769544@cloudservices.gserviceaccount.com","serviceAccount:blinkchat-a44b2@appspot.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:firebase-service-account@firebase-sa-management.iam.gserviceaccount.com","serviceAccount:service-927978769544@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebaseappcheck.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebaseappcheck.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasedatabase.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-927978769544@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-927978769544@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com","serviceAccount:service-927978769544@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:ameyakulkarni2023@gmail.com"]},{"role":"roles/run.invoker","members":["serviceAccount:927978769544-compute@developer.gserviceaccount.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-927978769544@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-attr4@blinkchat-a44b2.iam.gserviceaccount.com"]}]}
+[debug] [2025-02-15T08:43:10.330Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:10.330Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:10.330Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 [none]
+[debug] [2025-02-15T08:43:10.839Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 200
+[debug] [2025-02-15T08:43:10.839Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/blinkchat-a44b2 {"projectNumber":"927978769544","projectId":"blinkchat-a44b2","lifecycleState":"ACTIVE","name":"BlinkChat","labels":{"firebase":"enabled"},"createTime":"2024-10-12T06:15:20.105242Z"}
+[debug] [2025-02-15T08:43:10.840Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:10.840Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:10.841Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/blinkchat-a44b2/billingInfo [none]
+[debug] [2025-02-15T08:43:12.888Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/blinkchat-a44b2/billingInfo 200
+[debug] [2025-02-15T08:43:12.888Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/blinkchat-a44b2/billingInfo {"name":"projects/blinkchat-a44b2/billingInfo","projectId":"blinkchat-a44b2","billingAccountName":"billingAccounts/0111C6-BC72B5-D45EC6","billingEnabled":true}
+[debug] [2025-02-15T08:43:12.893Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:12.893Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:12.894Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions:generateUploadUrl [none]
+[debug] [2025-02-15T08:43:15.485Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions:generateUploadUrl 200
+[debug] [2025-02-15T08:43:15.485Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com/11716e87-6af4-4eed-b767-72090d9599a4.zip?GoogleAccessId=service-927978769544@gcf-admin-robot.iam.gserviceaccount.com&Expires=1739610795&Signature=IzkjY3esah514lz51fuiIrXxxZx8bPXXElri5W5qSa4Y0y69FVFHh00UnrP2%2F9UBkJzovmQyNeygyPTqrl6roFFUXLwyEYr6zDv%2Bz1CvHyWQ7ElMx8nsIiVglD4ef0%2Fpb2K2ZIKR%2BWVycMpAYBeD3HcCjcA0jYlvJFTKQJOkeVi0MitPEd%2Bv2h7b4CJkRfLE4YdOwZOFjLk72Y8q%2BlgWFv9CuD9kVC3URbvaXrzi%2BwVP2M3F7XxiestcYRaCrv8y5wg6%2B37ch9CkSJXkEvRjbUU44d%2FYjUcPVOtTe%2BtjYQ0zx6TTKo%2BIQzbiE1rTpf3se6jw%2Fg3ms6k%2Bxz5c%2BLSMww%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com","object":"11716e87-6af4-4eed-b767-72090d9599a4.zip"}}
+[debug] [2025-02-15T08:43:15.486Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com/11716e87-6af4-4eed-b767-72090d9599a4.zip GoogleAccessId=service-927978769544%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1739610795&Signature=IzkjY3esah514lz51fuiIrXxxZx8bPXXElri5W5qSa4Y0y69FVFHh00UnrP2%2F9UBkJzovmQyNeygyPTqrl6roFFUXLwyEYr6zDv%2Bz1CvHyWQ7ElMx8nsIiVglD4ef0%2Fpb2K2ZIKR%2BWVycMpAYBeD3HcCjcA0jYlvJFTKQJOkeVi0MitPEd%2Bv2h7b4CJkRfLE4YdOwZOFjLk72Y8q%2BlgWFv9CuD9kVC3URbvaXrzi%2BwVP2M3F7XxiestcYRaCrv8y5wg6%2B37ch9CkSJXkEvRjbUU44d%2FYjUcPVOtTe%2BtjYQ0zx6TTKo%2BIQzbiE1rTpf3se6jw%2Fg3ms6k%2Bxz5c%2BLSMww%3D%3D
+[debug] [2025-02-15T08:43:15.486Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com/11716e87-6af4-4eed-b767-72090d9599a4.zip [stream]
+[debug] [2025-02-15T08:43:17.046Z] <<< [apiv2][status] PUT https://storage.googleapis.com/gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com/11716e87-6af4-4eed-b767-72090d9599a4.zip 200
+[debug] [2025-02-15T08:43:17.046Z] <<< [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com/11716e87-6af4-4eed-b767-72090d9599a4.zip [omitted]
+[info] +  functions: functions folder uploaded successfully 
+[info] i  functions: creating Node.js 20 (2nd Gen) function cleanUpInactiveChatRooms(us-central1)... 
+[debug] [2025-02-15T08:43:17.062Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:17.062Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:17.063Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions functionId=cleanUpInactiveChatRooms
+[debug] [2025-02-15T08:43:17.063Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions {"name":"projects/blinkchat-a44b2/locations/us-central1/functions/cleanUpInactiveChatRooms","buildConfig":{"runtime":"nodejs20","entryPoint":"cleanUpInactiveChatRooms","source":{"storageSource":{"bucket":"gcf-v2-uploads-927978769544.us-central1.cloudfunctions.appspot.com","object":"11716e87-6af4-4eed-b767-72090d9599a4.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"blinkchat-a44b2\",\"databaseURL\":\"https://blinkchat-a44b2-default-rtdb.firebaseio.com\",\"storageBucket\":\"blinkchat-a44b2.firebasestorage.app\"}","GCLOUD_PROJECT":"blinkchat-a44b2","EVENTARC_CLOUD_EVENT_SOURCE":"projects/blinkchat-a44b2/locations/us-central1/services/cleanUpInactiveChatRooms","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"cleanUpInactiveChatRooms"},"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"2c8bd3f16ead3c0dd2e44ef9a4fd4790fc6a422d"},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.updated","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"database","value":"(default)"},{"attribute":"namespace","value":"(default)"},{"attribute":"document","value":"chatRooms/{chatRoomId}","operator":"match-path-pattern"}],"triggerRegion":"asia-south1"}}
+[debug] [2025-02-15T08:43:36.489Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions 400
+[debug] [2025-02-15T08:43:36.489Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/blinkchat-a44b2/locations/asia-south1/triggers/cleanupinactivechatrooms-176678: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions?functionId=cleanUpInactiveChatRooms had HTTP Error: 400, Validation failed for trigger projects/blinkchat-a44b2/locations/asia-south1/triggers/cleanupinactivechatrooms-176678: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] !  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] !  functions:  failed to create function projects/blinkchat-a44b2/locations/us-central1/functions/cleanUpInactiveChatRooms 
+[error] Failed to create function projects/blinkchat-a44b2/locations/us-central1/functions/cleanUpInactiveChatRooms
+[debug] [2025-02-15T08:43:36.504Z] Total Function Deployment time: 19440
+[debug] [2025-02-15T08:43:36.504Z] 1 Functions Deployed
+[debug] [2025-02-15T08:43:36.504Z] 1 Functions Errored
+[debug] [2025-02-15T08:43:36.505Z] 0 Function Deployments Aborted
+[debug] [2025-02-15T08:43:36.505Z] Average Function Deployment time: 19438
+[info] 
+[info] Functions deploy had errors with the following functions:
+	cleanUpInactiveChatRooms(us-central1)
+[info] i  functions: cleaning up build files... 
+[debug] [2025-02-15T08:43:36.684Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:36.684Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:36.686Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:36.687Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:36.687Z] >>> [apiv2][query] DELETE https://artifactregistry.googleapis.com/v1beta2/projects/blinkchat-a44b2/locations/us-central1/repositories/gcf-artifacts/packages/clean_up_inactive_chat_rooms [none]
+[debug] [2025-02-15T08:43:36.690Z] >>> [apiv2][query] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list [none]
+[debug] [2025-02-15T08:43:38.242Z] <<< [apiv2][status] DELETE https://artifactregistry.googleapis.com/v1beta2/projects/blinkchat-a44b2/locations/us-central1/repositories/gcf-artifacts/packages/clean_up_inactive_chat_rooms 404
+[debug] [2025-02-15T08:43:38.242Z] <<< [apiv2][body] DELETE https://artifactregistry.googleapis.com/v1beta2/projects/blinkchat-a44b2/locations/us-central1/repositories/gcf-artifacts/packages/clean_up_inactive_chat_rooms {"error":{"code":404,"message":"Package \"projects/blinkchat-a44b2/locations/us-central1/repositories/gcf-artifacts/packages/clean_up_inactive_chat_rooms\" was not found.","status":"NOT_FOUND"}}
+[debug] [2025-02-15T08:43:39.590Z] <<< [apiv2][status] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list 404
+[debug] [2025-02-15T08:43:39.591Z] <<< [apiv2][body] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list {"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}]}
+[debug] [2025-02-15T08:43:39.591Z] Failed docker command with error  Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found {"name":"FirebaseError","children":[],"context":{"body":{"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}],"error":{"message":"Not Found"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found","status":404}
+[debug] [2025-02-15T08:43:39.606Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:39.606Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:39.606Z] >>> [apiv2][query] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list [none]
+[debug] [2025-02-15T08:43:40.289Z] <<< [apiv2][status] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list 404
+[debug] [2025-02-15T08:43:40.289Z] <<< [apiv2][body] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list {"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}]}
+[debug] [2025-02-15T08:43:40.290Z] Failed docker command with error  Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found {"name":"FirebaseError","children":[],"context":{"body":{"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}],"error":{"message":"Not Found"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found","status":404}
+[debug] [2025-02-15T08:43:40.399Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:40.400Z] Checked if tokens are valid: true, expires at: 1739611069830
+[debug] [2025-02-15T08:43:40.400Z] >>> [apiv2][query] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list [none]
+[debug] [2025-02-15T08:43:40.813Z] <<< [apiv2][status] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list 404
+[debug] [2025-02-15T08:43:40.813Z] <<< [apiv2][body] GET https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list {"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}]}
+[debug] [2025-02-15T08:43:40.813Z] Failed docker command with error  Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found {"name":"FirebaseError","children":[],"context":{"body":{"errors":[{"code":"NAME_UNKNOWN","message":"Repository \"us.gcr.io\" not found"}],"error":{"message":"Not Found"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://us.gcr.io/v2/blinkchat-a44b2/gcf/us-central1/tags/list had HTTP Error: 404, Not Found","status":404}
+[warn] !  functions: Unhandled error cleaning up build images. This could result in a small monthly bill if not corrected. You can attempt to delete these images by redeploying or you can delete them manually at https://console.cloud.google.com/gcr/images/blinkchat-a44b2/us/gcf 
+[debug] [2025-02-15T08:43:40.814Z] Functions deploy failed.
+[debug] [2025-02-15T08:43:40.814Z] {
+  "endpoint": {
+    "id": "cleanUpInactiveChatRooms",
+    "project": "blinkchat-a44b2",
+    "region": "us-central1",
+    "entryPoint": "cleanUpInactiveChatRooms",
+    "platform": "gcfv2",
+    "runtime": "nodejs20",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.updated",
+      "retry": false,
+      "eventFilters": {
+        "database": "(default)",
+        "namespace": "(default)"
+      },
+      "eventFilterPathPatterns": {
+        "document": "chatRooms/{chatRoomId}"
+      },
+      "region": "asia-south1"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "serviceAccount": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"blinkchat-a44b2\",\"databaseURL\":\"https://blinkchat-a44b2-default-rtdb.firebaseio.com\",\"storageBucket\":\"blinkchat-a44b2.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "blinkchat-a44b2",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/blinkchat-a44b2/locations/us-central1/services/cleanUpInactiveChatRooms"
+    },
+    "codebase": "default",
+    "cpu": 1,
+    "targetedByOnly": false,
+    "hash": "2c8bd3f16ead3c0dd2e44ef9a4fd4790fc6a422d"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/blinkchat-a44b2/locations/us-central1/functions/cleanUpInactiveChatRooms"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/blinkchat-a44b2/locations/us-central1/functions/cleanUpInactiveChatRooms",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/blinkchat-a44b2/locations/asia-south1/triggers/cleanupinactivechatrooms-176678: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/blinkchat-a44b2/locations/us-central1/functions?functionId=cleanUpInactiveChatRooms had HTTP Error: 400, Validation failed for trigger projects/blinkchat-a44b2/locations/asia-south1/triggers/cleanupinactivechatrooms-176678: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2025-02-15T08:43:40.891Z] Error: Failed to create function cleanUpInactiveChatRooms in region us-central1
+    at C:\Users\ameya\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:294:27
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Fabricator.createV2Function (C:\Users\ameya\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:278:30)
+    at async Fabricator.createEndpoint (C:\Users\ameya\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:137:13)
+    at async handle (C:\Users\ameya\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:89:17)
+[error] 
+[error] Error: There was an error deploying functions

@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -36,9 +38,11 @@ import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
 import eu.tutorials.blinkchat.ui.screen.additional.AddBlockUsers
 import eu.tutorials.blinkchat.ui.screen.additional.BlockedUsers
+import eu.tutorials.blinkchat.ui.screen.additional.Profile
 import eu.tutorials.blinkchat.ui.screen.additional.ScheduleAMeet
 import eu.tutorials.blinkchat.ui.viewmodel.additional.AddBlockUsersViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.additional.BlockedUsersViewModel
+import eu.tutorials.blinkchat.ui.viewmodel.additional.ProfileViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.app.ChatRoomViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.app.InboxViewModel
 import eu.tutorials.blinkchat.ui.viewmodel.app.MeetingsViewModel
@@ -80,6 +84,9 @@ fun AppNavGraph(
     val addBlockUsersViewModel: AddBlockUsersViewModel = hiltViewModel()
     val addBlockUsersState = addBlockUsersViewModel.addBlockUsersState.collectAsState().value
 
+    val profileViewModel: ProfileViewModel = hiltViewModel()
+    val profileState = profileViewModel.profileState.collectAsState().value
+
     val chatRoomViewModel: ChatRoomViewModel = hiltViewModel()
     val chatRoomState = chatRoomViewModel.chatRoomState.collectAsState().value
 
@@ -106,7 +113,8 @@ fun AppNavGraph(
                 !currentRoute.startsWith(AppScreen.ChatRoom.route) &&
                 !currentRoute.startsWith(AppScreen.BlockedUsers.route) &&
                 !currentRoute.startsWith(AppScreen.AddBlockUsers.route) &&
-                !currentRoute.startsWith(AppScreen.ScheduleAMeet.route)
+                !currentRoute.startsWith(AppScreen.ScheduleAMeet.route) &&
+                !currentRoute.startsWith(AppScreen.Profile.route)
             ) {
                 BottomNavBar(navController = navController)
             }
@@ -124,17 +132,50 @@ fun AppNavGraph(
             route = Graph.APP
         ) {
             composable(
-                AppScreen.Meetings.route
+                AppScreen.Meetings.route,
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        tween(1000)
+                    )
+                },
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        tween(1000)
+                    )
+                }
             ) {
                 Meetings(
                     modifier = Modifier.padding(paddingValues),
                     meetingsState = meetingsState,
                     onEvent = meetingsViewModel::onEvent,
-                    onAddClicked = { navController.navigate(AppScreen.ScheduleAMeet.route) }
+                    onAddClicked = { navController.navigate(AppScreen.ScheduleAMeet.route) },
+                    onBackPressed = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate(AppScreen.Chats.route) { popUpTo(AppScreen.Chats.route) { inclusive = true } }
+                        }
+                    }
                 )
             }
 
-            composable(AppScreen.ScheduleAMeet.route) {
+            composable(
+                AppScreen.ScheduleAMeet.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Up,
+                        tween(1000)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Down,
+                        tween(1000)
+                    )
+                },
+            ) {
                 ScheduleAMeet(
                     contacts = inboxState.contacts,
                     onBackClicked = { navController.popBackStack() },
@@ -146,7 +187,9 @@ fun AppNavGraph(
                 )
             }
 
-            composable(AppScreen.Chats.route) {
+            composable(
+                AppScreen.Chats.route
+            ) {
                 Inbox(
                     inboxState = inboxState,
                     onEvent = inboxViewModel::onEvent,
@@ -158,7 +201,21 @@ fun AppNavGraph(
                 )
             }
 
-            composable(AppScreen.Settings.route) {
+            composable(
+                AppScreen.Settings.route,
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        tween(1000)
+                    )
+                },
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        tween(1000)
+                    )
+                }
+            ) {
                 Settings(
                     modifier = Modifier.padding(paddingValues),
                     settingsState = settingsState,
@@ -168,11 +225,52 @@ fun AppNavGraph(
                         navHostController.navigate(Graph.AUTH) {
                             popUpTo(Graph.APP) { inclusive = true }
                         }
-                    }
+                    },
+                    onProfileClicked = { navController.navigate(AppScreen.Profile.route)}
                 )
             }
 
-            composable(AppScreen.BlockedUsers.route) {
+            composable(
+                AppScreen.Profile.route,
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        tween(1000)
+                    )
+                },
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        tween(1000)
+                    )
+                }
+            ) {
+                inboxState.currentUserContact?.let { contact ->
+                    Profile(
+                        modifier = Modifier.padding(paddingValues),
+                        onBackClicked = { navController.popBackStack()},
+                        currentUserId = contact.id,
+                        profileState = profileState,
+                        onEvent = profileViewModel::onEvent
+                    )
+                }
+            }
+
+            composable(
+                AppScreen.BlockedUsers.route,
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        tween(1000)
+                    )
+                },
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        tween(1000)
+                    )
+                }
+            ) {
                 BlockedUsers(
                     modifier = Modifier.padding(paddingValues),
                     blockedUsers = settingsState.blockedUsers,
@@ -190,7 +288,21 @@ fun AppNavGraph(
                 )
             }
 
-            composable(AppScreen.AddBlockUsers.route) {
+            composable(
+                AppScreen.AddBlockUsers.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Up,
+                        tween(1000)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Down,
+                        tween(1000)
+                    )
+                }
+            ) {
                 AddBlockUsers(
                     modifier = Modifier.padding(paddingValues),
                     contacts = inboxState.contacts.filterNot { contact ->
@@ -217,6 +329,7 @@ sealed class AppScreen(val route: String) {
     data object BlockedUsers : AppScreen("blocked-users")
     data object AddBlockUsers : AppScreen("add-block-users")
     data object ScheduleAMeet : AppScreen("schedule-a-meet")
+    data object Profile: AppScreen("profile")
 }
 
 @Composable
