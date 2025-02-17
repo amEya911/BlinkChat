@@ -8,4 +8,6 @@ sealed class AddBlockUsersEvent {
     data object OnReset: AddBlockUsersEvent()
     data class OnContactClicked(val contact: Contact): AddBlockUsersEvent()
     data object OnDismissBottomSheet: AddBlockUsersEvent()
+    data object OnStartRefresh: AddBlockUsersEvent()
+    data object OnEndRefresh: AddBlockUsersEvent()
 }

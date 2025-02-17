@@ -8,4 +8,6 @@ sealed class BlockedUsersEvent {
     data class OnContactClicked(val contact: Contact): BlockedUsersEvent()
     data object OnDismissBottomSheet: BlockedUsersEvent()
     data object OnReset: BlockedUsersEvent()
+    data object OnStartRefresh: BlockedUsersEvent()
+    data object OnEndRefresh: BlockedUsersEvent()
 }

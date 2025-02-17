@@ -7,5 +7,6 @@ data class BlockedUsersState(
     val contacts: List<Contact> = emptyList(),
     val selectedContact: Contact? = null,
     val searchQuery: String? = null,
-    val searchResults: List<Contact> = emptyList()
+    val searchResults: List<Contact> = emptyList(),
+    val isRefreshing: Boolean = false
 )

@@ -45,6 +45,18 @@ class BlockedUsersViewModel @Inject constructor(): ViewModel() {
                     isBottomSheetShow = false
                 )
             }
+
+            BlockedUsersEvent.OnEndRefresh -> {
+                _blockedUsersState.value = _blockedUsersState.value.copy(
+                    isRefreshing = false
+                )
+            }
+
+            BlockedUsersEvent.OnStartRefresh -> {
+                _blockedUsersState.value = _blockedUsersState.value.copy(
+                    isRefreshing = true
+                )
+            }
         }
     }
 

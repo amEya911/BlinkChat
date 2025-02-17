@@ -16,5 +16,6 @@ data class SettingsState(
     val isThemeClicked: Boolean = false,
     val isNotificationsClicked: Boolean = false,
     val selectedTheme: AppTheme = AppTheme.SYSTEM_DEFAULT,
-    val selectedNotificationsType: NotificationsType = NotificationsType.PUBLIC
+    val selectedNotificationsType: NotificationsType = NotificationsType.PUBLIC,
+    val isRefreshing: Boolean = false
 )

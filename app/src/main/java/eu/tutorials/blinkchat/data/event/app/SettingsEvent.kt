@@ -12,6 +12,7 @@ sealed class SettingsEvent {
     data class OnThemeChanged(val theme: AppTheme, val activity: Activity): SettingsEvent()
     data class OnNotificationsTypeChanged(val notificationType: NotificationsType): SettingsEvent()
     data object OnNotificationsClicked: SettingsEvent()
+    data object OnStartRefresh: SettingsEvent()
 }
 
 enum class AppTheme {

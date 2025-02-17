@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
+import com.google.android.gms.common.internal.safeparcel.SafeParcelable.Indicator
 import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.state.app.InboxState
 import eu.tutorials.blinkchat.ui.component.AppBar
@@ -153,8 +154,6 @@ fun Inbox(
         onRefresh = {
             coroutineScope.launch {
                 onEvent(InboxEvent.OnStartRefresh)
-                delay(3.seconds)
-                onEvent(InboxEvent.OnEndRefresh)
             }
         }
     ) {
@@ -172,7 +171,7 @@ fun Inbox(
             containerColor = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .graphicsLayer {
-                    translationY = refreshState.distanceFraction * 100f
+                    translationY = refreshState.distanceFraction * 300f
                 }
         ) { innerPadding ->
             Box(

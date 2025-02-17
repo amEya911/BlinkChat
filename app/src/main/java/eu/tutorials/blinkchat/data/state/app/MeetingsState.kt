@@ -13,5 +13,6 @@ data class MeetingsState(
     val selectedMeeting: Meeting? = null,
     val isRescheduleClicked: Boolean = false,
     val isSortByCreatedAt: Boolean = true,
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+    val isRefreshing: Boolean = false
 )

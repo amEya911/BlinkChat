@@ -3,7 +3,7 @@ package eu.tutorials.blinkchat.ui.viewmodel.additional
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
-import eu.tutorials.blinkchat.data.event.app.ProfileEvent
+import eu.tutorials.blinkchat.data.event.additional.ProfileEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.additional.ProfileState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +21,7 @@ class ProfileViewModel @Inject constructor(
     fun onEvent(event: ProfileEvent) {
         when(event) {
             is ProfileEvent.OnLoadCurrentContact -> {
-                userRepository.getUserDetails(event.id) { contact ->
-                    _profileState.value = _profileState.value.copy(
-                        currentUserContact = contact ?: Contact("", "", "", null, null)
-                    )
-                }
+                getUserDetails(id = event.id)
             }
             ProfileEvent.OnNameClicked -> {
                 _profileState.value = _profileState.value.copy(
@@ -39,11 +35,38 @@ class ProfileViewModel @Inject constructor(
                         displayName = event.newName
                     )
                 )
-                userRepository.addDisplayName(
+                addDisplayName(
                     id = event.id,
-                    displayName = event.newName
+                    newName = event.newName
+                )
+            }
+
+            ProfileEvent.OnEndRefresh -> {
+                _profileState.value = _profileState.value.copy(
+                    isRefreshing = false
+                )
+            }
+
+            ProfileEvent.OnStartRefresh -> {
+                _profileState.value = _profileState.value.copy(
+                    isRefreshing = true
                 )
             }
         }
+    }
+
+    private fun getUserDetails(id: String) {
+        userRepository.getUserDetails(id) { contact ->
+            _profileState.value = _profileState.value.copy(
+                currentUserContact = contact ?: Contact("", "", "", null, null)
+            )
+        }
+    }
+
+    private fun addDisplayName(id: String, newName: String) {
+        userRepository.addDisplayName(
+            id = id,
+            displayName = newName
+        )
     }
 }

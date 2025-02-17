@@ -9,15 +9,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.tutorials.blinkchat.data.datasource.remote.LocalRepository
 import eu.tutorials.blinkchat.data.datasource.remote.MeetRepository
 import eu.tutorials.blinkchat.data.datasource.remote.UserRepository
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
 import eu.tutorials.blinkchat.data.model.Meeting
 import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.MeetingsState
+import eu.tutorials.blinkchat.util.ConnectivityObserver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import eu.tutorials.blinkchat.util.DateTimeUtils.toLocalDateTime
+import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
@@ -109,6 +112,31 @@ class MeetingsViewModel @Inject constructor(
 
             is MeetingsEvent.OnDeleteMeeting -> {
                 deleteMeet(event.meeting, true)
+            }
+
+            MeetingsEvent.OnStartRefresh -> {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isRefreshing = true
+                )
+                refreshData()
+            }
+        }
+    }
+
+    private fun refreshData() {
+        viewModelScope.launch {
+            delay(500)
+
+            while (!ConnectivityObserver.isOnline.value) {
+                delay(1000)
+            }
+
+            try {
+                loadMeetings()
+            } finally {
+                _meetingsSate.value = _meetingsSate.value.copy(
+                    isRefreshing = false
+                )
             }
         }
     }

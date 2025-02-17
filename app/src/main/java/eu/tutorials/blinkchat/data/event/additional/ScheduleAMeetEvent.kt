@@ -7,4 +7,6 @@ sealed class ScheduleAMeetEvent {
     data class OnButtonClicked(val selectedContact: Contact?): ScheduleAMeetEvent()
     data object OnDismiss: ScheduleAMeetEvent()
     data class OnSearchUsers(val searchQuery: String): ScheduleAMeetEvent()
+    data object OnStartRefresh: ScheduleAMeetEvent()
+    data object OnEndRefresh: ScheduleAMeetEvent()
 }

@@ -17,8 +17,10 @@ import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.RecentChatContact
 import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.InboxState
+import eu.tutorials.blinkchat.util.ConnectivityObserver
 import eu.tutorials.blinkchat.util.HashUtil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -170,15 +172,30 @@ class InboxViewModel @Inject constructor(
                 )
             }
 
-            InboxEvent.OnEndRefresh -> {
-                _inboxState.value = _inboxState.value.copy(
-                    isRefreshing = false
-                )
-            }
-
             InboxEvent.OnStartRefresh -> {
                 _inboxState.value = _inboxState.value.copy(
                     isRefreshing = true
+                )
+                refreshData()
+            }
+        }
+    }
+
+    private fun refreshData() {
+        viewModelScope.launch {
+            delay(500)
+
+            while (!ConnectivityObserver.isOnline.value) {
+                delay(1000)
+            }
+
+            try {
+                loadCurrentUser()
+                loadRecentChats()
+                loadContacts()
+            } finally {
+                _inboxState.value = _inboxState.value.copy(
+                    isRefreshing = false
                 )
             }
         }

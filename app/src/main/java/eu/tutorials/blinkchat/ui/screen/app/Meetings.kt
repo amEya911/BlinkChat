@@ -16,19 +16,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.MeetingsEvent
 import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.state.app.MeetingsState
@@ -38,7 +44,9 @@ import eu.tutorials.blinkchat.ui.component.ScheduleMeetDialog
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingContactPress
 import eu.tutorials.blinkchat.ui.component.meetings.MeetingItem
 import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Meetings(
     modifier: Modifier = Modifier,
@@ -50,110 +58,126 @@ fun Meetings(
     val contentModifier =
         if (meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked) Modifier.blur(20.dp) else Modifier
     val keyboardController = LocalSoftwareKeyboardController.current
+    val refreshState = rememberPullToRefreshState()
+    val coroutineScope = rememberCoroutineScope()
 
     BackHandler(onBack = {
         onBackPressed()
     })
 
-    Scaffold(
-        topBar = {
-            if (!(meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked)) {
-                AppBar(
-                    title = "Meetings",
-                    onIconClick = { onAddClicked() },
-                    iconResId = Icons.Default.Add,
-                    isOnline = rememberInternetConnectionState()
-                )
+    PullToRefreshBox(
+        state = refreshState,
+        isRefreshing = meetingsState.isRefreshing,
+        onRefresh = {
+            coroutineScope.launch {
+                onEvent(MeetingsEvent.OnStartRefresh)
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .then(contentModifier)
-        ) {
-            Column(
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                if (!(meetingsState.isMeetingClicked || meetingsState.isRescheduleClicked)) {
+                    AppBar(
+                        title = "Meetings",
+                        onIconClick = { onAddClicked() },
+                        iconResId = Icons.Default.Add,
+                        isOnline = rememberInternetConnectionState()
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .graphicsLayer {
+                    translationY = refreshState.distanceFraction * 300f
+                }
+        ) { innerPadding ->
+            Box(
                 modifier = modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .then(contentModifier)
             ) {
-                CustomTextField(
-                    value = meetingsState.searchQuery ?: "",
-                    onValueChange = { query ->
-                        onEvent(MeetingsEvent.OnSearchUsers(query))
-                    },
-                    placeholderText = "Search",
-                    modifier = Modifier
-                        .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
-                )
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    CustomTextField(
+                        value = meetingsState.searchQuery ?: "",
+                        onValueChange = { query ->
+                            onEvent(MeetingsEvent.OnSearchUsers(query))
+                        },
+                        placeholderText = "Search",
+                        modifier = Modifier
+                            .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                SegmentedButton(
-                    isSortByCreatedAt = meetingsState.isSortByCreatedAt,
-                    onSortByCreatedAt = { onEvent(MeetingsEvent.OnSortByCreatedAt) },
-                    onSortByTime = { onEvent(MeetingsEvent.OnSortByTime) }
-                )
+                    SegmentedButton(
+                        isSortByCreatedAt = meetingsState.isSortByCreatedAt,
+                        onSortByCreatedAt = { onEvent(MeetingsEvent.OnSortByCreatedAt) },
+                        onSortByTime = { onEvent(MeetingsEvent.OnSortByTime) }
+                    )
 
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                val displayedMeetings = if (meetingsState.searchQuery.isNullOrBlank()) {
-                    meetingsState.meetings
-                } else {
-                    meetingsState.searchResults
-                }
-
-                val updatedMatchedContacts = displayedMeetings.map { meeting ->
-                    val updatedOtherUserContact =
-                        meetingsState.contacts.find { it.id == meeting.otherUserContact.id }
-                    if (updatedOtherUserContact != null) {
-                        meeting.copy(otherUserContact = updatedOtherUserContact)
+                    val displayedMeetings = if (meetingsState.searchQuery.isNullOrBlank()) {
+                        meetingsState.meetings
                     } else {
-                        meeting.copy(
-                            otherUserContact = meeting.otherUserContact.copy(
-                             displayName = meeting.otherUserContact.phoneNumber
-                            )
-                        )
+                        meetingsState.searchResults
                     }
-                }
 
-                LazyColumn {
-                    items(updatedMatchedContacts.reversed()) { meeting ->
-                        MeetingItem(meeting, meetingsState, onEvent)
+                    val updatedMatchedContacts = displayedMeetings.map { meeting ->
+                        val updatedOtherUserContact =
+                            meetingsState.contacts.find { it.id == meeting.otherUserContact.id }
+                        if (updatedOtherUserContact != null) {
+                            meeting.copy(otherUserContact = updatedOtherUserContact)
+                        } else {
+                            meeting.copy(
+                                otherUserContact = meeting.otherUserContact.copy(
+                                    displayName = meeting.otherUserContact.phoneNumber
+                                )
+                            )
+                        }
+                    }
+
+                    LazyColumn {
+                        items(updatedMatchedContacts.reversed()) { meeting ->
+                            MeetingItem(meeting, meetingsState, onEvent)
+                        }
                     }
                 }
             }
-        }
-        if (meetingsState.isMeetingClicked) {
-            keyboardController?.hide()
-            MeetingContactPress(
-                meetingsState = meetingsState,
-                onEvent = onEvent
-            ) { meeting ->
-                MeetingItem(
-                    meeting = meeting,
+            if (meetingsState.isMeetingClicked) {
+                keyboardController?.hide()
+                MeetingContactPress(
                     meetingsState = meetingsState,
                     onEvent = onEvent
+                ) { meeting ->
+                    MeetingItem(
+                        meeting = meeting,
+                        meetingsState = meetingsState,
+                        onEvent = onEvent
+                    )
+                }
+            }
+            if (meetingsState.isRescheduleClicked) {
+                ScheduleMeetDialog(
+                    onDismiss = { onEvent(MeetingsEvent.OnMeetingDismissed) },
+                    onConfirm = { date, time ->
+                        meetingsState.selectedMeeting?.let { meeting ->
+                            onEvent(
+                                MeetingsEvent.OnRescheduleConfirmed(
+                                    meeting,
+                                    date,
+                                    time
+                                )
+                            )
+                        }
+                    }
                 )
             }
-        }
-        if (meetingsState.isRescheduleClicked) {
-            ScheduleMeetDialog(
-                onDismiss = { onEvent(MeetingsEvent.OnMeetingDismissed) },
-                onConfirm = { date, time ->
-                    meetingsState.selectedMeeting?.let { meeting ->
-                        onEvent(
-                            MeetingsEvent.OnRescheduleConfirmed(
-                                meeting,
-                                date,
-                                time
-                            )
-                        )
-                    }
-                }
-            )
         }
     }
 }

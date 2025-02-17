@@ -43,6 +43,18 @@ class AddBlockUsersViewModel @Inject constructor(): ViewModel() {
                     isBottomSheetShow = false
                 )
             }
+
+            AddBlockUsersEvent.OnEndRefresh -> {
+                _addBlockUsersState.value = _addBlockUsersState.value.copy(
+                    isRefreshing = false
+                )
+            }
+
+            AddBlockUsersEvent.OnStartRefresh -> {
+                _addBlockUsersState.value = _addBlockUsersState.value.copy(
+                    isRefreshing = true
+                )
+            }
         }
     }
 

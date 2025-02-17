@@ -7,5 +7,6 @@ data class ScheduleAMeetState(
     val searchQuery: String? = null,
     val searchResults: List<Contact> = emptyList(),
     val showDialog: Boolean = false,
-    val selectedContact: Contact? = null
+    val selectedContact: Contact? = null,
+    val isRefreshing: Boolean = false
 )

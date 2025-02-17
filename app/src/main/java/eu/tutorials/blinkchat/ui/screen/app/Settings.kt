@@ -1,6 +1,7 @@
 package eu.tutorials.blinkchat.ui.screen.app
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
@@ -24,15 +27,20 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import eu.tutorials.blinkchat.R
 import eu.tutorials.blinkchat.data.event.app.AppTheme
+import eu.tutorials.blinkchat.data.event.app.InboxEvent
 import eu.tutorials.blinkchat.data.event.app.NotificationsType
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.state.app.SettingsState
@@ -40,7 +48,9 @@ import eu.tutorials.blinkchat.ui.component.AppBar
 import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import eu.tutorials.blinkchat.ui.component.settings.ActionButton
 import eu.tutorials.blinkchat.ui.component.settings.AlertDialogSetting
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Settings(
     modifier: Modifier = Modifier,
@@ -51,6 +61,8 @@ fun Settings(
     navigateToLoginScreen: () -> Unit
 ) {
     val activity = LocalContext.current as? Activity
+    val refreshState = rememberPullToRefreshState()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = settingsState.blockedUsers) {
         onEvent(SettingsEvent.OnLoadBlockedUsers)
@@ -69,74 +81,88 @@ fun Settings(
         activity = activity
     )
 
-    Scaffold(
-        topBar = {
-            AppBar(
-                title = "Settings",
-                onIconClick = {},
-                isOnline = rememberInternetConnectionState()
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (settingsState.isLoading) {
-                Text("Loading...", modifier = Modifier.padding(16.dp))
-            } else {
-                ActionButton(
-                    onClick = {
-                        onProfileClicked()
-                    },
-                    text = "Profile",
-                    icon = Icons.Default.Person
+    PullToRefreshBox(
+        state = refreshState,
+        isRefreshing = settingsState.isRefreshing,
+        onRefresh = {
+            coroutineScope.launch {
+                onEvent(SettingsEvent.OnStartRefresh)
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                AppBar(
+                    title = "Settings",
+                    isOnline = rememberInternetConnectionState()
                 )
-                ActionButton(
-                    onClick = {
-                        onBlockUserClicked()
-                    },
-                    text = "Blocked",
-                    icon = Icons.Default.Block,
-                    count = settingsState.blockedUsers.size
-                )
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .graphicsLayer {
+                    translationY = refreshState.distanceFraction * 300f
+                }
+        ) { innerPadding ->
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (settingsState.isLoading) {
+                    Text("Loading...", modifier = Modifier.padding(16.dp))
+                } else {
+                    ActionButton(
+                        onClick = {
+                            onProfileClicked()
+                        },
+                        text = "Profile",
+                        icon = Icons.Default.Person
+                    )
+                    ActionButton(
+                        onClick = {
+                            onBlockUserClicked()
+                        },
+                        text = "Blocked",
+                        icon = Icons.Default.Block,
+                        count = settingsState.blockedUsers.size
+                    )
 
-                ActionButton(
-                    onClick = {
-                        onEvent(SettingsEvent.OnThemeClicked)
-                    },
-                    text = "Theme",
-                    icon = painterResource(id = R.drawable.theme)
-                )
+                    ActionButton(
+                        onClick = {
+                            onEvent(SettingsEvent.OnThemeClicked)
+                        },
+                        text = "Theme",
+                        icon = painterResource(id = R.drawable.theme)
+                    )
 
-                ActionButton(
-                    onClick = {
-                        onEvent(SettingsEvent.OnNotificationsClicked)
-                    },
-                    text = "Notifications",
-                    icon = Icons.Default.Notifications
-                )
+                    ActionButton(
+                        onClick = {
+                            onEvent(SettingsEvent.OnNotificationsClicked)
+                        },
+                        text = "Notifications",
+                        icon = Icons.Default.Notifications
+                    )
 
-                ActionButton(
-                    onClick = {
-                        onEvent(SettingsEvent.OnLogoutClicked)
-                    },
-                    text = "Log Out",
-                    icon = Icons.Default.Logout
-                )
+                    ActionButton(
+                        onClick = {
+                            onEvent(SettingsEvent.OnLogoutClicked)
+                        },
+                        text = "Log Out",
+                        icon = Icons.Default.Logout
+                    )
 
-                ActionButton(
-                    onClick = {
-                        onEvent(SettingsEvent.OnDeleteAccountClicked)
-                    },
-                    text = "Delete Account",
-                    icon = Icons.Default.Delete
-                )
+                    ActionButton(
+                        onClick = {
+                            onEvent(SettingsEvent.OnDeleteAccountClicked)
+                        },
+                        text = "Delete Account",
+                        icon = Icons.Default.Delete
+                    )
+                }
             }
         }
     }

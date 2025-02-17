@@ -24,5 +24,4 @@ sealed class InboxEvent {
     data object OnSnackbarDisplayed : InboxEvent()
     data object OnNoInternetConnection: InboxEvent()
     data object OnStartRefresh: InboxEvent()
-    data object OnEndRefresh: InboxEvent()
 }

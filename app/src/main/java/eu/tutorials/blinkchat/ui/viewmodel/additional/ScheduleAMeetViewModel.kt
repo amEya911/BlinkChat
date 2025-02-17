@@ -37,6 +37,18 @@ class ScheduleAMeetViewModel @Inject constructor(): ViewModel() {
             is ScheduleAMeetEvent.OnSearchUsers -> {
                 searchUsers(event.searchQuery)
             }
+
+            ScheduleAMeetEvent.OnEndRefresh -> {
+                _scheduleAMeetState.value = _scheduleAMeetState.value.copy(
+                    isRefreshing = false
+                )
+            }
+
+            ScheduleAMeetEvent.OnStartRefresh -> {
+                _scheduleAMeetState.value = _scheduleAMeetState.value.copy(
+                    isRefreshing = true
+                )
+            }
         }
     }
 

@@ -15,6 +15,8 @@ import eu.tutorials.blinkchat.data.event.app.AppTheme
 import eu.tutorials.blinkchat.data.event.app.SettingsEvent
 import eu.tutorials.blinkchat.data.model.toContact
 import eu.tutorials.blinkchat.data.state.app.SettingsState
+import eu.tutorials.blinkchat.util.ConnectivityObserver
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -80,6 +82,31 @@ class SettingsViewModel @Inject constructor(
                     isNotificationsClicked = false
                 )
                 notificationsTypePreferences.saveNotificationsType(event.notificationType)
+            }
+
+            SettingsEvent.OnStartRefresh -> {
+                _settingsState.value = _settingsState.value.copy(
+                    isRefreshing = true
+                )
+                refreshData()
+            }
+        }
+    }
+
+    private fun refreshData() {
+        viewModelScope.launch {
+            delay(500)
+
+            while (!ConnectivityObserver.isOnline.value) {
+                delay(1000)
+            }
+
+            try {
+                loadBlockedUsers()
+            } finally {
+                _settingsState.value = _settingsState.value.copy(
+                    isRefreshing = false
+                )
             }
         }
     }

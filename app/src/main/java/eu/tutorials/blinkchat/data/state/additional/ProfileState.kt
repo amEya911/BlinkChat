@@ -4,5 +4,6 @@ import eu.tutorials.blinkchat.data.model.Contact
 
 data class ProfileState(
     val currentUserContact: Contact = Contact("", "", "", null, null),
-    val isNameClicked: Boolean = false
+    val isNameClicked: Boolean = false,
+    val isRefreshing: Boolean = false
 )
