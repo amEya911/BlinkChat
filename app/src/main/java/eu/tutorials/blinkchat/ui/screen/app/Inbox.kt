@@ -20,11 +20,15 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -44,8 +48,11 @@ import eu.tutorials.blinkchat.ui.component.inbox.AllChatItem
 import eu.tutorials.blinkchat.ui.component.inbox.RecentChatItem
 import eu.tutorials.blinkchat.ui.component.rememberInternetConnectionState
 import eu.tutorials.blinkchat.ui.viewmodel.app.InboxViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun Inbox(
     inboxState: InboxState,
@@ -60,6 +67,8 @@ fun Inbox(
     val keyboardController = LocalSoftwareKeyboardController.current
     val visiblePermissionDialogQueue =
         inboxViewModel.visiblePermissionDialogQueue.collectAsState().value
+    val refreshState = rememberPullToRefreshState()
+    val coroutineScope = rememberCoroutineScope()
 
     val contactsPermissionResultLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -137,137 +146,164 @@ fun Inbox(
             edgeTreatment = BlurredEdgeTreatment.Unbounded
         ) else Modifier
 
-    Scaffold(
-        topBar = {
-            if (!(inboxState.isContactClicked || inboxState.isScheduleAMeetClicked)) {
-                AppBar(
-                    title = "Chats",
-                    onIconClick = { onEvent(InboxEvent.OnAllContactsIconClicked) },
-                    iconResId = if (inboxState.isAllContactsClicked) Icons.Default.Schedule else Icons.Default.AccountCircle,
-                    isOnline = rememberInternetConnectionState()
-                )
+
+    PullToRefreshBox(
+        state = refreshState,
+        isRefreshing = inboxState.isRefreshing,
+        onRefresh = {
+            coroutineScope.launch {
+                onEvent(InboxEvent.OnStartRefresh)
+                delay(3.seconds)
+                onEvent(InboxEvent.OnEndRefresh)
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .then(contentModifier)
-        ) {
-            Column(
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                CustomTextField(
-                    value = searchQuery ?: "",
-                    onValueChange = {
-                        searchQuery = it
-                        onEvent(InboxEvent.SearchUsers(it))
-                    },
-                    placeholderText = "Search",
-                    modifier = Modifier
-                        .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
-                        .background(MaterialTheme.colorScheme.surface)
-                )
-
-                val displayedContacts = when {
-                    inboxState.isAllContactsClicked -> {
-                        if (inboxState.searchQuery.isNullOrBlank()) {
-                            inboxState.contacts
-                        } else {
-                            inboxState.contacts.filter {
-                                it.displayName.contains(
-                                    inboxState.searchQuery,
-                                    ignoreCase = true
-                                ) ||
-                                        it.phoneNumber.contains(inboxState.searchQuery)
-                            }
-                        }
-                    }
-
-                    else -> {
-                        if (inboxState.searchQuery.isNullOrBlank()) {
-                            inboxState.recentContacts.map { it.contact }
-                        } else {
-                            inboxState.recentContacts.map { it.contact }.filter {
-                                it.displayName.contains(
-                                    inboxState.searchQuery,
-                                    ignoreCase = true
-                                ) ||
-                                        it.phoneNumber.contains(inboxState.searchQuery)
-                            }
-                        }
-                    }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                if (!(inboxState.isContactClicked || inboxState.isScheduleAMeetClicked)) {
+                    AppBar(
+                        title = "Chats",
+                        onIconClick = { onEvent(InboxEvent.OnAllContactsIconClicked) },
+                        iconResId = if (inboxState.isAllContactsClicked) Icons.Default.Schedule else Icons.Default.AccountCircle,
+                        isOnline = rememberInternetConnectionState()
+                    )
                 }
-                if (inboxState.isAllContactsClicked) {
-                    if (inboxState.isLoadingContacts) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .graphicsLayer {
+                    translationY = refreshState.distanceFraction * 100f
+                }
+        ) { innerPadding ->
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .then(contentModifier)
+            ) {
+                Column(
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    CustomTextField(
+                        value = searchQuery ?: "",
+                        onValueChange = {
+                            searchQuery = it
+                            onEvent(InboxEvent.SearchUsers(it))
+                        },
+                        placeholderText = "Search",
+                        modifier = Modifier
+                            .padding(start = 16.dp, bottom = 16.dp, end = 16.dp)
+                            .background(MaterialTheme.colorScheme.surface)
+                    )
+
+                    val displayedContacts = when {
+                        inboxState.isAllContactsClicked -> {
+                            if (inboxState.searchQuery.isNullOrBlank()) {
+                                inboxState.contacts
+                            } else {
+                                inboxState.contacts.filter {
+                                    it.displayName.contains(
+                                        inboxState.searchQuery,
+                                        ignoreCase = true
+                                    ) ||
+                                            it.phoneNumber.contains(inboxState.searchQuery)
+                                }
+                            }
+                        }
+
+                        else -> {
+                            if (inboxState.searchQuery.isNullOrBlank()) {
+                                inboxState.recentContacts.map { it.contact }
+                            } else {
+                                inboxState.recentContacts.map { it.contact }.filter {
+                                    it.displayName.contains(
+                                        inboxState.searchQuery,
+                                        ignoreCase = true
+                                    ) ||
+                                            it.phoneNumber.contains(inboxState.searchQuery)
+                                }
+                            }
+                        }
+                    }
+                    if (inboxState.isAllContactsClicked) {
+                        if (inboxState.isLoadingContacts) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            LazyColumn {
+                                val groupedContacts = displayedContacts
+                                    .sortedBy { it.displayName }
+                                    .groupBy { it.displayName.first().uppercaseChar() }
+
+                                groupedContacts.forEach { (initial, contacts) ->
+                                    stickyHeader {
+                                        Text(
+                                            text = initial.toString(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surface)
+                                                .padding(8.dp),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    items(contacts) { contact ->
+                                        AllChatItem(
+                                            contact = contact,
+                                            onEvent = onEvent,
+                                            inboxState = inboxState
+                                        )
+                                    }
+                                }
+                            }
                         }
                     } else {
                         LazyColumn {
-                            val groupedContacts = displayedContacts
-                                .sortedBy { it.displayName }
-                                .groupBy { it.displayName.first().uppercaseChar() }
-
-                            groupedContacts.forEach { (initial, contacts) ->
-                                stickyHeader {
-                                    Text(
-                                        text = initial.toString(),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .padding(8.dp),
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                items(contacts) { contact ->
-                                    AllChatItem(contact = contact, onEvent = onEvent, inboxState = inboxState)
-                                }
+                            items(displayedContacts.reversed()) { contact ->
+                                RecentChatItem(
+                                    inboxState = inboxState,
+                                    contact = contact,
+                                    onEvent = onEvent
+                                )
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                                )
                             }
                         }
                     }
-                } else {
-                    LazyColumn {
-                        items(displayedContacts.reversed()) { contact ->
-                            RecentChatItem(
-                                inboxState = inboxState,
-                                contact = contact,
-                                onEvent = onEvent
-                            )
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                            )
-                        }
-                    }
                 }
             }
-        }
-        if (inboxState.isContactClicked) {
-            keyboardController?.hide()
-            InboxContactPress(
-                state = inboxState,
-                onEvent = onEvent,
-            ) { contact ->
-                RecentChatItem(
-                    inboxState = inboxState,
-                    contact = contact,
-                    onEvent = {}
+            if (inboxState.isContactClicked) {
+                keyboardController?.hide()
+                InboxContactPress(
+                    state = inboxState,
+                    onEvent = onEvent,
+                ) { contact ->
+                    RecentChatItem(
+                        inboxState = inboxState,
+                        contact = contact,
+                        onEvent = {}
+                    )
+                }
+            }
+            if (inboxState.isScheduleAMeetClicked) {
+                ScheduleMeetDialog(
+                    onDismiss = { onEvent(InboxEvent.OnScheduleDismissed) },
+                    onConfirm = { date, time ->
+                        onEvent(
+                            InboxEvent.OnScheduleConfirmed(
+                                inboxState.selectedContact,
+                                date,
+                                time
+                            )
+                        )
+                    }
                 )
             }
-        }
-        if (inboxState.isScheduleAMeetClicked) {
-            ScheduleMeetDialog(
-                onDismiss = { onEvent(InboxEvent.OnScheduleDismissed) },
-                onConfirm = { date, time ->
-                    onEvent(InboxEvent.OnScheduleConfirmed(inboxState.selectedContact, date, time))
-                }
-            )
         }
     }
 }

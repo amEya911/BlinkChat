@@ -22,5 +22,6 @@ data class InboxState(
     val isSelectedContactBlocked: Boolean = false,
     val isSelectedContactMuted: Boolean = false,
     val snackbarMessage: String? = null,
-    val isLoadingContacts: Boolean = false
+    val isLoadingContacts: Boolean = false,
+    val isRefreshing: Boolean = false
 )

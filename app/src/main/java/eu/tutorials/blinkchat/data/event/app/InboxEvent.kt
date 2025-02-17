@@ -23,4 +23,6 @@ sealed class InboxEvent {
     data class OnPermissionResult(val permission: String, val isGranted: Boolean): InboxEvent()
     data object OnSnackbarDisplayed : InboxEvent()
     data object OnNoInternetConnection: InboxEvent()
+    data object OnStartRefresh: InboxEvent()
+    data object OnEndRefresh: InboxEvent()
 }

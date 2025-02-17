@@ -169,6 +169,18 @@ class InboxViewModel @Inject constructor(
                     snackbarMessage = "Cannot create room, no internet connection"
                 )
             }
+
+            InboxEvent.OnEndRefresh -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isRefreshing = false
+                )
+            }
+
+            InboxEvent.OnStartRefresh -> {
+                _inboxState.value = _inboxState.value.copy(
+                    isRefreshing = true
+                )
+            }
         }
     }
 
