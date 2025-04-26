@@ -13,7 +13,7 @@ import eu.tutorials.blinkchat.data.model.Contact
 import eu.tutorials.blinkchat.data.model.Image
 import eu.tutorials.blinkchat.data.model.Message
 import eu.tutorials.blinkchat.util.Crypto
-import eu.tutorials.blinkchat.util.IdentityPoolId
+import eu.tutorials.blinkchat.util.Ids
 import eu.tutorials.blinkchat.util.NotificationType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -293,7 +293,7 @@ class AppRepository @Inject constructor(
         val s3Client = AmazonS3Client(
             CognitoCachingCredentialsProvider(
                 context,
-                IdentityPoolId.IDENTITY_POOL_ID,
+                Ids.IDENTITY_POOL_ID,
                 Regions.AP_SOUTH_1
             )
         )
@@ -545,7 +545,7 @@ class AppRepository @Inject constructor(
         val s3Client = AmazonS3Client(
             CognitoCachingCredentialsProvider(
                 context,
-                IdentityPoolId.IDENTITY_POOL_ID,
+                Ids.IDENTITY_POOL_ID,
                 Regions.AP_SOUTH_1
             )
         )
