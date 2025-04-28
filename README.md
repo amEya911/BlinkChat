@@ -10,6 +10,10 @@
 - **Mobile verification**: Easy way to chat with contacts.
 - **Focus on privacy**: No data storage, just secure, confidential conversations.
 
+## Screenshots
+Here are some screenshots of the game in action:
+![Screenshot](https://github.com/user-attachments/assets/64e00838-e9b6-45ea-bcf7-e6a8098fd881)
+
 ## Current Progress
 
 I am currently working on adding more features to **BlinkChat**, so stay tuned for updates.
