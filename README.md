@@ -95,15 +95,13 @@ sequenceDiagram
     UserB->>Firebase: Join Room with Room ID
     Firebase-->>UserA: Presence Synced (Both Active)
     
-    rect rgb(200, 220, 240)
-        Note over UserA,UserB: Active Chat Session
-        UserA->>Firebase: Send Encrypted Message
-        Firebase-->>UserB: Receive & Decrypt Message
-        UserA->>AWS: Upload CameraX Image
-        AWS-->>UserA: Return S3 Image URL
-        UserA->>Firebase: Sync Encrypted Image URL
-        Firebase-->>UserB: Decrypt URL & Load Image
-    end
+    Note over UserA,UserB: Active Chat Session
+    UserA->>Firebase: Send Encrypted Message
+    Firebase-->>UserB: Receive & Decrypt Message
+    UserA->>AWS: Upload CameraX Image
+    AWS-->>UserA: Return S3 Image URL
+    UserA->>Firebase: Sync Encrypted Image URL
+    Firebase-->>UserB: Decrypt URL & Load Image
 
     UserA->>Firebase: Exit Chat Room
     Firebase->>Firebase: Immediately Delete Encrypted Messages
